@@ -47,9 +47,16 @@ supabase/seed.sql                 (seeding is automatic — see below)
 
 ## Accounts & data
 
-- The login screen now performs **real Supabase email/password auth**.
-  First time: enter an email + password and click **Create account**
-  (the "Sign in as" role is stored on your profile).
+- **Two-stage login.** Stage 1 is **company sign-in** — real Supabase
+  email/password (first time: enter email + password → **Create
+  account**); this lands on the portfolio. Stage 2: clicking **Enter
+  Project** opens a per-project gate where you pick your **job role**
+  (Engineer / CEO / Store / QC / PM / CFO / Estimator) and enter that
+  role's **passcode**. Exiting a project drops the role; the next
+  project entry re-authenticates.
+- **Demo role passcodes** (change in `buildcore.html` → `ROLE_PASSCODES`
+  for production): Engineer `eng123`, CEO/Admin `ceo123`, Store
+  `store123`, QC `qc123`, PM `pm123`, CFO `cfo123`, Estimator `est123`.
 - On your **first sign-in**, the app uploads its built-in seed data to
   your workspace. After that, every change syncs to Supabase
   (debounced) and is restored on any device you sign in from.

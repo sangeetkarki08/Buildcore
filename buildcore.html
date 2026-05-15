@@ -320,7 +320,7 @@
         <div class="font-mono text-[10px] text-stone-400 tracking-wider">CONTRACTOR OS · v4.7</div>
       </div>
     </div>
-    <div class="login-tagline">Welcome back — sign in to continue</div>
+    <div class="login-tagline">Company sign-in — your project role is verified when you enter a project</div>
     <form id="loginForm" class="login-form">
       <div class="ims-field">
         <label>EMAIL / USER ID</label>
@@ -330,22 +330,10 @@
         <label>PASSWORD</label>
         <input type="password" id="loginPass" value="demo" placeholder="••••••••" required>
       </div>
-      <div class="ims-field">
-        <label>SIGN IN AS</label>
-        <select id="loginRole">
-          <option value="ceo">CEO · Mr. Rajesh Tamang (full access)</option>
-          <option value="cfo">CFO · Ms. Sunita Adhikari (financial)</option>
-          <option value="pm">Project Manager · R. Tamang (PRJ-017 lead)</option>
-          <option value="se">Site Engineer · S. Adhikari (site ops)</option>
-          <option value="qc">QC Officer · M. Khatri (quality)</option>
-          <option value="store">Store Manager (inventory + procurement)</option>
-          <option value="estimator">Estimator (BOQ + tenders)</option>
-        </select>
-      </div>
       <button type="submit" class="login-btn">SIGN IN <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
       <button type="button" id="createAcctBtn" class="login-btn" style="background:transparent;color:inherit;border:1px solid currentColor;margin-top:8px;opacity:.85">CREATE ACCOUNT</button>
       <div class="login-footer">
-        <div class="text-[10px] text-stone-400" id="loginHint">First time? Pick a role, set a password, then "Create account".</div>
+        <div class="text-[10px] text-stone-400" id="loginHint">First time? Enter an email + password, then "Create account". Job role is chosen per project.</div>
         <div class="text-[10px] text-stone-400 mt-1" id="loginMode">Connecting…</div>
       </div>
     </form>
@@ -7885,20 +7873,34 @@
     estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','finance','documents','events','todos'] }
   };
 
+  // Stage-1 (company) identity — used on the portfolio screen before a
+  // project-specific job role is chosen.
+  const COMPANY_PROFILE = { name:'BuildCore Portfolio', role:'Company · select a project', avatar:'B', projects:'ALL', modules:'ALL' };
+
+  // Stage-2 per-job-role passcodes (entered when entering a project).
+  // Change these for production; documented in README.
+  const ROLE_PASSCODES = {
+    ceo:'ceo123', cfo:'cfo123', pm:'pm123', se:'eng123',
+    qc:'qc123', store:'store123', estimator:'est123'
+  };
+
   // Current session
   State.session = State.session || { loggedIn: false, role: null, user: null, inProjectMode: false, projectId: null };
 
-  function signIn(roleKey) {
-    const perm = ROLE_PERMS[roleKey];
-    if (!perm) return;
-    State.session = { loggedIn:true, role:roleKey, user:perm, inProjectMode:false, projectId:null };
+  // Stage 1: company-level login (after Supabase auth). No role yet.
+  function signInCompany() {
+    const profile = Object.assign({}, COMPANY_PROFILE);
+    try { if (typeof COMPANY !== 'undefined' && COMPANY.name) profile.name = COMPANY.name; } catch(e){}
+    State.session = { loggedIn:true, role:'company', user:profile, inProjectMode:false, projectId:null };
     saveState();
-    audit('create','Session login', perm.name + ' · ' + perm.role);
+    audit('create','Company sign-in', profile.name);
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('portfolioScreen').style.display = 'block';
     document.getElementById('appShell').style.display = 'none';
     renderPortfolioScreen();
   }
+  // Back-compat shim (any legacy caller ignores the role arg now).
+  function signIn() { signInCompany(); }
   function signOut() {
     audit('delete','Session logout', State.session?.user?.name || '');
     try { if (window.BC && BC.enabled) BC.auth.signOut(); } catch(e){}
@@ -7910,12 +7912,79 @@
   }
   window.signOut = signOut;
 
+  // Stage 2: clicking a project card opens a job-role + passcode gate.
   function enterProject(projectId) {
+    if (!State.session?.loggedIn) return signOut();
+    openProjectLogin(projectId);
+  }
+  window.enterProject = enterProject;
+
+  function openProjectLogin(projectId) {
+    const proj = (State.projects || []).find(p => p.id === projectId) || { id:projectId, name:projectId };
+    let m = document.getElementById('projectLoginModal');
+    if (!m) { m = document.createElement('div'); m.id = 'projectLoginModal'; document.body.appendChild(m); }
+    m.className = 'login-overlay';
+    m.style.display = 'flex';
+    m.style.zIndex = '9999';
+    m.innerHTML = `
+      <div class="login-card" style="max-width:380px">
+        <div class="login-brand">
+          <div class="login-logo">B</div>
+          <div>
+            <div class="font-display font-black text-lg">PROJECT SIGN-IN</div>
+            <div class="font-mono text-[10px] text-stone-400">${proj.id} · ${proj.name}</div>
+          </div>
+        </div>
+        <div class="login-tagline">Authenticate with your job role to enter this project</div>
+        <form id="projLoginForm" class="login-form">
+          <div class="ims-field">
+            <label>JOB ROLE</label>
+            <select id="projRole">
+              ${Object.keys(ROLE_PERMS).map(k => `<option value="${k}">${ROLE_PERMS[k].role}</option>`).join('')}
+            </select>
+          </div>
+          <div class="ims-field">
+            <label>ROLE PASSCODE</label>
+            <input type="password" id="projPass" placeholder="••••••" required autofocus>
+          </div>
+          <button type="submit" class="login-btn">ENTER PROJECT <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+          <button type="button" id="projCancel" class="login-btn" style="background:transparent;color:inherit;border:1px solid currentColor;margin-top:8px;opacity:.85">CANCEL</button>
+          <div class="login-footer">
+            <div class="text-[10px] text-stone-400">Demo passcodes — Engineer <b>eng123</b> · CEO/Admin <b>ceo123</b> · Store <b>store123</b> · QC <b>qc123</b> · PM <b>pm123</b> · CFO <b>cfo123</b> · Estimator <b>est123</b></div>
+          </div>
+        </form>
+      </div>`;
+    try { lucide.createIcons(); } catch(e){}
+    document.getElementById('projCancel').onclick = () => { m.style.display = 'none'; };
+    document.getElementById('projLoginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const role = document.getElementById('projRole').value;
+      const code = document.getElementById('projPass').value;
+      if (ROLE_PASSCODES[role] !== code) {
+        toast('Project sign-in failed', 'Incorrect passcode for ' + ROLE_PERMS[role].role, 'bad');
+        return;
+      }
+      // Apply the chosen role's permissions for this project session.
+      State.session.role = role;
+      State.session.user = ROLE_PERMS[role];
+      audit('create','Project sign-in', ROLE_PERMS[role].name + ' · ' + ROLE_PERMS[role].role);
+      const ok = doEnterProject(projectId);
+      if (ok) {
+        m.style.display = 'none';
+      } else {
+        // Role lacks access to this project — revert to company identity.
+        State.session.role = 'company';
+        State.session.user = Object.assign({}, COMPANY_PROFILE);
+      }
+    });
+  }
+
+  function doEnterProject(projectId) {
     const perm = State.session?.user;
-    if (!perm) return signOut();
-    // Permission check
+    if (!perm) { signOut(); return false; }
     if (perm.projects !== 'ALL' && !perm.projects.includes(projectId)) {
-      toast('Access Denied','Your role does not have access to ' + projectId,'bad'); return;
+      toast('Access Denied','This role has no access to ' + projectId + ' — pick another role','bad');
+      return false;
     }
     State.session.inProjectMode = true;
     State.session.projectId = projectId;
@@ -7924,21 +7993,20 @@
     audit('view','Project entered', projectId + ' by ' + perm.role);
     document.getElementById('portfolioScreen').style.display = 'none';
     document.getElementById('appShell').style.display = 'flex';
-    // Sync the active project selector
     const sel = $('#activeProjectSelect');
     if (sel) sel.value = projectId;
-    // Render banner
     renderProjectBanner();
-    // Filter sidebar by role
     filterSidebarByRole();
-    // Go to dashboard view (now project-scoped)
     navTo('dashboard');
+    return true;
   }
-  window.enterProject = enterProject;
 
   function exitToPortfolio() {
     State.session.inProjectMode = false;
     State.session.projectId = null;
+    // Drop the project job-role — re-authenticated on next project entry.
+    State.session.role = 'company';
+    State.session.user = Object.assign({}, COMPANY_PROFILE);
     saveState();
     audit('view','Exited project','Returned to portfolio');
     document.getElementById('appShell').style.display = 'none';
@@ -8172,19 +8240,15 @@
 
   // Pull the user's Supabase workspace into State (or seed it on first
   // run), then enter the app via the existing role-based UI flow.
-  async function bcAfterAuth(roleKey) {
+  async function bcAfterAuth() {
     if (window.BC && BC.enabled) {
       try {
         const hadData = await BC.pullInto(State);
         if (!hadData) await BC.firstSyncIfEmpty(State);
-        try {
-          const p = await BC.auth.profile();
-          if (p && p.role && ROLE_PERMS[p.role]) roleKey = p.role;
-        } catch(e){}
         bcRerenderAll();
       } catch(e) { try { console.log('[BuildCore] remote sync failed:', e && e.message); } catch(_){} }
     }
-    signIn(roleKey);
+    signInCompany();
   }
   window.bcAfterAuth = bcAfterAuth;
 
@@ -8199,14 +8263,13 @@
 
     const creds = () => ({
       email: (document.getElementById('loginEmail').value || '').trim(),
-      pass:  document.getElementById('loginPass').value,
-      role:  document.getElementById('loginRole').value
+      pass:  document.getElementById('loginPass').value
     });
 
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const { email, pass, role } = creds();
+        const { email, pass } = creds();
         if (online) {
           try { await BC.auth.signIn(email, pass); }
           catch (err) {
@@ -8214,23 +8277,22 @@
             return;
           }
         }
-        bcAfterAuth(role);
+        bcAfterAuth();
       });
     }
 
     const acctBtn = document.getElementById('createAcctBtn');
     if (acctBtn) acctBtn.addEventListener('click', async () => {
-      const { email, pass, role } = creds();
+      const { email, pass } = creds();
       if (!email || !pass) { toast('Create account', 'Enter an email and password first', 'bad'); return; }
-      if (!online) { toast('Offline mode', 'Supabase is not configured — sign in works locally', 'info'); bcAfterAuth(role); return; }
+      if (!online) { toast('Offline mode', 'Supabase is not configured — sign in works locally', 'info'); bcAfterAuth(); return; }
       try {
-        const perm = ROLE_PERMS[role];
-        await BC.auth.signUp(email, pass, { full_name: (perm && perm.name) || email, role });
+        await BC.auth.signUp(email, pass, { full_name: email });
         // Some projects require email confirmation; sign-in may fail until confirmed.
         try { await BC.auth.signIn(email, pass); }
         catch (e2) { toast('Almost there', 'Account created — confirm your email, then sign in', 'info'); return; }
         toast('Account created', 'Welcome to BuildCore', 'ok');
-        bcAfterAuth(role);
+        bcAfterAuth();
       } catch (err) {
         toast('Sign-up failed', (err && err.message) || 'Try a different email', 'bad');
       }
@@ -8240,11 +8302,7 @@
     if (online) {
       try {
         const u = await BC.auth.currentUser();
-        if (u) {
-          let role = document.getElementById('loginRole').value;
-          try { const p = await BC.auth.profile(); if (p && p.role && ROLE_PERMS[p.role]) role = p.role; } catch(e){}
-          await bcAfterAuth(role);
-        }
+        if (u) await bcAfterAuth();
       } catch(e){}
     }
   });
