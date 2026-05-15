@@ -4,7 +4,7 @@
 # Set project_id to your project ref (Supabase Dashboard ->
 # Project Settings -> General -> Reference ID), or run:
 #   supabase link --project-ref <your-ref>
-project_id = "YOUR-PROJECT-REF"
+project_id = "hakmusfwprybgovojmex"
 
 [api]
 enabled = true
