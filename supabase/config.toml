@@ -1,0 +1,43 @@
+# Supabase project config — required for the GitHub integration and the
+# Supabase CLI to recognize this repo as a project.
+#
+# Set project_id to your project ref (Supabase Dashboard ->
+# Project Settings -> General -> Reference ID), or run:
+#   supabase link --project-ref <your-ref>
+project_id = "YOUR-PROJECT-REF"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.migrations]
+schema_paths = []
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+# Set to false to skip the confirmation email (handy while testing the
+# "Create account" flow). Re-enable for production.
+enable_confirmations = false
