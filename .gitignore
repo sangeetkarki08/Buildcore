@@ -1,5 +1,6 @@
-# Local Supabase credentials (each deployment sets its own)
-js/supabase-config.js
+# NOTE: js/supabase-config.js is intentionally committed so GitHub Pages
+# can serve a configured app. It only holds the publishable (anon) key,
+# which is browser-safe — Row Level Security protects the data.
 .env
 .env.local
 
