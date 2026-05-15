@@ -1,0 +1,28 @@
+-- =====================================================================
+--  BuildCore — optional seed
+--
+--  The app already ships rich seed data in buildcore.html. On a user's
+--  first authenticated session the front-end pushes that seed into the
+--  tables automatically (see js/buildcore-supabase.js → firstSyncIfEmpty),
+--  so you normally do NOT need to run this file.
+--
+--  Use this only if you want to pre-create a demo auth user from the
+--  SQL editor instead of signing up through the UI.
+--
+--  NOTE: creating auth users via SQL requires the service role / SQL
+--  editor. Prefer the dashboard (Authentication → Add user) or the app's
+--  own "Create account" path. The block below is provided for reference.
+-- =====================================================================
+
+-- Example: provision a demo user (run in the Supabase SQL editor).
+-- Email confirmation must be disabled, or confirm the user afterwards.
+--
+-- select auth.uid();  -- sanity check
+--
+-- The supported, supported-across-versions way is the dashboard or:
+--   supabase auth users create demo@buildcore.com.np --password 'changeme'
+--
+-- After the user exists, the on_auth_user_created trigger creates their
+-- profile row automatically. No further seeding is required here.
+
+-- (intentionally empty — seeding is handled by the application layer)

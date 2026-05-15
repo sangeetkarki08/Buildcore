@@ -1,0 +1,235 @@
+/* =====================================================================
+ *  BuildCore — Supabase data layer
+ *
+ *  Bridges the app's in-memory `State` object to Postgres via Supabase.
+ *  - Real e-mail/password auth (replaces the demo role login)
+ *  - Per-user, RLS-isolated workspace
+ *  - Whole-collection "replace" sync (simple + correct for one tenant)
+ *  - localStorage stays as an offline cache (handled in buildcore.html)
+ *
+ *  Configuration is read from `window.BUILDCORE_SUPABASE`
+ *  (see js/supabase-config.example.js). If it is absent or still has
+ *  placeholder values, the layer disables itself and the app keeps
+ *  running exactly as before (offline / localStorage only).
+ *
+ *  Everything is exposed on `window.BC`.
+ * ===================================================================== */
+(function () {
+  'use strict';
+
+  var cfg = window.BUILDCORE_SUPABASE || {};
+  var configured =
+    !!cfg.url &&
+    !!cfg.anonKey &&
+    cfg.url.indexOf('YOUR-PROJECT') === -1 &&
+    cfg.anonKey.indexOf('YOUR-ANON-KEY') === -1;
+
+  var sb = null;
+  if (configured && window.supabase && window.supabase.createClient) {
+    sb = window.supabase.createClient(cfg.url, cfg.anonKey, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+  }
+
+  // State-key -> { table, id }. `id` is the field on each object used as
+  // the row primary key; null means "no natural id, generate one".
+  var MAP = {
+    projects: { table: 'projects',          id: 'id'   },
+    tenders:  { table: 'tenders',           id: 'id'   },
+    materials:{ table: 'materials',         id: 'code' },
+    ncrs:     { table: 'ncrs',              id: 'id'   },
+    raBills:  { table: 'ra_bills',          id: 'id'   },
+    pos:      { table: 'purchase_orders',   id: 'id'   },
+    dprs:     { table: 'dprs',              id: 'id'   },
+    vos:      { table: 'variation_orders',  id: 'id'   },
+    risks:    { table: 'risks',             id: 'id'   },
+    photos:   { table: 'photos',            id: 'id'   },
+    activity: { table: 'activity',          id: null   },
+    audit:    { table: 'audit_log',         id: 'hash' }
+  };
+
+  function log() {
+    try { console.log.apply(console, ['[BuildCore·Supabase]'].concat([].slice.call(arguments))); }
+    catch (e) {}
+  }
+
+  // ---- auth ----------------------------------------------------------
+  var auth = {
+    async currentUser() {
+      if (!sb) return null;
+      var r = await sb.auth.getUser();
+      return (r && r.data && r.data.user) || null;
+    },
+    async signIn(email, password) {
+      if (!sb) throw new Error('Supabase not configured');
+      var r = await sb.auth.signInWithPassword({ email: email, password: password });
+      if (r.error) throw r.error;
+      return r.data.user;
+    },
+    async signUp(email, password, meta) {
+      if (!sb) throw new Error('Supabase not configured');
+      var r = await sb.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: meta || {} }
+      });
+      if (r.error) throw r.error;
+      return r.data.user;
+    },
+    async signOut() {
+      if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+    },
+    async profile() {
+      if (!sb) return null;
+      var u = await this.currentUser();
+      if (!u) return null;
+      var r = await sb.from('profiles').select('*').eq('id', u.id).maybeSingle();
+      return (r && r.data) || null;
+    }
+  };
+
+  // ---- helpers -------------------------------------------------------
+  function chunk(arr, n) {
+    var out = [];
+    for (var i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+    return out;
+  }
+
+  function genId() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return 'r-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function toRows(list, idField) {
+    return (list || []).map(function (obj, i) {
+      var o = obj;
+      // activity carries a Date in memory — serialize to ISO for JSONB
+      if (o && o.t instanceof Date) o = Object.assign({}, o, { t: o.t.toISOString() });
+      var id = idField && o && o[idField] != null ? String(o[idField]) : genId();
+      return { id: id, data: o };
+    });
+  }
+
+  function rehydrate(stateKey, rows) {
+    var list = rows.map(function (r) { return r.data; });
+    if (stateKey === 'activity') {
+      list = list.map(function (a) { return Object.assign({}, a, { t: new Date(a.t) }); });
+    }
+    return list;
+  }
+
+  // ---- load (Supabase -> State) -------------------------------------
+  // Returns true if the remote workspace had any rows.
+  async function pullInto(State) {
+    if (!sb) return false;
+    var hadData = false;
+
+    await Promise.all(Object.keys(MAP).map(async function (key) {
+      var m = MAP[key];
+      try {
+        var r = await sb.from(m.table).select('id,data');
+        if (r.error) { log('load', m.table, 'failed:', r.error.message); return; }
+        if (r.data && r.data.length) {
+          State[key] = rehydrate(key, r.data);
+          hadData = true;
+        }
+      } catch (e) { log('load', m.table, 'error', e && e.message); }
+    }));
+
+    try {
+      var s = await sb.from('app_settings').select('automations,active_project').maybeSingle();
+      if (s && s.data) {
+        if (s.data.automations && Object.keys(s.data.automations).length) {
+          State.automations = s.data.automations;
+        }
+        if (s.data.active_project) State.activeProject = s.data.active_project;
+        hadData = true;
+      }
+    } catch (e) { log('load app_settings error', e && e.message); }
+
+    return hadData;
+  }
+
+  // ---- save (State -> Supabase) -------------------------------------
+  async function syncCollection(key, State) {
+    if (!sb) return;
+    var m = MAP[key];
+    var rows = toRows(State[key], m.id);
+    try {
+      // RLS scopes deletes to the caller's rows only.
+      var del = await sb.from(m.table).delete().not('id', 'is', null);
+      if (del.error) { log('clear', m.table, del.error.message); return; }
+      var parts = chunk(rows, 500);
+      for (var i = 0; i < parts.length; i++) {
+        var ins = await sb.from(m.table).insert(parts[i]);
+        if (ins.error) { log('insert', m.table, ins.error.message); return; }
+      }
+    } catch (e) { log('sync', m.table, 'error', e && e.message); }
+  }
+
+  async function syncSettings(State) {
+    if (!sb) return;
+    var u = await auth.currentUser();
+    if (!u) return;
+    try {
+      var r = await sb.from('app_settings').upsert({
+        user_id: u.id,
+        automations: State.automations || {},
+        active_project: State.activeProject || null,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+      if (r.error) log('settings upsert', r.error.message);
+    } catch (e) { log('settings error', e && e.message); }
+  }
+
+  var _pushTimer = null;
+  var _pushing = false;
+  function push(State) {
+    if (!sb) return;
+    if (_pushTimer) clearTimeout(_pushTimer);
+    _pushTimer = setTimeout(async function () {
+      if (_pushing) return;
+      _pushing = true;
+      try {
+        var u = await auth.currentUser();
+        if (!u) return;                       // not signed in -> skip remote
+        for (var key in MAP) { if (MAP.hasOwnProperty(key)) await syncCollection(key, State); }
+        await syncSettings(State);
+        log('synced to Supabase');
+      } finally { _pushing = false; }
+    }, 900);
+  }
+
+  // Force a full, awaited push (used right after first sign-in to upload
+  // the local seed when the remote workspace is still empty).
+  async function pushNow(State) {
+    if (!sb) return;
+    var u = await auth.currentUser();
+    if (!u) return;
+    for (var key in MAP) { if (MAP.hasOwnProperty(key)) await syncCollection(key, State); }
+    await syncSettings(State);
+    log('initial seed uploaded');
+  }
+
+  async function firstSyncIfEmpty(State) {
+    if (!sb) return;
+    try {
+      var r = await sb.from('projects').select('id', { count: 'exact', head: true });
+      var empty = !r.error && (r.count === 0 || r.count == null);
+      if (empty) await pushNow(State);
+    } catch (e) { log('firstSync error', e && e.message); }
+  }
+
+  window.BC = {
+    enabled: !!sb,
+    configured: configured,
+    client: sb,
+    auth: auth,
+    pullInto: pullInto,
+    push: push,
+    pushNow: pushNow,
+    firstSyncIfEmpty: firstSyncIfEmpty
+  };
+
+  log(sb ? 'client ready' : 'not configured — running in offline (localStorage) mode');
+})();
