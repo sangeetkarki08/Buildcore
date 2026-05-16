@@ -1378,6 +1378,7 @@
           <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs">
             <button class="ims-tab active" data-imstab="overview"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>Stock Overview</button>
             <button class="ims-tab" data-imstab="items"><i data-lucide="boxes" class="w-3 h-3"></i>Item Master</button>
+            <button class="ims-tab" data-imstab="project-flow"><i data-lucide="route" class="w-3 h-3"></i>Project Flow</button>
             <button class="ims-tab" data-imstab="stock-in"><i data-lucide="package-plus" class="w-3 h-3"></i>Stock IN (GRN)</button>
             <button class="ims-tab" data-imstab="stock-out"><i data-lucide="package-minus" class="w-3 h-3"></i>Stock OUT</button>
             <button class="ims-tab" data-imstab="tools"><i data-lucide="hammer" class="w-3 h-3"></i>Tool Tracker</button>
@@ -1414,6 +1415,7 @@
             <button class="ims-tab" data-eqtab="logs"><i data-lucide="clipboard-list" class="w-3 h-3"></i>Logsheets</button>
             <button class="ims-tab" data-eqtab="operators"><i data-lucide="user-circle" class="w-3 h-3"></i>Operators</button>
             <button class="ims-tab" data-eqtab="maintenance"><i data-lucide="wrench" class="w-3 h-3"></i>Maintenance</button>
+            <button class="ims-tab" data-eqtab="compliance"><i data-lucide="shield-check" class="w-3 h-3"></i>Owned Compliance</button>
             <button class="ims-tab" data-eqtab="utilization"><i data-lucide="activity" class="w-3 h-3"></i>Utilization Reports</button>
           </div>
           <div id="eqTabContent" class="p-5"><!-- populated by JS --></div>
@@ -2985,7 +2987,7 @@
 
   // ----- Seed data (only on first load) -----
   function seedIMSData() {
-    if (State.items.length > 0) return;
+    if (State.items.length > 0) { normalizeStockMovements(); return; }
     State.items = [
       { id:1,  sku:'CEM-001', name:'OPC 53 Grade Cement', category:'Cement', unit:'bag', reorderLevel:200, costPrice:712, supplier:'Shivam Cement', notes:'50kg bags, mfg within 30d' },
       { id:2,  sku:'CEM-002', name:'OPC 43 Grade Cement', category:'Cement', unit:'bag', reorderLevel:100, costPrice:680, supplier:'Hetauda Cement', notes:'Backup grade · PCC use only' },
@@ -3051,6 +3053,7 @@
       { type:'OUT', itemId:25, qty:8,   date:today-10*day, refNo:'MIN-921', issuedTo:'New workers (8)', purpose:'PPE issue', siteId:3, notes:'' }
     ];
     State.stockMovements = seedMov.map((m, i) => ({ ...m, id: i+1 }));
+    normalizeStockMovements();
     State.imsNextId.mov = seedMov.length + 1;
 
     // Seed tool issues
@@ -3093,6 +3096,49 @@
     });
     return map;
   }
+  function imsActiveProjectId() {
+    const pid = State.session?.projectId || State.activeProject;
+    return pid && pid !== 'ALL' ? pid : '';
+  }
+  function imsMovementProject(m) {
+    if (!m) return '';
+    if (m.chargeProject) return m.chargeProject;
+    if (m.projectId) return m.projectId;
+    if (m.siteProject) return m.siteProject;
+    if (m.recipientType === 'transfer' && m.recipientId) return m.recipientId;
+    if (m.recipientType === 'site' && m.recipientId) {
+      try {
+        seedProjectSites();
+        const s = (State.projectSites || []).find(x => String(x.id) === String(m.recipientId));
+        if (s && s.projectId) return s.projectId;
+      } catch(e) {}
+    }
+    return '';
+  }
+  function normalizeStockMovements() {
+    const fallbackProject = (m) => {
+      if (m.siteId === 5) return 'PRJ-021';
+      if (m.siteId === 4) return 'PRJ-019';
+      if ((m.purpose || '').toLowerCase().includes('underpass')) return 'PRJ-021';
+      if ((m.purpose || '').toLowerCase().includes('resort')) return 'PRJ-019';
+      return 'PRJ-017';
+    };
+    (State.stockMovements || []).forEach(m => {
+      const pid = imsMovementProject(m) || fallbackProject(m);
+      if (!m.chargeProject) m.chargeProject = pid;
+      if (!m.projectId) m.projectId = pid;
+      if (!m.flowStage) m.flowStage = m.type === 'IN' ? 'received' : (m.recipientType === 'transfer' ? 'transfer' : 'issued');
+    });
+  }
+  function projectStockMap(pid) {
+    normalizeStockMovements();
+    const map = new Map();
+    (State.stockMovements || []).forEach(m => {
+      if (pid && imsMovementProject(m) !== pid) return;
+      map.set(m.itemId, (map.get(m.itemId) || 0) + (m.type === 'IN' ? Number(m.qty||0) : -Number(m.qty||0)));
+    });
+    return map;
+  }
 
   // ----- Formatters -----
   const fmtINR = (n) => 'रू ' + Math.round(n).toLocaleString('en-IN');
@@ -3120,6 +3166,7 @@
       };
     });
     // Render current tab
+    document.querySelectorAll('#view-materials .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.imstab === (State.imsCurrentTab || 'overview')));
     renderIMSTab(State.imsCurrentTab || 'overview');
     if (window.lucide) lucide.createIcons();
   }
@@ -3149,6 +3196,7 @@
     if (!container) return;
     if (tab === 'overview')  return renderIMSOverview(container);
     if (tab === 'items')     return renderIMSItems(container);
+    if (tab === 'project-flow') return renderIMSProjectFlow(container);
     if (tab === 'stock-in')  return renderIMSMovements(container, 'IN');
     if (tab === 'stock-out') return renderIMSMovements(container, 'OUT');
     if (tab === 'tools')     return renderIMSTools(container);
@@ -3279,6 +3327,98 @@
     });
   }
 
+  function renderIMSProjectFlow(c) {
+    normalizeStockMovements();
+    const pid = imsActiveProjectId();
+    const project = (State.projects || []).find(p => p.id === pid);
+    const itemById = Object.fromEntries(State.items.map(i => [i.id, i]));
+    const movs = (State.stockMovements || [])
+      .filter(m => !pid || imsMovementProject(m) === pid)
+      .sort((a,b) => (b.date||0) - (a.date||0));
+    const inValue = movs.filter(m => m.type === 'IN').reduce((s,m) => s + Number(m.qty||0) * ((itemById[m.itemId] || {}).costPrice || 0), 0);
+    const outValue = movs.filter(m => m.type === 'OUT').reduce((s,m) => s + Number(m.qty||0) * ((itemById[m.itemId] || {}).costPrice || 0), 0);
+    const transfers = movs.filter(m => m.recipientType === 'transfer').length;
+    const pStock = projectStockMap(pid);
+    const stockRows = State.items.map(it => {
+      const stock = pStock.get(it.id) || 0;
+      const inQty = movs.filter(m => m.itemId === it.id && m.type === 'IN').reduce((s,m) => s + Number(m.qty||0), 0);
+      const outQty = movs.filter(m => m.itemId === it.id && m.type === 'OUT').reduce((s,m) => s + Number(m.qty||0), 0);
+      return { it, stock, inQty, outQty, value: stock * (it.costPrice || 0) };
+    }).filter(r => r.inQty || r.outQty || r.stock).sort((a,b) => Math.abs(b.outQty) - Math.abs(a.outQty));
+    c.innerHTML = `
+      <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
+        <div>
+          <div class="font-display font-bold text-lg">${pid ? `${pid} Material Flow` : 'Project Material Flow'}</div>
+          <div class="text-xs text-stone-500">${pid ? (project?.name || 'Active project') : 'All projects'} · receipts, issues, transfers, consumption value, and live project balance</div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-ghost" data-ims-act="new-grn"><i data-lucide="package-plus" class="w-3.5 h-3.5"></i>Receive</button>
+          <button class="btn btn-amber" data-ims-act="new-issue"><i data-lucide="package-minus" class="w-3.5 h-3.5"></i>Issue</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-5 gap-3 mb-4">
+        <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">RECEIVED VALUE</div><div class="font-display font-black text-xl tabular">${fmtINR(inValue)}</div></div>
+        <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">ISSUED / CONSUMED</div><div class="font-display font-black text-xl tabular">${fmtINR(outValue)}</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">LIVE BALANCE</div><div class="font-display font-black text-xl tabular">${fmtINR(inValue - outValue)}</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">MOVEMENTS</div><div class="font-display font-black text-xl tabular">${movs.length}</div></div>
+        <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">TRANSFERS</div><div class="font-display font-black text-xl tabular">${transfers}</div></div>
+      </div>
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-7 card overflow-hidden">
+          <div class="px-4 py-3 border-b border-stone-100" style="background:#fafaf6">
+            <div class="font-display font-bold">Project Stock Ledger</div>
+            <div class="text-[10px] text-stone-500">Item-wise received, issued, and balance for this project</div>
+          </div>
+          <table class="data">
+            <thead><tr><th>Item</th><th class="text-right">Received</th><th class="text-right">Issued</th><th class="text-right">Balance</th><th class="text-right">Value</th><th>Status</th></tr></thead>
+            <tbody>
+              ${stockRows.map(r => {
+                const low = r.stock <= (r.it.reorderLevel || 0);
+                const neg = r.stock < 0;
+                return `<tr>
+                  <td><b>${r.it.name}</b><div class="font-mono text-[10px] text-stone-500">${r.it.sku || ''} · ${r.it.category || ''}</div></td>
+                  <td class="text-right font-mono">${r.inQty.toLocaleString()} ${r.it.unit||''}</td>
+                  <td class="text-right font-mono" style="color:#B45309">${r.outQty.toLocaleString()} ${r.it.unit||''}</td>
+                  <td class="text-right font-mono" style="${neg?'color:#C0383B;font-weight:800':low?'color:#B45309;font-weight:800':''}">${r.stock.toLocaleString()} ${r.it.unit||''}</td>
+                  <td class="text-right font-mono"><b>${fmtINR(r.value)}</b></td>
+                  <td>${neg ? '<span class="badge badge-bad">NEGATIVE</span>' : low ? '<span class="badge badge-warn">LOW</span>' : '<span class="badge badge-ok">OK</span>'}</td>
+                </tr>`;
+              }).join('') || '<tr><td colspan="6" class="text-center text-stone-400 py-4">No material movement for this project yet</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        <div class="col-span-5 card overflow-hidden">
+          <div class="px-4 py-3 border-b border-stone-100" style="background:#fafaf6">
+            <div class="font-display font-bold">Recent Flow</div>
+            <div class="text-[10px] text-stone-500">Latest receipts and issues linked to ${pid || 'projects'}</div>
+          </div>
+          <div>
+            ${movs.slice(0,12).map(m => {
+              const it = itemById[m.itemId] || { name:'Deleted item', unit:'' };
+              const col = m.type === 'IN' ? '#15803D' : '#C0383B';
+              return `<div class="notification-item" data-ims-act="edit-flow-mov" data-id="${m.id}">
+                <div class="notification-dot" style="background:${col}18;color:${col}"><i data-lucide="${m.type==='IN'?'package-plus':'package-minus'}" class="w-4 h-4"></i></div>
+                <div>
+                  <div class="text-xs font-bold">${m.refNo || m.type} · ${it.name}</div>
+                  <div class="text-[10px] text-stone-500 mt-0.5">${fmtDateShort(m.date)} · ${m.qty} ${it.unit||''} · ${m.purpose || m.supplier || m.issuedTo || ''}</div>
+                </div>
+                <div class="text-[10px] font-mono self-center" style="color:${col}">${m.type}</div>
+              </div>`;
+            }).join('') || '<div class="p-5 text-center text-xs text-stone-500">No recent material flow.</div>'}
+          </div>
+        </div>
+      </div>
+    `;
+    c.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-ims-act]');
+      if (!btn) return;
+      if (btn.dataset.imsAct === 'new-grn') return imsEditMovement('IN');
+      if (btn.dataset.imsAct === 'new-issue') return imsEditMovement('OUT');
+      if (btn.dataset.imsAct === 'edit-flow-mov') return imsEditMovement(null, +btn.dataset.id);
+    });
+    if (window.lucide) lucide.createIcons();
+  }
+
   function imsEditItem(id) {
     const it = id ? State.items.find(x => x.id === id) : { sku:'', name:'', category:'', unit:'pcs', reorderLevel:0, costPrice:0, supplier:'', notes:'' };
     if (!it) return;
@@ -3383,10 +3523,14 @@
 
   // ----- TAB 3/4: STOCK MOVEMENTS (IN / OUT) -----
   function renderIMSMovements(c, type) {
-    const movs = State.stockMovements.filter(m => m.type === type).sort((a,b) => (b.date||0) - (a.date||0));
+    normalizeStockMovements();
+    const pid = imsActiveProjectId();
+    const movs = State.stockMovements
+      .filter(m => m.type === type && (!pid || imsMovementProject(m) === pid))
+      .sort((a,b) => (b.date||0) - (a.date||0));
     const itemById = Object.fromEntries(State.items.map(i => [i.id, i]));
     const siteById = Object.fromEntries(State.sites.map(s => [s.id, s]));
-    const typeLabel = type === 'IN' ? 'Stock IN (GRN)' : 'Stock OUT (Issue)';
+    const typeLabel = (type === 'IN' ? 'Stock IN (GRN)' : 'Stock OUT (Issue)') + (pid ? ' · ' + pid : '');
     c.innerHTML = `
       <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
         <div>
@@ -3400,7 +3544,7 @@
       </div>
       <table class="data" id="imsMovTable">
         <thead><tr>
-          <th class="sortable">Date</th><th>Ref No</th><th>Item</th><th class="text-right">Qty</th><th>Site</th>
+          <th class="sortable">Date</th><th>Ref No</th><th>Project</th><th>Item</th><th class="text-right">Qty</th><th>Site</th>
           ${type === 'IN' ? '<th>Supplier</th>' : '<th>Issued To</th><th>Purpose</th>'}
           <th>Notes</th><th></th>
         </tr></thead>
@@ -3408,10 +3552,13 @@
           ${movs.map(m => {
             const it = itemById[m.itemId] || { name:'(deleted item)', unit:'' };
             const site = siteById[m.siteId];
-            const searchBlob = ((m.refNo||'') + ' ' + it.name + ' ' + (m.supplier||m.issuedTo||'') + ' ' + (m.purpose||'')).toLowerCase();
+            const mpid = imsMovementProject(m);
+            const searchBlob = ((m.refNo||'') + ' ' + mpid + ' ' + it.name + ' ' + (m.supplier||m.issuedTo||'') + ' ' + (m.purpose||'')).toLowerCase();
+            const projectCell = `<td><span class="badge badge-neutral">${mpid || 'UNASSIGNED'}</span></td>`;
             return `<tr data-search="${searchBlob}">
               <td class="font-mono text-xs">${fmtDateShort(m.date)}</td>
               <td class="font-mono text-xs">${m.refNo || '—'}</td>
+              ${projectCell}
               <td><b>${it.name}</b></td>
               <td class="text-right font-mono">${m.qty} <span class="text-[10px] text-stone-500">${it.unit||''}</span></td>
               <td class="text-xs">${site ? site.name.split('·')[0] : '—'}</td>
@@ -3425,7 +3572,7 @@
                 <button class="ims-icon-btn danger" data-ims-act="del-mov" data-id="${m.id}" title="Delete">🗑</button>
               </div></td>
             </tr>`;
-          }).join('') || `<tr><td colspan="${type==='IN'?8:9}" class="text-center text-stone-400 py-4">No ${type==='IN'?'receipts':'issues'} yet · click "New ${type==='IN'?'GRN':'Issue'}" to record one</td></tr>`}
+          }).join('') || `<tr><td colspan="${type==='IN'?9:10}" class="text-center text-stone-400 py-4">No ${type==='IN'?'receipts':'issues'} yet · click "New ${type==='IN'?'GRN':'Issue'}" to record one</td></tr>`}
         </tbody>
       </table>
     `;
@@ -3448,7 +3595,8 @@
     if (!id && type === 'OUT') {
       if (!ensureSitesExistOrRedirect()) return;
     }
-    const m = id ? State.stockMovements.find(x => x.id === id) : { type, itemId: State.items[0].id, siteId: State.sites[0].id, qty: 1, date: Date.now(), refNo: type === 'IN' ? 'GRN-' + (1843 + State.stockMovements.filter(x=>x.type==='IN').length) : 'MIN-' + (943 + State.stockMovements.filter(x=>x.type==='OUT').length), supplier:'', issuedTo:'', purpose:'', notes:'', recipientType:'site' };
+    const activePid = imsActiveProjectId();
+    const m = id ? State.stockMovements.find(x => x.id === id) : { type, itemId: State.items[0].id, siteId: State.sites[0].id, qty: 1, date: Date.now(), refNo: type === 'IN' ? 'GRN-' + (1843 + State.stockMovements.filter(x=>x.type==='IN').length) : 'MIN-' + (943 + State.stockMovements.filter(x=>x.type==='OUT').length), supplier:'', issuedTo:'', purpose:'', notes:'', recipientType:'site', chargeProject: activePid || 'PRJ-017', projectId: activePid || 'PRJ-017' };
     if (!m) return;
     const effType = m.type;
     const dateStr = m.date ? new Date(m.date).toISOString().slice(0,10) : new Date().toISOString().slice(0,10);
@@ -3468,7 +3616,10 @@
           </div>
           <div class="ims-field"><label>Warehouse / Site *</label><select name="siteId" required>${State.sites.map(s => `<option value="${s.id}" ${m.siteId===s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
           ${effType === 'IN' 
-            ? `<div class="ims-field"><label>Supplier</label><input name="supplier" value="${m.supplier||''}" placeholder="Vendor name"></div>`
+            ? `<div class="ims-form-row">
+                <div class="ims-field"><label>Supplier</label><input name="supplier" value="${m.supplier||''}" placeholder="Vendor name"></div>
+                <div class="ims-field"><label>Project (received for)</label><select name="chargeProject">${State.projects.map(p => `<option value="${p.id}" ${(m.chargeProject||m.projectId)===p.id?'selected':''}>${p.id} · ${p.name}</option>`).join('')}</select></div>
+              </div>`
             : `
               <div class="ims-form-row-3">
                 <div class="ims-field"><label>Issue To Type *</label><select name="recipientType" id="imsRecipientType" required onchange="imsUpdateRecipientPicker()">
@@ -3499,6 +3650,9 @@
         obj.siteId = Number(obj.siteId);
         obj.qty = Number(obj.qty);
         obj.date = new Date(obj.date).getTime();
+        if (!obj.chargeProject && imsActiveProjectId()) obj.chargeProject = imsActiveProjectId();
+        obj.projectId = obj.chargeProject || obj.projectId || '';
+        obj.flowStage = effType === 'IN' ? 'received' : (obj.recipientType === 'transfer' ? 'transfer' : 'issued');
         // Sync issuedTo with recipient if not manually set
         if (effType === 'OUT' && !obj.issuedTo && obj.recipientType && obj.recipientId) {
           const labels = {
@@ -4090,10 +4244,71 @@
   };
 
   function stColor(s) { return ({Working:'#15803D', Idle:'#B45309', 'Under Maintenance':'#1E3A4C', Breakdown:'#C0383B'})[s] || '#777'; }
+  function datePlus(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0,10);
+  }
+  function daysUntil(dateStr) {
+    if (!dateStr) return null;
+    return Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  }
+  function complianceState(dateStr, warnDays=45) {
+    const d = daysUntil(dateStr);
+    if (d == null) return { label:'Missing', cls:'bad', color:'#C0383B', days:null };
+    if (d < 0) return { label:'Expired', cls:'bad', color:'#C0383B', days:d };
+    if (d <= warnDays) return { label:'Due Soon', cls:'warn', color:'#B45309', days:d };
+    return { label:'Valid', cls:'ok', color:'#15803D', days:d };
+  }
+  function ensureEquipmentComplianceFields() {
+    const offsets = {
+      EQ001:[75,95,120,62,155], EQ002:[28,42,70,35,100], EQ003:[110,18,52,26,85],
+      EQ004:[130,88,44,92,120], EQ007:[14,38,66,20,90], EQ008:[160,130,25,45,110],
+      EQ009:[200,24,82,28,92], EQ010:[240,190,55,0,160], EQ011:[170,150,36,0,140],
+      EQ013:[300,260,120,0,210], EQ014:[46,31,58,29,75]
+    };
+    (State.equipment || []).forEach((e, idx) => {
+      if (!e.ownership) e.ownership = 'Owned';
+      if (!e.serviceIntervalHours) e.serviceIntervalHours = ['Excavator','Dozer','Loader','Tipper Truck','Concrete Pump','Roller','JCB Backhoe'].includes(e.name) ? 250 : 500;
+      if (!e.nextServiceDue) e.nextServiceDue = datePlus((idx % 5) * 18 + 12);
+      if (e.ownership === 'Owned') {
+        const o = offsets[e.id] || [90 + idx*7, 120 + idx*5, 150 + idx*4, e.regNo && e.regNo !== '—' ? 80 + idx*3 : 0, 160 + idx*6];
+        if (!e.registrationExpiry && e.regNo && e.regNo !== '—') e.registrationExpiry = datePlus(o[0]);
+        if (!e.insurancePolicyNo) e.insurancePolicyNo = 'POL-' + e.id + '-26';
+        if (!e.insuranceExpiry) e.insuranceExpiry = datePlus(o[1]);
+        if (!e.roadTaxExpiry && e.regNo && e.regNo !== '—') e.roadTaxExpiry = datePlus(o[2]);
+        if (!e.pollutionExpiry && e.regNo && e.regNo !== '—') e.pollutionExpiry = datePlus(o[3]);
+        if (!e.fitnessExpiry) e.fitnessExpiry = datePlus(o[4]);
+      } else {
+        if (!e.rentalContractExpiry) e.rentalContractExpiry = datePlus(90 + idx*9);
+      }
+    });
+  }
+  function equipmentComplianceAlerts() {
+    ensureEquipmentComplianceFields();
+    const fields = [
+      ['nextServiceDue','Service',30],
+      ['registrationExpiry','Registration',45],
+      ['insuranceExpiry','Insurance',45],
+      ['roadTaxExpiry','Road Tax',45],
+      ['pollutionExpiry','Pollution',45],
+      ['fitnessExpiry','Fitness',45],
+      ['rentalContractExpiry','Rental Contract',45]
+    ];
+    const rows = [];
+    (State.equipment || []).forEach(e => {
+      fields.forEach(([key,label,warn]) => {
+        if (!e[key]) return;
+        const st = complianceState(e[key], warn);
+        if (st.cls !== 'ok') rows.push({ equipment:e, key, label, due:e[key], state:st });
+      });
+    });
+    return rows.sort((a,b) => (a.state.days ?? 9999) - (b.state.days ?? 9999));
+  }
 
   // ----- Seed data -----
   function seedEqData() {
-    if (State.equipment.length > 0) return;
+    if (State.equipment.length > 0) { ensureEquipmentComplianceFields(); return; }
     const today = Date.now();
     const day = 86400000;
     State.equipment = [
@@ -4112,6 +4327,7 @@
       { id:'EQ013', name:'Welding Machine', brand:'ESAB', model:'Caddy 250i', capacity:'250 A inverter', regNo:'—', engineNo:'—', chassisNo:'ESAB250I-2022-0418', purchaseDate:'2022-09-10', purchaseCost:148000, ownership:'Owned', vendor:'', status:'Working', currentMeter:680, fuelTankCap:0 },
       { id:'EQ014', name:'Loader', brand:'Caterpillar', model:'950 GC', capacity:'3.4 cum bucket', regNo:'Ba 9 Kha 8821', engineNo:'CAT C7.1', chassisNo:'CAT950GC-2022-0388', purchaseDate:'2022-12-08', purchaseCost:13200000, ownership:'Owned', vendor:'', status:'Working', currentMeter:2840, fuelTankCap:289 }
     ];
+    ensureEquipmentComplianceFields();
     State.eqNextId.equip = 15;
 
     State.operators = [
@@ -4211,11 +4427,13 @@
         }
       };
     });
+    document.querySelectorAll('#view-equipment .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.eqtab === (State.eqCurrentTab || 'overview')));
     renderEqTab(State.eqCurrentTab || 'overview');
     if (window.lucide) lucide.createIcons();
   }
 
   function renderEqKPIs() {
+    ensureEquipmentComplianceFields();
     const eq = State.equipment;
     const logs = State.equipLogs;
     const wk = eq.filter(e => e.status === 'Working').length;
@@ -4226,14 +4444,15 @@
     const totalHrs = logs.reduce((s,l) => s + (Number(l.workingHours)||0), 0);
     const totalDiesel = logs.reduce((s,l) => s + (Number(l.diesel)||0), 0);
     const fleetValue = eq.reduce((s,e) => s + (Number(e.purchaseCost)||0), 0);
+    const complianceDue = equipmentComplianceAlerts().length;
 
     $('#eqKpis').innerHTML = `
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">FLEET SIZE</div><div class="font-display font-black text-2xl tabular">${eq.length}</div><div class="text-xs text-stone-500 mt-1">${eq.filter(e => e.ownership === 'Owned').length} owned · ${eq.filter(e => e.ownership === 'Rented').length} rented</div></div>
       <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">UTILIZATION</div><div class="font-display font-black text-2xl tabular">${utilPct}%</div><div class="text-xs text-stone-500 mt-1">${wk}/${eq.length} working</div></div>
       <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">STATUS BREAKDOWN</div><div class="font-display font-black text-base tabular" style="line-height:1.2"><span style="color:#15803D">${wk}W</span> <span style="color:#B45309">${idle}I</span> <span style="color:#1E3A4C">${mt}M</span> <span style="color:#C0383B">${bk}B</span></div><div class="text-xs text-stone-500 mt-1">Wkg / Idl / Mnt / Brk</div></div>
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">TOTAL OP HOURS</div><div class="font-display font-black text-2xl tabular">${fmtNum(totalHrs)}</div><div class="text-xs text-stone-500 mt-1">${logs.length} log entries</div></div>
-      <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">DIESEL CONSUMED</div><div class="font-display font-black text-2xl tabular">${fmtNum(totalDiesel)}<span class="text-sm">L</span></div><div class="text-xs text-stone-500 mt-1">${totalHrs > 0 ? (totalDiesel / totalHrs).toFixed(2) : '0'} L/hr avg</div></div>
-      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">FLEET VALUE</div><div class="font-display font-black text-2xl tabular">${fmtINR(fleetValue)}</div><div class="text-xs text-stone-500 mt-1">CapEx total</div></div>
+      <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">FLEET VALUE</div><div class="font-display font-black text-2xl tabular">${fmtINR(fleetValue)}</div><div class="text-xs text-stone-500 mt-1">CapEx total</div></div>
+      <div class="kpi ${complianceDue ? 'kpi-red' : 'kpi-green'}"><div class="font-mono text-[10px] text-stone-500">RENEWALS DUE</div><div class="font-display font-black text-2xl tabular">${complianceDue}</div><div class="text-xs text-stone-500 mt-1">service, insurance, tax, license</div></div>
     `;
   }
 
@@ -4245,6 +4464,7 @@
     if (tab === 'logs')        return renderEqLogs(c);
     if (tab === 'operators')   return renderEqOperators(c);
     if (tab === 'maintenance') return renderEqMaintenance(c);
+    if (tab === 'compliance')  return renderEqCompliance(c);
     if (tab === 'utilization') return renderEqUtilization(c);
   }
 
@@ -4318,12 +4538,16 @@
         <thead><tr>
           <th class="sortable">ID</th><th class="sortable">Type</th><th class="sortable">Brand / Model</th>
           <th>Capacity</th><th>Reg No</th><th class="text-right">Meter</th><th class="text-right">Cost (NPR)</th>
-          <th>Ownership</th><th>Status</th><th></th>
+          <th>Ownership</th><th>Compliance</th><th>Status</th><th></th>
         </tr></thead>
         <tbody id="eqMasterBody">
           ${State.equipment.map(e => {
             const { meter } = eqStats(e);
             const searchBlob = (e.name + ' ' + e.brand + ' ' + e.model + ' ' + (e.regNo||'') + ' ' + e.id).toLowerCase();
+            const dueKeys = e.ownership === 'Owned' ? ['nextServiceDue','registrationExpiry','insuranceExpiry','roadTaxExpiry','fitnessExpiry'] : ['nextServiceDue','rentalContractExpiry'];
+            const due = dueKeys
+              .map(k => complianceState(e[k], k === 'nextServiceDue' ? 30 : 45))
+              .filter(s => s.cls !== 'ok').length;
             return `<tr data-search="${searchBlob}">
               <td class="font-mono text-xs">${e.id}</td>
               <td><span style="font-size:16px">${eqIco(e.name)}</span> <b>${e.name}</b></td>
@@ -4333,6 +4557,7 @@
               <td class="text-right font-mono"><b style="color:#E8742C">${fmtNum(meter)}</b></td>
               <td class="text-right font-mono text-xs">${fmtINR(e.purchaseCost || 0)}</td>
               <td><span class="badge" style="background:${e.ownership==='Owned'?'#1E3A4C':'#B45309'}22;color:${e.ownership==='Owned'?'#1E3A4C':'#B45309'};border:1px solid ${e.ownership==='Owned'?'#1E3A4C':'#B45309'}44">${e.ownership}${e.vendor ? ' · ' + e.vendor.split('·')[0].trim() : ''}</span></td>
+              <td><span class="badge badge-${due?'warn':'ok'}">${due ? due + ' due' : 'Clear'}</span></td>
               <td><span class="badge" style="background:${stColor(e.status)}22;color:${stColor(e.status)};border:1px solid ${stColor(e.status)}44">${e.status}</span></td>
               <td><div class="ims-row-action">
                 <button class="ims-icon-btn" data-eq-act="edit-equip" data-id="${e.id}" title="Edit">✎</button>
@@ -4365,7 +4590,7 @@
   }
 
   function eqEditEquipment(id) {
-    const e = id ? State.equipment.find(x => x.id === id) : { id:'', name:'Excavator', brand:'', model:'', capacity:'', regNo:'', engineNo:'', chassisNo:'', purchaseDate:new Date().toISOString().slice(0,10), purchaseCost:0, ownership:'Owned', vendor:'', status:'Working', currentMeter:0, fuelTankCap:0 };
+    const e = id ? State.equipment.find(x => x.id === id) : { id:'', name:'Excavator', brand:'', model:'', capacity:'', regNo:'', engineNo:'', chassisNo:'', purchaseDate:new Date().toISOString().slice(0,10), purchaseCost:0, ownership:'Owned', vendor:'', status:'Working', currentMeter:0, fuelTankCap:0, serviceIntervalHours:250, nextServiceDue:datePlus(30), insurancePolicyNo:'', insuranceExpiry:'', registrationExpiry:'', roadTaxExpiry:'', pollutionExpiry:'', fitnessExpiry:'', rentalContractExpiry:'' };
     if (!e) return;
     openModal({
       title: id ? 'Edit Equipment · ' + e.name : 'Add Equipment',
@@ -4400,6 +4625,22 @@
           <div class="ims-form-row">
             <div class="ims-field"><label>Current Meter (hrs)</label><input type="number" name="currentMeter" min="0" step="1" value="${e.currentMeter||0}"></div>
           </div>
+          <div class="text-xs font-mono font-bold mt-3 mb-2" style="color:#E8742C">OWNED EQUIPMENT COMPLIANCE / RENEWALS</div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Service Interval (hrs)</label><input type="number" name="serviceIntervalHours" min="0" value="${e.serviceIntervalHours||250}"></div>
+            <div class="ims-field"><label>Next Service Due</label><input type="date" name="nextServiceDue" value="${e.nextServiceDue||''}"></div>
+            <div class="ims-field"><label>Registration / License Expiry</label><input type="date" name="registrationExpiry" value="${e.registrationExpiry||''}"></div>
+          </div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Insurance Policy No</label><input name="insurancePolicyNo" value="${e.insurancePolicyNo||''}" placeholder="Policy number"></div>
+            <div class="ims-field"><label>Insurance Expiry</label><input type="date" name="insuranceExpiry" value="${e.insuranceExpiry||''}"></div>
+            <div class="ims-field"><label>Road Tax Expiry</label><input type="date" name="roadTaxExpiry" value="${e.roadTaxExpiry||''}"></div>
+          </div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Pollution / Emission Expiry</label><input type="date" name="pollutionExpiry" value="${e.pollutionExpiry||''}"></div>
+            <div class="ims-field"><label>Fitness Certificate Expiry</label><input type="date" name="fitnessExpiry" value="${e.fitnessExpiry||''}"></div>
+            <div class="ims-field"><label>Rental Contract Expiry</label><input type="date" name="rentalContractExpiry" value="${e.rentalContractExpiry||''}"></div>
+          </div>
         </form>
       `,
       onSubmit: () => {
@@ -4409,6 +4650,7 @@
         obj.purchaseCost = Number(obj.purchaseCost || 0);
         obj.currentMeter = Number(obj.currentMeter || 0);
         obj.fuelTankCap = Number(obj.fuelTankCap || 0);
+        obj.serviceIntervalHours = Number(obj.serviceIntervalHours || 0);
         if (id) {
           Object.assign(e, obj);
           audit('update','Equipment · ' + obj.id, obj.name + ' ' + obj.brand);
@@ -4814,7 +5056,7 @@
     });
   }
   function eqEditMaintenance(id) {
-    const r = id ? State.maintenance.find(x => x.id === id) : { id:'', equipmentId:'', date: new Date().toISOString().slice(0,10), type:'Routine', description:'', parts:'', cost:0, nextDue:'', odometer:0, vendor:'', technician:'' };
+    const r = id ? State.maintenance.find(x => x.id === id) : { id:'', equipmentId:State.eqSelectedEquip || '', date: new Date().toISOString().slice(0,10), type:'Routine', description:'', parts:'', cost:0, nextDue:'', odometer:0, vendor:'', technician:'' };
     openModal({
       title: id ? 'Edit Maintenance Record' : 'Log Maintenance',
       wide: true,
@@ -4847,6 +5089,9 @@
         obj.odometer = Number(obj.odometer||0);
         if (id) { Object.assign(r, obj); audit('update','Maintenance · ' + r.id, obj.description.slice(0,40)); }
         else { obj.id = 'MT' + String(State.eqNextId.mt++).padStart(3,'0'); State.maintenance.push(obj); audit('create','Maintenance · ' + obj.id, obj.equipmentId + ' · ' + obj.type); }
+        const eq = State.equipment.find(e => e.id === obj.equipmentId);
+        if (eq && obj.nextDue) eq.nextServiceDue = obj.nextDue;
+        if (eq && obj.odometer) eq.currentMeter = Math.max(Number(eq.currentMeter||0), obj.odometer);
         saveState();
         toast(id ? 'Maintenance Updated' : 'Maintenance Logged','—','ok');
         renderEquipmentView();
@@ -4860,6 +5105,65 @@
       body:`<div class="text-sm">Delete maintenance record from <b>${r.date}</b>?</div>`,
       onSubmit: () => { State.maintenance = State.maintenance.filter(x => x.id !== id); audit('delete','Maintenance · ' + id, r.date); saveState(); toast('Record Deleted','—','warn'); renderEquipmentView(); }
     });
+  }
+
+  function renderEqCompliance(c) {
+    ensureEquipmentComplianceFields();
+    const owned = State.equipment.filter(e => e.ownership === 'Owned');
+    const alerts = equipmentComplianceAlerts();
+    const fields = [
+      ['nextServiceDue','Next Service',30],
+      ['registrationExpiry','Reg / License',45],
+      ['insuranceExpiry','Insurance',45],
+      ['roadTaxExpiry','Road Tax',45],
+      ['pollutionExpiry','Pollution',45],
+      ['fitnessExpiry','Fitness',45]
+    ];
+    c.innerHTML = `
+      <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
+        <div>
+          <div class="font-display font-bold text-lg">Owned Equipment Compliance</div>
+          <div class="text-xs text-stone-500">${owned.length} owned assets · ${alerts.length} renewal/service action${alerts.length!==1?'s':''} due or overdue</div>
+        </div>
+        <button class="btn btn-amber" data-eq-act="new-equip"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Add Owned Equipment</button>
+      </div>
+      ${alerts.length ? `
+        <div class="card p-3 mb-4" style="background:#FFFBF0;border-left:3px solid #B45309">
+          <div class="text-xs font-mono font-bold mb-2" style="color:#B45309">RENEWAL / SERVICE ALERTS</div>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            ${alerts.slice(0,9).map(a => `<div class="p-2 bg-white border border-stone-200">
+              <b>${a.equipment.id} · ${a.equipment.name}</b>
+              <div class="text-stone-500">${a.label}</div>
+              <div class="font-mono font-bold mt-1" style="color:${a.state.color}">${a.state.label} · ${a.due}</div>
+            </div>`).join('')}
+          </div>
+        </div>` : ''}
+      <table class="data">
+        <thead><tr><th>Equipment</th><th>Reg No</th><th>Policy</th>${fields.map(f => `<th>${f[1]}</th>`).join('')}<th>Status</th><th></th></tr></thead>
+        <tbody>
+          ${owned.map(e => {
+            const states = fields.map(([key,label,warn]) => ({ key, label, state: complianceState(e[key], warn), due:e[key] }));
+            const worst = states.find(s => s.state.cls === 'bad') || states.find(s => s.state.cls === 'warn') || states[0];
+            return `<tr>
+              <td><b>${eqIco(e.name)} ${e.name}</b><div class="text-[10px] text-stone-500">${e.id} · ${e.brand} ${e.model}</div></td>
+              <td class="font-mono text-xs">${e.regNo || '—'}</td>
+              <td class="font-mono text-xs">${e.insurancePolicyNo || '—'}</td>
+              ${states.map(s => `<td><span class="badge badge-${s.state.cls}">${s.due || 'Missing'}</span><div class="text-[10px]" style="color:${s.state.color}">${s.state.label}${s.state.days != null ? ' · ' + s.state.days + 'd' : ''}</div></td>`).join('')}
+              <td><span class="badge badge-${worst.state.cls}">${worst.state.cls === 'ok' ? 'CLEAR' : worst.state.label.toUpperCase()}</span></td>
+              <td><div class="ims-row-action"><button class="ims-icon-btn" data-eq-act="edit-equip" data-id="${e.id}" title="Edit renewals">✎</button><button class="ims-icon-btn" data-eq-act="log-service" data-id="${e.id}" title="Log service">↻</button></div></td>
+            </tr>`;
+          }).join('') || '<tr><td colspan="11" class="text-center text-stone-400 py-4">No owned equipment found</td></tr>'}
+        </tbody>
+      </table>
+    `;
+    c.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-eq-act]');
+      if (!btn) return;
+      if (btn.dataset.eqAct === 'new-equip') return eqEditEquipment();
+      if (btn.dataset.eqAct === 'edit-equip') return eqEditEquipment(btn.dataset.id);
+      if (btn.dataset.eqAct === 'log-service') { State.eqSelectedEquip = btn.dataset.id; return eqEditMaintenance(null); }
+    });
+    if (window.lucide) lucide.createIcons();
   }
 
   // ----- TAB 6: UTILIZATION REPORTS -----
@@ -7936,6 +8240,7 @@
         const projectNcrs = (State.ncrs || []).filter(n => n.proj === project.id);
         const projectBills = (State.raBills || []).filter(b => b.proj === project.id);
         const projectPOs = (State.pos || []).filter(p => p.proj === project.id || p.project === project.id || p.projectId === project.id);
+        const projectStockValue = Array.from(projectStockMap(project.id).entries()).reduce((s,[itemId,qty]) => s + qty * ((State.items || []).find(i => i.id === itemId)?.costPrice || 0), 0);
         let projectSites = [];
         try { projectSites = projectSitesFor(project.id) || []; } catch(e) {}
         const overdueTasks = projectTodos.filter(t => t.status !== 'completed' && t.dueDate && new Date(t.dueDate) < todayDate).length;
@@ -7944,7 +8249,7 @@
           { view:'projectsites', icon:'map-pin', title:'Work Sites / Zones', value:projectSites.length, sub:'Project locations and work fronts', color:'#15803D' },
           { view:'schedule', icon:'calendar-range', title:'Schedule', value:project.spi.toFixed(2), sub:'SPI and baseline tracking', color:project.spi < 0.9 ? '#C0383B' : '#15803D' },
           { view:'dpr', icon:'clipboard-list', title:'Daily Progress', value:project.pctComplete + '%', sub:'DPR, manpower, weather, output', color:'#E8742C' },
-          { view:'materials', icon:'package', title:'Materials', value:projectPOs.length || '-', sub:'Stock, issues, GRN, procurement', color:'#15803D' },
+          { view:'materials', icon:'package', title:'Inventory Flow', value:fmtINR(projectStockValue), sub:'Project stock, issues, GRN, transfers', color:'#15803D' },
           { view:'equipment', icon:'truck', title:'Equipment', value:project.equipment, sub:'Plant allocation and logsheets', color:'#B45309' },
           { view:'quality', icon:'badge-check', title:'QA / QC', value:openNcrs, sub:'NCRs, inspections, tests', color:openNcrs ? '#C0383B' : '#15803D' },
           { view:'events', icon:'calendar-check', title:'Events & Claims', value:projectEvents.length, sub:'Notices, delay, EOT, VO records', color:'#7C3AED' },
@@ -9156,7 +9461,7 @@
     if (view === 'analytics') { setTimeout(renderAnalyticsView, 50); }
     if (view === 'audit') { renderAuditTable(); }
     if (view === 'schedule') { renderScheduleTable(); }
-    if (view === 'materials') { setTimeout(renderIMS, 30); }
+    if (view === 'materials') { if (State.session?.inProjectMode) State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
     if (view === 'equipment') { setTimeout(renderEquipmentView, 30); }
     if (view === 'events')    { setTimeout(renderEventsView, 30); }
     if (view === 'todos')     { setTimeout(renderTodosView, 30); }
