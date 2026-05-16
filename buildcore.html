@@ -128,13 +128,22 @@
   .dash-workflow-step { border:1px solid var(--line); border-radius:5px; padding:12px; min-height:92px; cursor:pointer; }
   .dash-workflow-step:hover { border-color:var(--amber); background:#FFFBF5; }
   .dash-tile-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
+  .project-select-hero { background:#102F3E; color:#fff; border-radius:8px; overflow:hidden; position:relative; border:1px solid rgba(255,255,255,.08); }
+  .project-select-hero::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size:30px 30px; pointer-events:none; }
+  .project-select-hero > * { position:relative; z-index:1; }
+  .project-name-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  .project-name-card { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; cursor:pointer; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .project-name-card:hover { transform:translateY(-2px); border-color:var(--amber); box-shadow:0 14px 30px rgba(15,15,14,.1); }
+  .project-card-top { height:6px; background:var(--amber); }
+  .project-enter-btn { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 14px; background:#FAF8F0; border-top:1px solid var(--line); color:var(--steel); font-size:12px; font-weight:800; }
+  .project-enter-btn span { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
   @media (max-width: 1180px) {
-    .dash-kpi-grid, .dash-tile-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .dash-kpi-grid, .dash-tile-grid, .project-name-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .dash-main-grid { grid-template-columns:1fr; }
     .dash-project-row { grid-template-columns:1fr 1fr 1fr; }
   }
   @media (max-width: 760px) {
-    .dash-kpi-grid, .dash-tile-grid, .dash-workflow { grid-template-columns:1fr; }
+    .dash-kpi-grid, .dash-tile-grid, .dash-workflow, .project-name-grid { grid-template-columns:1fr; }
     .dash-project-row { grid-template-columns:1fr; }
   }
 
@@ -8214,13 +8223,13 @@
     saveState();
     audit('create','Company sign-in', profile.name);
     document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('portfolioScreen').style.display = 'none';
-    document.getElementById('appShell').style.display = 'flex';
+    document.getElementById('portfolioScreen').style.display = 'block';
+    document.getElementById('appShell').style.display = 'none';
     document.getElementById('projectBanner').style.display = 'none';
     const sel = $('#activeProjectSelect');
     if (sel) sel.value = State.activeProject || 'ALL';
     filterSidebarByRole();
-    navTo('dashboard');
+    renderPortfolioScreen();
     renderNotificationCenter();
   }
   // Back-compat shim (any legacy caller ignores the role arg now).
@@ -8251,13 +8260,18 @@
     m.style.display = 'flex';
     m.style.zIndex = '9999';
     m.innerHTML = `
-      <div class="login-card" style="max-width:380px">
+      <div class="login-card" style="max-width:430px;border-top:0;border-radius:8px;overflow:hidden">
         <div class="login-brand">
           <div class="login-logo">B</div>
           <div>
             <div class="font-display font-black text-lg">PROJECT SIGN-IN</div>
             <div class="font-mono text-[10px] text-stone-400">${proj.id} · ${proj.name}</div>
           </div>
+        </div>
+        <div class="card p-3 mb-3" style="background:#102F3E;color:#fff;border-color:#102F3E">
+          <div class="font-mono text-[10px] opacity-60">SECURE PROJECT ENTRY</div>
+          <div class="font-display font-black text-base mt-1">${proj.name}</div>
+          <div class="text-[10px] opacity-70 mt-1">Choose your role, enter the passcode, then the full project dashboard opens.</div>
         </div>
         <div class="login-tagline">Authenticate with your job role to enter this project</div>
         <form id="projLoginForm" class="login-form">
@@ -8345,6 +8359,7 @@
     if (!perm) return;
     document.querySelectorAll('.nav-item[data-view]').forEach(item => {
       const v = item.dataset.view;
+      if (State.session?.inProjectMode) { item.style.display = ''; return; }
       if (perm.modules === 'ALL') { item.style.display = ''; return; }
       item.style.display = perm.modules.includes(v) ? '' : 'none';
     });
@@ -8390,6 +8405,66 @@
 
     const allProjects = projectPortfolio();
     const accessibleProjects = perm.projects === 'ALL' ? allProjects : allProjects.filter(p => perm.projects.includes(p.id));
+
+    document.getElementById('portfolioContent').innerHTML = `
+      <div class="project-select-hero mb-5">
+        <div class="p-6 grid grid-cols-12 gap-5 items-center">
+          <div class="col-span-8">
+            <div class="stamp mb-3" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><i data-lucide="folder-kanban" class="w-3 h-3"></i>PROJECT ACCESS</div>
+            <h1 class="font-display font-black text-4xl leading-tight">Select Project</h1>
+            <p class="text-sm mt-3" style="color:rgba(255,255,255,.72)">Choose a project first. BuildCore will ask for your job role and passcode before showing modules, records, finance, DPR, inventory, QA/QC, and reports.</p>
+          </div>
+          <div class="col-span-4 grid grid-cols-2 gap-3">
+            <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff;padding:14px">
+              <div class="font-mono text-[10px] opacity-60">AVAILABLE</div>
+              <div class="font-display font-black text-3xl">${accessibleProjects.length}</div>
+              <div class="text-[10px] opacity-60">projects</div>
+            </div>
+            <div class="card" style="background:rgba(232,116,44,.18);border-color:rgba(232,116,44,.34);color:#fff;padding:14px">
+              <div class="font-mono text-[10px] opacity-70">ACCESS MODE</div>
+              <div class="font-display font-black text-xl">Secure</div>
+              <div class="text-[10px] opacity-70">role passcode</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <div class="font-display font-black text-2xl title-mark">Project Names</div>
+          <div class="text-xs text-stone-500 mt-3">Only project selection is shown here. Full navigation opens after successful project entry.</div>
+        </div>
+        <button class="btn btn-ghost" onclick="signOut()"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Sign Out</button>
+      </div>
+
+      <div class="project-name-grid">
+        ${accessibleProjects.map(p => {
+          const sc = statusColor(p.status);
+          const rc = riskColor(p.risk);
+          return `<div class="project-name-card" onclick="enterProject('${p.id}')">
+            <div class="project-card-top" style="background:${sc}"></div>
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-mono text-[11px] text-stone-500">${p.id}</span>
+                <span class="badge" style="background:${sc}18;color:${sc};border:1px solid ${sc}44">${p.status}</span>
+              </div>
+              <div class="font-display font-black text-xl leading-tight">${p.name}</div>
+              <div class="text-xs text-stone-500 mt-2">${p.client}</div>
+              <div class="flex items-center justify-between mt-4 text-[10px] font-mono text-stone-500">
+                <span>${p.location}</span>
+                <span style="color:${rc};font-weight:800">${p.risk.toUpperCase()} RISK</span>
+              </div>
+            </div>
+            <div class="project-enter-btn">
+              <span>Enter project</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+    return;
 
     // Company rollup (only for projects accessible)
     const totalContract = accessibleProjects.reduce((s,p) => s + p.contract, 0);
