@@ -98,6 +98,14 @@
   .nav-item:hover { background: rgba(232,116,44,0.08); color: #fff; }
   .nav-item.active { background: rgba(232,116,44,0.14); color: #fff; border-left-color: var(--amber); }
   .nav-item.active .nav-icon { color: var(--amber); }
+  .notification-wrap { position: relative; }
+  .notification-panel { display:none; position:absolute; right:0; top:calc(100% + 10px); width:380px; max-width:calc(100vw - 24px); background:#fff; border:1px solid var(--line); box-shadow:0 18px 50px rgba(15,15,14,.18); z-index:80; }
+  .notification-panel.show { display:block; animation: fadeIn .18s ease; }
+  .notification-item { display:grid; grid-template-columns:34px 1fr auto; gap:10px; padding:12px; border-top:1px solid var(--line); cursor:pointer; }
+  .notification-item:hover { background:#FBFAF4; }
+  .notification-dot { width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:6px; }
+  .module-summary-card { background:#fff; border:1px solid var(--line); border-radius:4px; padding:14px; cursor:pointer; transition:all .16s ease; }
+  .module-summary-card:hover { transform:translateY(-1px); border-color:var(--amber); box-shadow:0 8px 18px rgba(15,15,14,.07); }
 
   /* Cards */
   .card { background: #fff; border: 1px solid var(--line); border-radius: 4px; }
@@ -518,10 +526,13 @@
               <option value="ALL">— All Projects (Portfolio) —</option>
             </select>
           </div>
-          <span class="badge badge-amber">15 alerts</span>
-          <button class="btn btn-ghost"><i data-lucide="zap" class="w-3.5 h-3.5"></i>Automations</button>
-          <button class="btn btn-ghost"><i data-lucide="bell" class="w-3.5 h-3.5"></i></button>
-          <button class="btn btn-amber"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Quick Add</button>
+          <span class="badge badge-amber" id="notificationBadge">0 alerts</span>
+          <button class="btn btn-ghost" onclick="navTo('settings')"><i data-lucide="zap" class="w-3.5 h-3.5"></i>Automations</button>
+          <div class="notification-wrap">
+            <button class="btn btn-ghost" id="notificationBell" onclick="toggleNotifications(event)" title="Notifications"><i data-lucide="bell" class="w-3.5 h-3.5"></i></button>
+            <div class="notification-panel" id="notificationPanel"></div>
+          </div>
+          <button class="btn btn-amber" onclick="openQuickAddMenu()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Quick Add</button>
         </div>
       </div>
     </header>
@@ -7698,6 +7709,134 @@
     return null;
   }
 
+  function buildNotifications() {
+    try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); } catch(e){}
+    const list = [];
+    const now = new Date();
+    const add = (level, title, msg, view, icon='bell', actionLabel='Open') =>
+      list.push({ level, title, msg, view, icon, actionLabel });
+
+    const overdueTodos = (State.todos || []).filter(t => t.status !== 'completed' && t.dueDate && new Date(t.dueDate) < now);
+    if (overdueTodos.length) add('bad', overdueTodos.length + ' overdue tasks', 'Review owners, due dates, and blockers in the To-Do board.', 'todos', 'check-square', 'Open tasks');
+
+    const upcomingEvents = (State.events || []).filter(e => {
+      try { const d = eventDaysFromNow(e); return d >= 0 && d <= 3 && e.status !== 'completed'; }
+      catch(_) { return false; }
+    });
+    if (upcomingEvents.length) add('warn', upcomingEvents.length + ' events due soon', 'Contractual notices, meetings, or claim actions need attention.', 'events', 'calendar-check', 'Open events');
+
+    try {
+      const stock = stockMap();
+      const low = (State.items || []).filter(it => (stock.get(it.id) || 0) <= (it.reorderLevel || 0));
+      if (low.length) add('bad', low.length + ' low-stock items', 'Generate RFQs or purchase orders before work fronts stall.', 'materials', 'package', 'Open IMS');
+    } catch(_) {}
+
+    const pendingPOs = (State.pos || []).filter(p => ['pending-approval','overdue'].includes(p.status));
+    if (pendingPOs.length) add('warn', pendingPOs.length + ' purchase orders need action', 'Approve pending POs and follow up overdue supply commitments.', 'procurement', 'shopping-cart', 'Open POs');
+
+    const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed');
+    if (openNcrs.length) add('warn', openNcrs.length + ' open NCRs', 'Close corrective actions and keep QA/QC evidence current.', 'quality', 'badge-check', 'Open QA');
+
+    const overdueBills = (State.raBills || []).filter(b => ['overdue','under-review'].includes(b.status));
+    if (overdueBills.length) add('warn', overdueBills.length + ' RA bills pending', 'Billing certification needs follow-up with PMC/client.', 'billing', 'receipt', 'Open bills');
+
+    const equipmentDown = (State.equipment || []).filter(e => e.status === 'Breakdown' || e.status === 'Under Maintenance');
+    if (equipmentDown.length) add('bad', equipmentDown.length + ' equipment exceptions', 'Check breakdowns, maintenance records, and utilization impact.', 'equipment', 'truck', 'Open fleet');
+
+    const portfolioRisk = projectPortfolio().filter(p => p.status === 'At Risk' || p.status === 'Delayed');
+    if (portfolioRisk.length) add('bad', portfolioRisk.length + ' projects at risk', 'Use the dashboard rollup to review schedule, cost, and alert pressure.', 'projects', 'folder-kanban', 'Open projects');
+
+    return list;
+  }
+
+  function moduleSummaries() {
+    const activeTasks = (State.todos || []).filter(t => t.status !== 'completed').length;
+    const openEvents = (State.events || []).filter(e => e.status !== 'completed').length;
+    const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed').length;
+    const pendingPOs = (State.pos || []).filter(p => p.status !== 'delivered').length;
+    const billed = (State.raBills || []).reduce((s,b) => s + (+b.net || 0), 0);
+    const contractValue = (State.projects || []).reduce((s,p) => s + (+p.value || 0), 0);
+    return [
+      { view:'projects', icon:'folder-kanban', label:'Projects', value:(State.projects || []).length, detail:'portfolio value ' + fmtNPR(contractValue), color:'#1E3A4C' },
+      { view:'todos', icon:'check-square', label:'To-Do', value:activeTasks, detail:'open work items', color:activeTasks ? '#B45309' : '#15803D' },
+      { view:'events', icon:'calendar-check', label:'Events', value:openEvents, detail:'active contractual records', color:'#7C3AED' },
+      { view:'materials', icon:'package', label:'Materials', value:(State.items || []).length, detail:'catalogued inventory items', color:'#15803D' },
+      { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs, detail:'POs not yet delivered', color:'#7C3AED' },
+      { view:'quality', icon:'badge-check', label:'QA/QC', value:openNcrs, detail:'open NCRs', color:openNcrs ? '#C0383B' : '#15803D' },
+      { view:'billing', icon:'receipt', label:'Billing', value:(State.raBills || []).length, detail:'net billed ' + fmtNPR(billed), color:'#E8742C' },
+      { view:'finance', icon:'trending-up', label:'Finance', value:(State.revenues || []).length + (State.expenses || []).length, detail:'ledger records', color:'#1E3A4C' }
+    ];
+  }
+
+  function renderNotificationCenter() {
+    const items = buildNotifications();
+    const badge = $('#notificationBadge');
+    if (badge) badge.textContent = items.length + ' alert' + (items.length === 1 ? '' : 's');
+    const panel = $('#notificationPanel');
+    if (!panel) return;
+    const levelColor = { bad:'#C0383B', warn:'#B45309', info:'#1E3A4C', ok:'#15803D' };
+    panel.innerHTML = `
+      <div class="p-3 flex items-center justify-between">
+        <div>
+          <div class="font-display font-black text-sm">Notifications</div>
+          <div class="text-[10px] text-stone-500">Module alerts and next actions</div>
+        </div>
+        <button class="btn btn-ghost" style="padding:5px 8px;font-size:11px" onclick="navTo('dashboard'); closeNotifications();">Dashboard</button>
+      </div>
+      ${items.length ? items.map((n,i) => {
+        const c = levelColor[n.level] || levelColor.info;
+        return `<div class="notification-item" data-notification-view="${n.view}" data-notification-idx="${i}">
+          <div class="notification-dot" style="background:${c}18;color:${c}"><i data-lucide="${n.icon}" class="w-4 h-4"></i></div>
+          <div>
+            <div class="text-xs font-bold">${n.title}</div>
+            <div class="text-[10px] text-stone-500 mt-0.5">${n.msg}</div>
+          </div>
+          <div class="text-[10px] font-mono font-bold self-center" style="color:${c}">${n.actionLabel}</div>
+        </div>`;
+      }).join('') : `<div class="p-5 text-center text-xs text-stone-500 border-t border-stone-200">
+        <i data-lucide="check-circle" class="w-5 h-5 mx-auto mb-2 text-green-700"></i>
+        No critical notifications right now.
+      </div>`}
+    `;
+    panel.querySelectorAll('[data-notification-view]').forEach(item => {
+      item.onclick = () => {
+        closeNotifications();
+        navTo(item.dataset.notificationView);
+      };
+    });
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function toggleNotifications(ev) {
+    if (ev) ev.stopPropagation();
+    renderNotificationCenter();
+    $('#notificationPanel')?.classList.toggle('show');
+  }
+  function closeNotifications() {
+    $('#notificationPanel')?.classList.remove('show');
+  }
+  function openQuickAddMenu() {
+    openModal({
+      title:'Quick Add',
+      hideFooter:true,
+      body:`<div class="grid grid-cols-2 gap-2">
+        ${[
+          ['New Project','folder-kanban','actNewProject()'],
+          ['New Tender','gavel','actNewTender()'],
+          ['Submit DPR','clipboard-list','actSubmitDPR()'],
+          ['Raise NCR','badge-check','actRaiseNCR()'],
+          ['Generate RA Bill','receipt','actGenerateRA()'],
+          ['New Purchase Order','shopping-cart','actNewPO()'],
+          ['Add BOQ Line','calculator','actAddBOQ()'],
+          ['Issue Permit','hard-hat','actIssuePTW()']
+        ].map(a => `<button class="module-summary-card text-left" onclick="closeModal(); ${a[2]}"><div class="flex items-center gap-2"><i data-lucide="${a[1]}" class="w-4 h-4 text-orange-600"></i><span class="text-xs font-bold">${a[0]}</span></div></button>`).join('')}
+      </div>`
+    });
+  }
+  window.toggleNotifications = toggleNotifications;
+  window.closeNotifications = closeNotifications;
+  window.openQuickAddMenu = openQuickAddMenu;
+
   function renderLauncher() {
     // Seed data so counts are accurate
     try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); } catch(e){}
@@ -7816,6 +7955,50 @@
       </div>
     `;
 
+    const notifications = buildNotifications();
+    const summaryCards = moduleSummaries();
+    const commandCenterHtml = `
+      <div class="grid grid-cols-12 gap-4 mb-6">
+        <div class="col-span-8">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-stone-200">
+            <div class="text-xs font-mono font-bold" style="color:#1E3A4C;letter-spacing:1px">MODULE SUMMARY · COMPANY COMMAND CENTER</div>
+            <button class="btn btn-ghost text-xs" onclick="openPalette()"><i data-lucide="search" class="w-3 h-3"></i>Fast Jump</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+            ${summaryCards.map(s => `
+              <div class="module-summary-card" data-launch-view="${s.view}" style="border-top:3px solid ${s.color}">
+                <div class="flex items-start justify-between">
+                  <div class="notification-dot" style="background:${s.color}18;color:${s.color}"><i data-lucide="${s.icon}" class="w-4 h-4"></i></div>
+                  <div class="font-display font-black text-xl tabular" style="color:${s.color}">${s.value}</div>
+                </div>
+                <div class="font-display font-bold text-sm mt-2">${s.label}</div>
+                <div class="text-[10px] text-stone-500 mt-1">${s.detail}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="col-span-4">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-stone-200">
+            <div class="text-xs font-mono font-bold" style="color:#1E3A4C;letter-spacing:1px">PRIORITY NOTIFICATIONS</div>
+            <button class="btn btn-ghost text-xs" onclick="toggleNotifications(event)"><i data-lucide="bell" class="w-3 h-3"></i>${notifications.length}</button>
+          </div>
+          <div class="card overflow-hidden">
+            ${notifications.slice(0,5).map(n => {
+              const c = n.level === 'bad' ? '#C0383B' : n.level === 'warn' ? '#B45309' : '#1E3A4C';
+              return `<div class="notification-item" data-launch-view="${n.view}">
+                <div class="notification-dot" style="background:${c}18;color:${c}"><i data-lucide="${n.icon}" class="w-4 h-4"></i></div>
+                <div>
+                  <div class="text-xs font-bold">${n.title}</div>
+                  <div class="text-[10px] text-stone-500 mt-0.5">${n.msg}</div>
+                </div>
+                <i data-lucide="arrow-right" class="w-3 h-3 self-center text-stone-400"></i>
+              </div>`;
+            }).join('') || `<div class="p-5 text-center text-xs text-stone-500">No priority alerts. Modules are clean.</div>`}
+          </div>
+        </div>
+      </div>
+    `;
+
     // ============== MODULE TILE LAUNCHER ==============
     const moduleTilesHtml = `
       <div class="mb-3 mt-6 text-xs font-mono font-bold pb-2 border-b border-stone-200" style="color:#1E3A4C;letter-spacing:1px">QUICK ACCESS · ALL MODULES</div>
@@ -7840,7 +8023,7 @@
       </div>
     `).join('');
 
-    tilesContainer.innerHTML = portfolioCardsHtml + moduleTilesHtml;
+    tilesContainer.innerHTML = portfolioCardsHtml + commandCenterHtml + moduleTilesHtml;
 
     // Wire tile clicks
     document.querySelectorAll('[data-launch-view]').forEach(tile => {
@@ -7892,12 +8075,18 @@
     const profile = Object.assign({}, COMPANY_PROFILE);
     try { if (typeof COMPANY !== 'undefined' && COMPANY.name) profile.name = COMPANY.name; } catch(e){}
     State.session = { loggedIn:true, role:'company', user:profile, inProjectMode:false, projectId:null };
+    State.activeProject = 'ALL';
     saveState();
     audit('create','Company sign-in', profile.name);
     document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('portfolioScreen').style.display = 'block';
-    document.getElementById('appShell').style.display = 'none';
-    renderPortfolioScreen();
+    document.getElementById('portfolioScreen').style.display = 'none';
+    document.getElementById('appShell').style.display = 'flex';
+    document.getElementById('projectBanner').style.display = 'none';
+    const sel = $('#activeProjectSelect');
+    if (sel) sel.value = State.activeProject || 'ALL';
+    filterSidebarByRole();
+    navTo('dashboard');
+    renderNotificationCenter();
   }
   // Back-compat shim (any legacy caller ignores the role arg now).
   function signIn() { signInCompany(); }
@@ -8546,6 +8735,7 @@
     State.activity.unshift({ t: new Date(), title, msg });
     if (State.activity.length > 100) State.activity.length = 100;
     renderActivityFeed();
+    renderNotificationCenter();
     // and to audit log (skip system-status toasts to avoid noise)
     if (!['BuildCore Ready'].includes(title) && type !== 'info') {
       const actionMap = { ok:'create', warn:'update', bad:'delete' };
@@ -8633,6 +8823,9 @@
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openPalette(); }
     if (e.key === 'Escape') { closeModal(); closeDrawer(); closePalette(); }
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest?.('.notification-wrap')) closeNotifications();
   });
 
   // -------- COMMAND PALETTE (Cmd+K) --------
@@ -10067,6 +10260,7 @@
   attachScheduleEditing();
   // Initial launcher render (dashboard is the default active view)
   renderLauncher();
+  renderNotificationCenter();
   // Expose navTo for inline onclick handlers
   window.navTo = navTo;
 
@@ -10079,6 +10273,8 @@
       saveState();
       toast('Active Project Changed', v === 'ALL' ? 'Viewing portfolio rollup' : 'Switched to ' + v + ' · views will filter accordingly', 'info');
       audit('update', 'Active Project', v);
+      renderNotificationCenter();
+      if (State.currentView === 'dashboard') renderLauncher();
     });
     // Restore from state if present
     if (State.activeProject) projSelect.value = State.activeProject;
