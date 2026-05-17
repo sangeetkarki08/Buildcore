@@ -503,6 +503,9 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="quality">
         <i data-lucide="badge-check" class="nav-icon w-4 h-4 text-white/60"></i>Quality (QA/QC)
       </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="clientportal">
+        <i data-lucide="file-check-2" class="nav-icon w-4 h-4 text-white/60"></i>Client Portal
+      </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="safety">
         <i data-lucide="hard-hat" class="nav-icon w-4 h-4 text-white/60"></i>Safety / HSE
       </a>
@@ -1429,15 +1432,27 @@
         <div class="flex items-end justify-between mb-6">
           <div>
             <div class="stamp mb-3"><i data-lucide="badge-check" class="w-3 h-3"></i>QUALITY ASSURANCE</div>
-            <h1 class="font-display font-black text-3xl title-mark">QA / QC</h1>
-            <p class="text-sm text-stone-500 mt-3">Mobile checklists · Material test reports · NCR tracking · ISO 9001 aligned</p>
+            <h1 class="font-display font-black text-3xl title-mark">QA / QC Lab Reports</h1>
+            <p class="text-sm text-stone-500 mt-3">All material and field tests - saved lab reports - digital signature - client approval submission</p>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-ghost"><i data-lucide="check-square" class="w-3.5 h-3.5"></i>Checklists</button>
-            <button class="btn btn-amber"><i data-lucide="flag-triangle-right" class="w-3.5 h-3.5"></i>Raise NCR</button>
+            <button class="btn btn-ghost" data-quality-act="export-csv"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
+            <button class="btn btn-ghost" data-quality-act="new-test"><i data-lucide="flask-conical" class="w-3.5 h-3.5"></i>Test Type</button>
+            <button class="btn btn-amber" data-quality-act="new-lab"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Lab Report</button>
           </div>
         </div>
 
+        <div class="grid grid-cols-6 gap-3 mb-5" id="qualityKpis"></div>
+        <div class="card mb-5">
+          <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs">
+            <button class="ims-tab active" data-qualitytab="reports"><i data-lucide="clipboard-check" class="w-3 h-3"></i>Lab Reports</button>
+            <button class="ims-tab" data-qualitytab="submissions"><i data-lucide="send" class="w-3 h-3"></i>Client Submissions</button>
+            <button class="ims-tab" data-qualitytab="tests"><i data-lucide="flask-conical" class="w-3 h-3"></i>Test Catalogue</button>
+            <button class="ims-tab" data-qualitytab="ncr"><i data-lucide="flag-triangle-right" class="w-3 h-3"></i>NCR Register</button>
+          </div>
+          <div id="qualityTabContent" class="p-5"></div>
+        </div>
+        <div style="display:none">
         <div class="grid grid-cols-4 gap-4 mb-5">
           <div class="kpi"><div class="font-mono text-[10px] text-stone-500">CHECKLISTS THIS WEEK</div><div class="font-display font-black text-2xl tabular">48</div><div class="text-xs text-stone-500 mt-1">42 passed · 6 conditional</div></div>
           <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">OPEN NCRs</div><div class="font-display font-black text-2xl tabular">7</div><div class="text-xs text-stone-500 mt-1">2 major · 5 minor</div></div>
@@ -1493,6 +1508,22 @@
             </div>
           </div>
         </div>
+        </div>
+      </section>
+
+      <section id="view-clientportal" class="view">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <div class="stamp mb-3"><i data-lucide="file-check-2" class="w-3 h-3"></i>CLIENT ACCESS PORTAL</div>
+            <h1 class="font-display font-black text-3xl title-mark">Client Approval Portal</h1>
+            <p class="text-sm text-stone-500 mt-3">Project-wise DPR, lab report and document submissions requiring client approval</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-ghost" data-client-act="notify"><i data-lucide="bell" class="w-3.5 h-3.5"></i>Notify Client</button>
+            <button class="btn btn-amber" data-client-act="submit-package"><i data-lucide="send" class="w-3.5 h-3.5"></i>Submit Package</button>
+          </div>
+        </div>
+        <div id="clientPortalContent"></div>
       </section>
 
       <!-- ============================================= -->
@@ -2854,6 +2885,9 @@
     charts: {},
     audit: [],     // tamper-evident audit log
     dprs: [],      // historical DPRs
+    labReports: [], // QA/QC test reports with signatures and approval status
+    labTestTypes: [], // customizable lab and field test catalogue
+    clientSubmissions: [], // DPR / lab report / document client approval queue
     vos: [],       // variation orders
     risks: [],     // risk register
     photos: [],    // photo metadata
@@ -2904,6 +2938,10 @@
     dprCurrentTab: 'log',
     dprTemplates: {},
     dprNextTemplateId: 1,
+    qualityCurrentTab: 'reports',
+    labNextId: 1,
+    labTestNextId: 1,
+    clientSubmissionNextId: 1,
     estNextId: { item:1, ctr:1, exp:1, rev:1 }
   };
 
@@ -2927,6 +2965,8 @@
           projects: State.projects, tenders: State.tenders, materials: State.materials,
           ncrs: State.ncrs, raBills: State.raBills, pos: State.pos, automations: State.automations,
           dprs: State.dprs, dprTemplates: State.dprTemplates, dprNextTemplateId: State.dprNextTemplateId,
+          labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
+          labNextId: State.labNextId, labTestNextId: State.labTestNextId, clientSubmissionNextId: State.clientSubmissionNextId,
           vos: State.vos, risks: State.risks, photos: State.photos,
           activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
           audit: State.audit.slice(0,2000)
@@ -2945,7 +2985,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -2961,6 +3001,8 @@
       state: { projects:State.projects, tenders:State.tenders, materials:State.materials,
         ncrs:State.ncrs, raBills:State.raBills, pos:State.pos, automations:State.automations,
         dprs:State.dprs, dprTemplates:State.dprTemplates, dprNextTemplateId:State.dprNextTemplateId,
+        labReports:State.labReports, labTestTypes:State.labTestTypes, clientSubmissions:State.clientSubmissions,
+        labNextId:State.labNextId, labTestNextId:State.labTestNextId, clientSubmissionNextId:State.clientSubmissionNextId,
         vos:State.vos, risks:State.risks, photos:State.photos,
         activity:State.activity, audit:State.audit }
     }, null, 2);
@@ -7821,6 +7863,771 @@
   }
 
   // =====================================================================
+  //              QA/QC LAB REPORTS + CLIENT APPROVAL PORTAL
+  // =====================================================================
+  const LAB_TEST_DEFAULTS = [
+    { category:'Concrete', name:'Concrete Cube Compressive Strength', method:'IS 516 / project spec', specification:'7/28 day strength as per grade', unit:'N/mm2', frequency:'Every pour / every 30 m3', clientApprovalDefault:true },
+    { category:'Concrete', name:'Concrete Slump Test', method:'IS 1199', specification:'Workability within approved mix range', unit:'mm', frequency:'Each transit mixer / pour', clientApprovalDefault:false },
+    { category:'Concrete', name:'Concrete Core Test', method:'IS 516 / ASTM C42', specification:'In-situ strength verification', unit:'N/mm2', frequency:'As required by NCR/client', clientApprovalDefault:true },
+    { category:'Concrete', name:'Concrete Mix Design Trial', method:'IS 10262', specification:'Approved design mix and target mean strength', unit:'set', frequency:'Before production mix', clientApprovalDefault:true },
+    { category:'Steel', name:'TMT Tensile / Yield / Elongation', method:'IS 1608', specification:'Fe grade compliance', unit:'MPa / %', frequency:'Each heat / batch', clientApprovalDefault:true },
+    { category:'Steel', name:'Bend and Re-bend Test', method:'IS 1786', specification:'No crack after bend/rebend', unit:'pass/fail', frequency:'Each lot', clientApprovalDefault:true },
+    { category:'Steel', name:'Steel Chemical Analysis', method:'Mill TC / lab chemical', specification:'C, S, P and CE limits', unit:'%', frequency:'As per lot / client instruction', clientApprovalDefault:true },
+    { category:'Aggregate', name:'Sieve Analysis / Gradation', method:'IS 2386', specification:'Within approved grading envelope', unit:'%', frequency:'Weekly / source change', clientApprovalDefault:false },
+    { category:'Aggregate', name:'Aggregate Crushing Value', method:'IS 2386 Part IV', specification:'Within project limit', unit:'%', frequency:'Monthly / source approval', clientApprovalDefault:true },
+    { category:'Aggregate', name:'Aggregate Impact Value', method:'IS 2386 Part IV', specification:'Within project limit', unit:'%', frequency:'Monthly / source approval', clientApprovalDefault:true },
+    { category:'Aggregate', name:'Flakiness and Elongation Index', method:'IS 2386 Part I', specification:'Within approved limits', unit:'%', frequency:'Monthly', clientApprovalDefault:false },
+    { category:'Soil / Road', name:'Field Density Test', method:'Sand cone / core cutter', specification:'Compaction as per layer requirement', unit:'% MDD', frequency:'Each layer / chainage', clientApprovalDefault:true },
+    { category:'Soil / Road', name:'Proctor Compaction Test', method:'IS 2720', specification:'MDD and OMC approval', unit:'MDD/OMC', frequency:'Source/material change', clientApprovalDefault:true },
+    { category:'Soil / Road', name:'CBR Test', method:'IS 2720 Part 16', specification:'As per pavement design', unit:'%', frequency:'Subgrade/source approval', clientApprovalDefault:true },
+    { category:'Bitumen / Asphalt', name:'Bitumen Penetration Test', method:'IS 1203', specification:'Grade compliance', unit:'0.1 mm', frequency:'Each tanker / batch', clientApprovalDefault:true },
+    { category:'Bitumen / Asphalt', name:'Softening Point Test', method:'IS 1205', specification:'Grade compliance', unit:'deg C', frequency:'Each batch', clientApprovalDefault:true },
+    { category:'Bitumen / Asphalt', name:'Marshall Stability Test', method:'ASTM D6927 / MoRTH', specification:'Approved job mix formula', unit:'kN / flow', frequency:'Each asphalt mix lot', clientApprovalDefault:true },
+    { category:'Masonry', name:'Brick Compressive Strength', method:'IS 3495', specification:'Class requirement', unit:'N/mm2', frequency:'Each source / lot', clientApprovalDefault:true },
+    { category:'Masonry', name:'Brick Water Absorption', method:'IS 3495', specification:'Within project limit', unit:'%', frequency:'Each source / lot', clientApprovalDefault:false },
+    { category:'Cement', name:'Cement Fineness / Setting Time', method:'IS 4031', specification:'OPC/PPC compliance', unit:'%', frequency:'Each lot / source change', clientApprovalDefault:true },
+    { category:'Water', name:'Construction Water Quality', method:'IS 456 / chemical test', specification:'pH, chloride, sulphate limits', unit:'ppm / pH', frequency:'Source approval / quarterly', clientApprovalDefault:true },
+    { category:'Welding / NDT', name:'DPT / MPI Weld Inspection', method:'ASME / approved WPS', specification:'No relevant indication', unit:'pass/fail', frequency:'As per ITP', clientApprovalDefault:true },
+    { category:'Welding / NDT', name:'Ultrasonic Testing', method:'ASME / approved procedure', specification:'Acceptance level as specified', unit:'report', frequency:'Critical welds', clientApprovalDefault:true },
+    { category:'Hydropower Underground', name:'Shotcrete Thickness Test', method:'Core / pin / probe', specification:'Design thickness achieved', unit:'mm', frequency:'Each tunnel round / zone', clientApprovalDefault:true },
+    { category:'Hydropower Underground', name:'Rock Bolt Pull-out Test', method:'Hydraulic pull test', specification:'Design load achieved', unit:'kN', frequency:'As per support class', clientApprovalDefault:true },
+    { category:'Hydropower Underground', name:'Grout Take / Lugeon Test', method:'Project procedure', specification:'Seepage treatment acceptance', unit:'Lugeon / kg', frequency:'Each grouting stage', clientApprovalDefault:true },
+    { category:'Hydropower Underground', name:'Blast Vibration Record', method:'Seismograph record', specification:'PPV within limit', unit:'mm/s', frequency:'Each blast near structures', clientApprovalDefault:true }
+  ];
+
+  function ensureQualityState() {
+    if (!Array.isArray(State.labReports)) State.labReports = [];
+    if (!Array.isArray(State.labTestTypes)) State.labTestTypes = [];
+    if (!Array.isArray(State.clientSubmissions)) State.clientSubmissions = [];
+    if (!State.labTestTypes.length) {
+      State.labTestTypes = LAB_TEST_DEFAULTS.map((t,i) => Object.assign({ id:'LT-' + String(i+1).padStart(3,'0'), active:true, builtIn:true }, t));
+      State.labTestNextId = State.labTestTypes.length + 1;
+    }
+    if (!State.labNextId) {
+      const ids = State.labReports.map(r => Number((String(r.id||'').match(/LAB-(\d+)/)||[])[1] || 0));
+      State.labNextId = Math.max(0, ...ids) + 1;
+    }
+    if (!State.labTestNextId) {
+      const ids = State.labTestTypes.map(r => Number((String(r.id||'').match(/LT-(\d+)/)||[])[1] || 0));
+      State.labTestNextId = Math.max(0, ...ids) + 1;
+    }
+    if (!State.clientSubmissionNextId) {
+      const ids = State.clientSubmissions.map(r => Number((String(r.id||'').match(/SUB-(\d+)/)||[])[1] || 0));
+      State.clientSubmissionNextId = Math.max(0, ...ids) + 1;
+    }
+  }
+
+  function seedQualityData() {
+    ensureQualityState();
+    if (State.labReports.length > 0) return;
+    seedDPRData();
+    const ds = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0,10); };
+    const byName = (name) => State.labTestTypes.find(t => t.name === name) || State.labTestTypes[0];
+    const samples = [
+      { projectId:'PRJ-017', date:ds(-1), type:byName('Concrete Cube Compressive Strength'), sampleNo:'CUBE-L5-017-A', location:'Block A L5 column pour', source:'DPR concrete pour', result:'34.8', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'submitted' },
+      { projectId:'PRJ-017', date:ds(-1), type:byName('Concrete Slump Test'), sampleNo:'SLUMP-L5-017-A', location:'Transit mixer TM-07', source:'Batch plant', result:'105', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:false, clientStatus:'internal' },
+      { projectId:'PRJ-017', date:ds(-3), type:byName('TMT Tensile / Yield / Elongation'), sampleNo:'TMT16-HEAT-8841', location:'Steel yard', source:'Panchakanya Steel', result:'Yield 548 / UTS 641 / El 18', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'approved' },
+      { projectId:'PRJ-021', date:ds(-2), type:byName('Field Density Test'), sampleNo:'FDT-CH0+420-L2', location:'Underpass north approach CH 0+420', source:'Subgrade layer 2', result:'96.2', acceptance:'Passed', status:'passed', sig:'S. Adhikari', client:true, clientStatus:'submitted' },
+      { projectId:'PRJ-021', date:ds(-4), type:byName('Marshall Stability Test'), sampleNo:'ASPH-JMF-021-03', location:'Batch plant / lab', source:'DBM trial mix', result:'11.8 kN / flow 3.1', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'pending' },
+      { projectId:'PRJ-019', date:ds(-5), type:byName('Brick Water Absorption'), sampleNo:'BR-POK-119', location:'Main building masonry', source:'Bhaktapur brick lot', result:'14.6', acceptance:'Passed', status:'passed', sig:'K. Lama (PM)', client:false, clientStatus:'internal' }
+    ];
+    State.labReports = samples.map((s,i) => ({
+      id:'LAB-' + String(i+1).padStart(4,'0'),
+      projectId:s.projectId,
+      reportDate:s.date,
+      testTypeId:s.type.id,
+      category:s.type.category,
+      testName:s.type.name,
+      method:s.type.method,
+      specification:s.type.specification,
+      unit:s.type.unit,
+      sampleNo:s.sampleNo,
+      location:s.location,
+      sampleSource:s.source,
+      resultValue:s.result,
+      acceptance:s.acceptance,
+      status:s.status,
+      testedBy:s.sig,
+      reviewedBy:'Quality Manager',
+      digitalSignature:s.sig,
+      signatureAt:new Date().toISOString(),
+      remarks:'Auto-seeded QA/QC lab record for project workflow.',
+      clientApprovalRequired:s.client,
+      clientStatus:s.clientStatus,
+      submittedAt:s.client && s.clientStatus !== 'pending' ? new Date().toISOString() : '',
+      approvedAt:s.clientStatus === 'approved' ? new Date().toISOString() : '',
+      notifiedAt:s.client && s.clientStatus !== 'pending' ? new Date().toISOString() : ''
+    }));
+    State.labNextId = State.labReports.length + 1;
+    State.clientSubmissions = State.labReports
+      .filter(r => r.clientApprovalRequired && r.clientStatus !== 'internal')
+      .map((r,i) => ({
+        id:'SUB-' + String(i+1).padStart(4,'0'),
+        projectId:r.projectId,
+        type:'Lab Report',
+        recordId:r.id,
+        title:r.testName + ' - ' + r.sampleNo,
+        status:r.clientStatus === 'approved' ? 'approved' : 'submitted',
+        approval:r.clientStatus === 'approved' ? 'approved' : 'pending',
+        submittedAt:r.submittedAt || new Date().toISOString(),
+        notifiedAt:r.notifiedAt || new Date().toISOString(),
+        dueDate:ds(3),
+        submittedBy:r.digitalSignature || 'QC',
+        clientComment:r.clientStatus === 'approved' ? 'Accepted for record.' : '',
+        notificationLog:[{ at:new Date().toISOString(), by:'System', message:'Client informed for approval.' }]
+      }));
+    State.clientSubmissionNextId = State.clientSubmissions.length + 1;
+    saveState();
+  }
+
+  function qualityProjectId() { return State.session?.projectId || State.activeProject || 'ALL'; }
+  function qualityProjectReports() {
+    const pid = qualityProjectId();
+    if (!pid || pid === 'ALL') return State.labReports || [];
+    return (State.labReports || []).filter(r => r.projectId === pid);
+  }
+  function qualityTestById(id) { ensureQualityState(); return (State.labTestTypes || []).find(t => t.id === id); }
+  function qualityStatusClass(status) {
+    return ({ passed:'ok', failed:'bad', hold:'warn', draft:'neutral', submitted:'info', approved:'ok', rejected:'bad', pending:'warn', internal:'neutral' })[String(status||'').toLowerCase()] || 'neutral';
+  }
+  function labSignatureHash(r) {
+    const text = [r.id, r.projectId, r.sampleNo, r.resultValue, r.digitalSignature, r.signatureAt].join('|');
+    let h = 0;
+    for (let i = 0; i < text.length; i++) h = ((h << 5) - h) + text.charCodeAt(i) | 0;
+    return 'SIG-' + Math.abs(h).toString(36).toUpperCase().padStart(8,'0');
+  }
+  function clientSubmissionFor(type, recordId) {
+    return (State.clientSubmissions || []).find(s => s.type === type && s.recordId === recordId);
+  }
+  function createClientSubmission({ type, recordId, projectId, title, submittedBy, dueDate }) {
+    ensureQualityState();
+    let s = clientSubmissionFor(type, recordId);
+    if (s) {
+      s.status = s.status === 'approved' ? s.status : 'submitted';
+      s.approval = s.approval === 'approved' ? s.approval : 'pending';
+      s.notifiedAt = new Date().toISOString();
+      s.notificationLog = s.notificationLog || [];
+      s.notificationLog.unshift({ at:s.notifiedAt, by:State.session?.user?.name || 'System', message:'Client informed again for approval.' });
+      return s;
+    }
+    s = {
+      id:'SUB-' + String(State.clientSubmissionNextId++).padStart(4,'0'),
+      projectId, type, recordId, title,
+      status:'submitted',
+      approval:'pending',
+      submittedAt:new Date().toISOString(),
+      notifiedAt:new Date().toISOString(),
+      dueDate: dueDate || '',
+      submittedBy: submittedBy || State.session?.user?.name || 'Project team',
+      clientComment:'',
+      notificationLog:[{ at:new Date().toISOString(), by:State.session?.user?.name || 'System', message:'Client informed for approval.' }]
+    };
+    State.clientSubmissions.unshift(s);
+    return s;
+  }
+
+  function renderQualityView() {
+    seedQualityData();
+    renderQualityKPIs();
+    document.querySelectorAll('#view-quality .ims-tab').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#view-quality .ims-tab').forEach(b => b.classList.toggle('active', b === btn));
+        State.qualityCurrentTab = btn.dataset.qualitytab;
+        renderQualityTab(State.qualityCurrentTab);
+      };
+      btn.classList.toggle('active', btn.dataset.qualitytab === (State.qualityCurrentTab || 'reports'));
+    });
+    document.querySelectorAll('#view-quality [data-quality-act]').forEach(btn => {
+      btn.onclick = () => {
+        if (btn.dataset.qualityAct === 'new-lab') labReportEdit();
+        if (btn.dataset.qualityAct === 'new-test') labTestTypeEdit();
+        if (btn.dataset.qualityAct === 'export-csv') qualityExportCSV();
+      };
+    });
+    renderQualityTab(State.qualityCurrentTab || 'reports');
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function renderQualityKPIs() {
+    const reports = qualityProjectReports();
+    const passed = reports.filter(r => r.status === 'passed').length;
+    const failed = reports.filter(r => r.status === 'failed').length;
+    const signed = reports.filter(r => r.digitalSignature).length;
+    const pendingClient = reports.filter(r => r.clientApprovalRequired && !['approved','rejected'].includes(r.clientStatus)).length;
+    const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed' && (!qualityProjectId() || qualityProjectId() === 'ALL' || n.proj === qualityProjectId())).length;
+    $('#qualityKpis').innerHTML = `
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">LAB REPORTS</div><div class="font-display font-black text-2xl tabular">${reports.length}</div></div>
+      <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">PASSED</div><div class="font-display font-black text-2xl tabular">${passed}</div></div>
+      <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">FAILED / HOLD</div><div class="font-display font-black text-2xl tabular">${failed + reports.filter(r => r.status === 'hold').length}</div></div>
+      <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">DIGITAL SIGNED</div><div class="font-display font-black text-2xl tabular">${signed}</div></div>
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">CLIENT PENDING</div><div class="font-display font-black text-2xl tabular" style="color:#B45309">${pendingClient}</div></div>
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">OPEN NCR</div><div class="font-display font-black text-2xl tabular" style="color:${openNcrs ? '#C0383B' : '#15803D'}">${openNcrs}</div></div>
+    `;
+  }
+
+  function renderQualityTab(tab='reports') {
+    const c = $('#qualityTabContent');
+    if (!c) return;
+    if (tab === 'reports') return renderLabReportsTab(c);
+    if (tab === 'submissions') return renderQualitySubmissionsTab(c);
+    if (tab === 'tests') return renderLabTestsTab(c);
+    if (tab === 'ncr') return renderQualityNCRTab(c);
+  }
+
+  function renderLabReportsTab(c) {
+    const reports = [...qualityProjectReports()].sort((a,b) => String(b.reportDate).localeCompare(String(a.reportDate)));
+    c.innerHTML = `
+      <div class="flex justify-between items-start mb-4 gap-3">
+        <div>
+          <div class="font-display font-bold text-lg">Saved Lab Reports</div>
+          <div class="text-xs text-stone-500">Every test report is stored with sample, result, acceptance, digital signature and client approval status.</div>
+        </div>
+        <button class="btn btn-amber" onclick="labReportEdit()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Lab Report</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data">
+          <thead><tr><th>Report</th><th>Project</th><th>Date</th><th>Test</th><th>Sample / Location</th><th>Result</th><th>Status</th><th>Signature</th><th>Client</th><th></th></tr></thead>
+          <tbody>
+            ${reports.map(r => `<tr>
+              <td class="font-mono text-xs">${esc(r.id)}</td>
+              <td class="font-mono text-xs">${esc(r.projectId)}</td>
+              <td class="font-mono text-xs">${fmtDateShort(r.reportDate)}</td>
+              <td><div class="font-semibold text-xs">${esc(r.testName)}</div><div class="text-[10px] text-stone-500">${esc(r.category)} - ${esc(r.method)}</div></td>
+              <td><div class="text-xs">${esc(r.sampleNo)}</div><div class="text-[10px] text-stone-500">${esc(r.location)}</div></td>
+              <td><div class="font-mono text-xs">${esc(r.resultValue)} ${esc(r.unit || '')}</div><div class="text-[10px] text-stone-500">${esc(r.acceptance || '')}</div></td>
+              <td><span class="badge badge-${qualityStatusClass(r.status)}">${esc(String(r.status||'draft').toUpperCase())}</span></td>
+              <td>${r.digitalSignature ? `<span class="badge badge-ok">${labSignatureHash(r)}</span><div class="text-[10px] text-stone-500">${esc(r.digitalSignature)}</div>` : '<span class="badge badge-warn">UNSIGNED</span>'}</td>
+              <td><span class="badge badge-${qualityStatusClass(r.clientStatus || (r.clientApprovalRequired ? 'pending' : 'internal'))}">${esc(String(r.clientStatus || (r.clientApprovalRequired ? 'pending' : 'internal')).toUpperCase())}</span></td>
+              <td class="text-right">
+                <button class="btn btn-ghost text-xs" onclick="labReportView('${r.id}')">View</button>
+                <button class="btn btn-ghost text-xs" onclick="labReportEdit('${r.id}')">Edit</button>
+                ${r.clientApprovalRequired ? `<button class="btn btn-ghost text-xs" onclick="submitLabReportToClient('${r.id}')">Submit</button>` : ''}
+              </td>
+            </tr>`).join('') || '<tr><td colspan="10" class="text-center text-stone-400 py-5">No lab reports yet.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function renderQualitySubmissionsTab(c) {
+    const pid = qualityProjectId();
+    const subs = (State.clientSubmissions || []).filter(s => !pid || pid === 'ALL' || s.projectId === pid).sort((a,b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
+    c.innerHTML = `
+      <div class="flex justify-between items-start mb-4 gap-3">
+        <div>
+          <div class="font-display font-bold text-lg">Client Submission Queue</div>
+          <div class="text-xs text-stone-500">Lab reports, DPRs and documents submitted for client approval and notification tracking.</div>
+        </div>
+        <button class="btn btn-amber" onclick="clientPackageModal()"><i data-lucide="send" class="w-3.5 h-3.5"></i>Submit Package</button>
+      </div>
+      ${clientSubmissionTableHTML(subs, true)}
+    `;
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function renderLabTestsTab(c) {
+    ensureQualityState();
+    const groups = {};
+    (State.labTestTypes || []).forEach(t => { (groups[t.category] = groups[t.category] || []).push(t); });
+    c.innerHTML = `
+      <div class="flex justify-between items-start mb-4 gap-3">
+        <div>
+          <div class="font-display font-bold text-lg">Default and Custom Test Catalogue</div>
+          <div class="text-xs text-stone-500">${State.labTestTypes.length} test formats covering concrete, steel, aggregate, soil, road, bridge, hydropower, underground, welding and water quality.</div>
+        </div>
+        <button class="btn btn-amber" onclick="labTestTypeEdit()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Add Test Type</button>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        ${Object.keys(groups).sort().map(cat => `<div class="card p-4" style="border-top:3px solid #0EA5E9">
+          <div class="font-display font-bold text-base mb-2">${esc(cat)}</div>
+          <div class="space-y-2">
+            ${groups[cat].map(t => `<div class="p-3 border border-stone-200 bg-stone-50">
+              <div class="flex justify-between items-start gap-2">
+                <div>
+                  <div class="font-semibold text-xs">${esc(t.name)}</div>
+                  <div class="text-[10px] text-stone-500 mt-1">${esc(t.method)} - ${esc(t.specification)}</div>
+                  <div class="text-[10px] text-stone-500 mt-1">Frequency: ${esc(t.frequency || '-')} - Unit: ${esc(t.unit || '-')}</div>
+                </div>
+                <span class="badge badge-${t.clientApprovalDefault ? 'amber' : 'neutral'}">${t.clientApprovalDefault ? 'CLIENT' : 'INTERNAL'}</span>
+              </div>
+              <div class="flex gap-2 mt-2">
+                <button class="btn btn-ghost text-xs" onclick="labTestTypeEdit('${t.id}')">Edit</button>
+                ${t.builtIn ? '' : `<button class="btn btn-ghost text-xs" onclick="labTestTypeDelete('${t.id}')">Delete</button>`}
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>`).join('')}
+      </div>
+    `;
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function renderQualityNCRTab(c) {
+    const pid = qualityProjectId();
+    const ncrs = (State.ncrs || []).filter(n => !pid || pid === 'ALL' || n.proj === pid);
+    c.innerHTML = `
+      <div class="flex justify-between items-start mb-4 gap-3">
+        <div>
+          <div class="font-display font-bold text-lg">NCR Register</div>
+          <div class="text-xs text-stone-500">Existing non-conformance records linked with QA/QC evidence.</div>
+        </div>
+        <button class="btn btn-amber" onclick="actRaiseNCR()"><i data-lucide="flag-triangle-right" class="w-3.5 h-3.5"></i>Raise NCR</button>
+      </div>
+      <table class="data"><thead><tr><th>NCR</th><th>Project</th><th>Area</th><th>Issue</th><th>Severity</th><th>Status</th></tr></thead><tbody>
+        ${ncrs.map(n => `<tr><td class="font-mono text-xs">${esc(n.id)}</td><td class="font-mono text-xs">${esc(n.proj)}</td><td class="text-xs">${esc(n.area)}</td><td class="text-xs">${esc(n.issue)}</td><td><span class="badge badge-${n.severity === 'major' ? 'bad' : 'warn'}">${esc(String(n.severity||'').toUpperCase())}</span></td><td><span class="badge badge-${n.status === 'closed' ? 'ok' : 'warn'}">${esc(String(n.status||'open').toUpperCase())}</span></td></tr>`).join('') || '<tr><td colspan="6" class="text-center text-stone-400 py-5">No NCR records for this project.</td></tr>'}
+      </tbody></table>
+    `;
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function labReportEdit(id=null) {
+    seedQualityData();
+    const pid = qualityProjectId() === 'ALL' ? (State.projects[0]?.id || 'PRJ-017') : qualityProjectId();
+    const firstType = (State.labTestTypes || []).find(t => t.active !== false) || State.labTestTypes[0];
+    const r = id ? State.labReports.find(x => x.id === id) : {
+      projectId:pid, reportDate:new Date().toISOString().slice(0,10), testTypeId:firstType?.id || '',
+      category:firstType?.category || '', testName:firstType?.name || '', method:firstType?.method || '',
+      specification:firstType?.specification || '', unit:firstType?.unit || '', sampleNo:'', location:'',
+      sampleSource:'', resultValue:'', acceptance:'', status:'passed', testedBy:State.session?.user?.name || '',
+      reviewedBy:'', digitalSignature:State.session?.user?.name || '', signatureAt:'',
+      remarks:'', clientApprovalRequired:firstType?.clientApprovalDefault || false, clientStatus:'pending'
+    };
+    const projects = projectPortfolio();
+    openModal({
+      title: id ? 'Edit Lab Report - ' + r.id : 'Create Lab Report',
+      wide: true,
+      submitLabel: id ? 'Save Report' : 'Save Lab Report',
+      body: `
+        <form id="labReportForm" class="ims-form" style="max-height:70vh;overflow-y:auto;padding-right:8px">
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Project</label><select name="projectId">${projects.map(p => `<option value="${p.id}" ${p.id===r.projectId?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div>
+            <div class="ims-field"><label>Report Date</label><input type="date" name="reportDate" value="${r.reportDate || new Date().toISOString().slice(0,10)}"></div>
+            <div class="ims-field"><label>Test Type</label><select name="testTypeId">${State.labTestTypes.filter(t => t.active !== false).map(t => `<option value="${t.id}" ${t.id===r.testTypeId?'selected':''}>${esc(t.category)} - ${esc(t.name)}</option>`).join('')}</select></div>
+          </div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Sample No.</label><input name="sampleNo" value="${esc(r.sampleNo||'')}" required></div>
+            <div class="ims-field"><label>Location / Chainage / Structure</label><input name="location" value="${esc(r.location||'')}" required></div>
+            <div class="ims-field"><label>Sample Source / Supplier</label><input name="sampleSource" value="${esc(r.sampleSource||'')}"></div>
+          </div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Result Value</label><input name="resultValue" value="${esc(r.resultValue||'')}" required placeholder="34.8 / 96.2 / Pass"></div>
+            <div class="ims-field"><label>Acceptance / Limit</label><input name="acceptance" value="${esc(r.acceptance||'')}" placeholder="Passed as per spec"></div>
+            <div class="ims-field"><label>Status</label><select name="status">${['passed','failed','hold','draft'].map(s => `<option value="${s}" ${s===r.status?'selected':''}>${s.toUpperCase()}</option>`).join('')}</select></div>
+          </div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Tested By</label><input name="testedBy" value="${esc(r.testedBy||'')}"></div>
+            <div class="ims-field"><label>Reviewed By</label><input name="reviewedBy" value="${esc(r.reviewedBy||'')}"></div>
+            <div class="ims-field"><label>Digital Signature</label><input name="digitalSignature" value="${esc(r.digitalSignature||'')}" placeholder="Name / ID of authorized signer"></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Client Approval Required</label><select name="clientApprovalRequired">${[['yes','YES'],['no','NO']].map(a => `<option value="${a[0]}" ${(r.clientApprovalRequired ? 'yes' : 'no')===a[0]?'selected':''}>${a[1]}</option>`).join('')}</select></div>
+            <div class="ims-field"><label>Submit to Client Now</label><select name="submitNow"><option value="no">NO - SAVE ONLY</option><option value="yes">YES - INFORM CLIENT</option></select></div>
+          </div>
+          <div class="ims-field"><label>Remarks / Lab Observation</label><textarea name="remarks" rows="3">${esc(r.remarks||'')}</textarea></div>
+          <div class="p-3 border border-stone-200 bg-stone-50 text-xs">
+            <b>Signature note:</b> Saving with a digital signature creates a report hash. Client portal shows this hash for approval verification.
+          </div>
+        </form>
+      `,
+      onSubmit: () => {
+        const fd = new FormData($('#labReportForm'));
+        const type = qualityTestById(fd.get('testTypeId')) || firstType || {};
+        const obj = id ? {...r} : {};
+        fd.forEach((v,k) => obj[k] = v);
+        obj.category = type.category || obj.category || '';
+        obj.testName = type.name || obj.testName || '';
+        obj.method = type.method || obj.method || '';
+        obj.specification = type.specification || obj.specification || '';
+        obj.unit = type.unit || obj.unit || '';
+        obj.clientApprovalRequired = obj.clientApprovalRequired === 'yes';
+        obj.digitalSignature = (obj.digitalSignature || '').trim();
+        if (obj.digitalSignature && !obj.signatureAt) obj.signatureAt = new Date().toISOString();
+        if (!obj.clientApprovalRequired) obj.clientStatus = 'internal';
+        else if (!obj.clientStatus || obj.clientStatus === 'internal') obj.clientStatus = 'pending';
+        if (id) { Object.assign(r, obj); audit('update','Lab Report - ' + r.id, r.testName); }
+        else {
+          obj.id = 'LAB-' + String(State.labNextId++).padStart(4,'0');
+          State.labReports.push(obj);
+          audit('create','Lab Report - ' + obj.id, obj.testName);
+        }
+        if (obj.clientApprovalRequired && fd.get('submitNow') === 'yes') submitLabReportToClient(obj.id, true);
+        saveState();
+        toast(id ? 'Lab Report Updated' : 'Lab Report Saved', obj.sampleNo || obj.id, 'ok');
+        renderQualityView();
+      }
+    });
+  }
+  window.labReportEdit = labReportEdit;
+
+  function labReportView(id) {
+    const r = State.labReports.find(x => x.id === id); if (!r) return;
+    const sub = clientSubmissionFor('Lab Report', r.id);
+    openDrawer({
+      title:'Lab Report - ' + r.id,
+      body: `
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="card p-3"><div class="font-mono text-[10px] text-stone-400">PROJECT</div><div class="font-mono font-bold">${esc(r.projectId)}</div></div>
+          <div class="card p-3"><div class="font-mono text-[10px] text-stone-400">DATE</div><div class="font-mono font-bold">${fmtDateShort(r.reportDate)}</div></div>
+          <div class="card p-3"><div class="font-mono text-[10px] text-stone-400">STATUS</div><span class="badge badge-${qualityStatusClass(r.status)}">${esc(String(r.status||'draft').toUpperCase())}</span></div>
+        </div>
+        <div class="card p-4 mb-4">
+          <div class="font-display font-bold text-lg">${esc(r.testName)}</div>
+          <div class="text-xs text-stone-500 mt-1">${esc(r.category)} - ${esc(r.method)} - Spec: ${esc(r.specification)}</div>
+          <table class="data mt-3"><tbody>
+            <tr><th>Sample No.</th><td>${esc(r.sampleNo)}</td></tr>
+            <tr><th>Location</th><td>${esc(r.location)}</td></tr>
+            <tr><th>Source</th><td>${esc(r.sampleSource)}</td></tr>
+            <tr><th>Result</th><td><b>${esc(r.resultValue)} ${esc(r.unit||'')}</b> - ${esc(r.acceptance || '')}</td></tr>
+            <tr><th>Remarks</th><td>${esc(r.remarks || '-')}</td></tr>
+          </tbody></table>
+        </div>
+        <div class="card p-4 mb-4" style="border-left:3px solid ${r.digitalSignature ? '#15803D' : '#B45309'}">
+          <div class="font-display font-bold">Digital Signature</div>
+          <div class="grid grid-cols-3 gap-3 mt-3 text-xs">
+            <div><div class="text-stone-500">Signed By</div><b>${esc(r.digitalSignature || 'Unsigned')}</b></div>
+            <div><div class="text-stone-500">Signed At</div><b>${r.signatureAt ? fmtDateShort(r.signatureAt) : '-'}</b></div>
+            <div><div class="text-stone-500">Signature Hash</div><b class="font-mono">${r.digitalSignature ? labSignatureHash(r) : '-'}</b></div>
+          </div>
+        </div>
+        <div class="card p-4">
+          <div class="font-display font-bold">Client Approval</div>
+          <div class="mt-2"><span class="badge badge-${qualityStatusClass(r.clientStatus || (r.clientApprovalRequired ? 'pending' : 'internal'))}">${esc(String(r.clientStatus || (r.clientApprovalRequired ? 'pending' : 'internal')).toUpperCase())}</span></div>
+          ${sub ? `<div class="text-xs text-stone-500 mt-2">Submission ${sub.id} - notified ${sub.notifiedAt ? fmtDateShort(sub.notifiedAt) : '-'}</div>` : '<div class="text-xs text-stone-500 mt-2">Not submitted to client yet.</div>'}
+          <div class="flex gap-2 mt-4">
+            <button class="btn btn-ghost" onclick="closeDrawer(); labReportEdit('${r.id}')">Edit</button>
+            ${r.clientApprovalRequired ? `<button class="btn btn-amber" onclick="submitLabReportToClient('${r.id}'); closeDrawer();">Submit to Client</button>` : ''}
+          </div>
+        </div>
+      `
+    });
+  }
+  window.labReportView = labReportView;
+
+  function submitLabReportToClient(id, silent=false) {
+    const r = State.labReports.find(x => x.id === id); if (!r) return;
+    r.clientApprovalRequired = true;
+    r.clientStatus = r.clientStatus === 'approved' ? 'approved' : 'submitted';
+    r.submittedAt = r.submittedAt || new Date().toISOString();
+    r.notifiedAt = new Date().toISOString();
+    const s = createClientSubmission({ type:'Lab Report', recordId:r.id, projectId:r.projectId, title:r.testName + ' - ' + r.sampleNo, submittedBy:r.digitalSignature || State.session?.user?.name || 'QC', dueDate:'' });
+    audit('create','Client submission - Lab Report', s.id + ' - ' + r.id);
+    saveState();
+    if (!silent) {
+      toast('Client Informed', r.id + ' submitted for approval', 'ok');
+      renderQualityView();
+      renderClientPortalView();
+    }
+  }
+  window.submitLabReportToClient = submitLabReportToClient;
+
+  function labTestTypeEdit(id=null) {
+    ensureQualityState();
+    const t = id ? State.labTestTypes.find(x => x.id === id) : { category:'Custom', name:'', method:'', specification:'', unit:'', frequency:'', clientApprovalDefault:true, active:true };
+    if (!t) return;
+    openModal({
+      title: id ? 'Edit Test Type - ' + t.name : 'Add Custom Test Type',
+      submitLabel: id ? 'Save Test Type' : 'Create Test Type',
+      body: `
+        <form id="labTypeForm" class="ims-form">
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Category</label><input name="category" value="${esc(t.category||'')}" required></div>
+            <div class="ims-field"><label>Test Name</label><input name="name" value="${esc(t.name||'')}" required></div>
+          </div>
+          <div class="ims-field"><label>Method / Standard</label><input name="method" value="${esc(t.method||'')}"></div>
+          <div class="ims-field"><label>Specification / Acceptance</label><input name="specification" value="${esc(t.specification||'')}"></div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Unit</label><input name="unit" value="${esc(t.unit||'')}"></div>
+            <div class="ims-field"><label>Frequency</label><input name="frequency" value="${esc(t.frequency||'')}"></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Default Client Approval</label><select name="clientApprovalDefault"><option value="yes" ${t.clientApprovalDefault?'selected':''}>YES</option><option value="no" ${!t.clientApprovalDefault?'selected':''}>NO</option></select></div>
+            <div class="ims-field"><label>Active</label><select name="active"><option value="yes" ${t.active!==false?'selected':''}>YES</option><option value="no" ${t.active===false?'selected':''}>NO</option></select></div>
+          </div>
+        </form>
+      `,
+      onSubmit: () => {
+        const fd = new FormData($('#labTypeForm'));
+        const obj = id ? t : { id:'LT-' + String(State.labTestNextId++).padStart(3,'0'), builtIn:false };
+        ['category','name','method','specification','unit','frequency'].forEach(k => obj[k] = (fd.get(k) || '').trim());
+        obj.clientApprovalDefault = fd.get('clientApprovalDefault') === 'yes';
+        obj.active = fd.get('active') === 'yes';
+        if (!obj.category || !obj.name) return false;
+        if (!id) State.labTestTypes.push(obj);
+        audit(id ? 'update' : 'create','Lab Test Type', obj.name);
+        saveState();
+        toast(id ? 'Test Type Updated' : 'Test Type Added', obj.name, 'ok');
+        renderQualityView();
+      }
+    });
+  }
+  window.labTestTypeEdit = labTestTypeEdit;
+
+  function labTestTypeDelete(id) {
+    const t = State.labTestTypes.find(x => x.id === id);
+    if (!t || t.builtIn) return;
+    openModal({
+      title:'Delete Test Type',
+      submitLabel:'Delete',
+      submitClass:'btn-danger',
+      body:`<div class="text-sm">Delete custom test type <b>${esc(t.name)}</b>? Existing lab reports will keep their saved test name.</div>`,
+      onSubmit: () => {
+        State.labTestTypes = State.labTestTypes.filter(x => x.id !== id);
+        audit('delete','Lab Test Type', t.name);
+        saveState();
+        toast('Test Type Deleted', t.name, 'warn');
+        renderQualityView();
+      }
+    });
+  }
+  window.labTestTypeDelete = labTestTypeDelete;
+
+  function qualityExportCSV() {
+    seedQualityData();
+    const reports = qualityProjectReports();
+    const headers = ['ID','Project','Date','Category','Test','Sample','Location','Source','Result','Unit','Acceptance','Status','Tested By','Reviewed By','Digital Signature','Signature Hash','Client Required','Client Status'];
+    const rows = reports.map(r => [r.id,r.projectId,r.reportDate,r.category,r.testName,r.sampleNo,r.location,r.sampleSource,r.resultValue,r.unit,r.acceptance,r.status,r.testedBy,r.reviewedBy,r.digitalSignature,labSignatureHash(r),r.clientApprovalRequired ? 'YES' : 'NO',r.clientStatus]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'buildcore-lab-reports-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 200);
+    toast('CSV Exported', rows.length + ' lab reports', 'ok');
+  }
+
+  function clientSubmissionTableHTML(subs, showActions=true) {
+    return `<div class="overflow-x-auto">
+      <table class="data">
+        <thead><tr><th>Submission</th><th>Project</th><th>Type</th><th>Title</th><th>Submitted</th><th>Notified</th><th>Approval</th><th>Comment</th><th></th></tr></thead>
+        <tbody>
+          ${subs.map(s => `<tr>
+            <td class="font-mono text-xs">${esc(s.id)}</td>
+            <td class="font-mono text-xs">${esc(s.projectId)}</td>
+            <td><span class="badge badge-info">${esc(s.type)}</span></td>
+            <td><div class="font-semibold text-xs">${esc(s.title)}</div><div class="text-[10px] text-stone-500">${esc(s.recordId || '')}</div></td>
+            <td class="font-mono text-xs">${fmtDateShort(s.submittedAt)}</td>
+            <td class="font-mono text-xs">${s.notifiedAt ? fmtDateShort(s.notifiedAt) : '-'}</td>
+            <td><span class="badge badge-${qualityStatusClass(s.approval || s.status)}">${esc(String(s.approval || s.status || 'pending').toUpperCase())}</span></td>
+            <td class="text-xs">${esc(s.clientComment || '-')}</td>
+            <td class="text-right">${showActions ? `
+              <button class="btn btn-ghost text-xs" onclick="notifyClientForSubmission('${s.id}')">Notify</button>
+              <button class="btn btn-ghost text-xs" onclick="clientApproveSubmission('${s.id}')">Approve</button>
+              <button class="btn btn-ghost text-xs" onclick="clientRejectSubmission('${s.id}')">Reject</button>
+            ` : ''}</td>
+          </tr>`).join('') || '<tr><td colspan="9" class="text-center text-stone-400 py-5">No client submissions yet.</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  function renderClientPortalView() {
+    seedQualityData();
+    seedDPRData();
+    const c = $('#clientPortalContent');
+    if (!c) return;
+    const pid = qualityProjectId();
+    const project = projectPortfolio().find(p => p.id === pid);
+    const reports = qualityProjectReports().filter(r => r.clientApprovalRequired);
+    const dprs = (State.dprs || []).filter(d => !pid || pid === 'ALL' || d.projectId === pid).sort((a,b) => String(b.date).localeCompare(String(a.date))).slice(0,12);
+    const subs = (State.clientSubmissions || []).filter(s => !pid || pid === 'ALL' || s.projectId === pid).sort((a,b) => String(b.submittedAt).localeCompare(String(a.submittedAt)));
+    const pending = subs.filter(s => (s.approval || s.status) === 'pending' || s.status === 'submitted').length;
+    const approved = subs.filter(s => s.approval === 'approved' || s.status === 'approved').length;
+    c.innerHTML = `
+      <div class="grid grid-cols-5 gap-3 mb-5">
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">PROJECT</div><div class="font-display font-black text-xl tabular">${esc(pid || 'ALL')}</div><div class="text-xs text-stone-500 mt-1">${esc(project?.client || 'Client view')}</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">APPROVAL PENDING</div><div class="font-display font-black text-2xl tabular" style="color:#B45309">${pending}</div></div>
+        <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">APPROVED</div><div class="font-display font-black text-2xl tabular">${approved}</div></div>
+        <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">LAB REPORTS</div><div class="font-display font-black text-2xl tabular">${reports.length}</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">DPR RECORDS</div><div class="font-display font-black text-2xl tabular">${dprs.length}</div></div>
+      </div>
+      <div class="card mb-5">
+        <div class="px-5 py-3 border-b border-stone-100 flex justify-between items-start gap-3">
+          <div>
+            <div class="font-display font-bold">Approval Queue</div>
+            <div class="text-xs text-stone-500 mt-1">Client-visible submissions only: lab reports, DPRs and required project documents.</div>
+          </div>
+          <button class="btn btn-amber text-xs" onclick="clientPackageModal()"><i data-lucide="send" class="w-3 h-3"></i>Submit Package</button>
+        </div>
+        <div class="p-5">${clientSubmissionTableHTML(subs, true)}</div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-5">
+        <div class="card">
+          <div class="px-5 py-3 border-b border-stone-100 flex justify-between items-center">
+            <div><div class="font-display font-bold">Lab Reports for Approval</div><div class="text-xs text-stone-500 mt-1">Digital signature and lab result visible to client.</div></div>
+            <button class="btn btn-ghost text-xs" onclick="navTo('quality')">QA/QC</button>
+          </div>
+          <table class="data">
+            <thead><tr><th>Report</th><th>Test</th><th>Result</th><th>Signature</th><th>Approval</th></tr></thead>
+            <tbody>${reports.map(r => `<tr>
+              <td class="font-mono text-xs">${esc(r.id)}</td>
+              <td><div class="text-xs font-semibold">${esc(r.testName)}</div><div class="text-[10px] text-stone-500">${esc(r.sampleNo)}</div></td>
+              <td class="font-mono text-xs">${esc(r.resultValue)} ${esc(r.unit||'')}</td>
+              <td class="font-mono text-[10px]">${r.digitalSignature ? labSignatureHash(r) : 'UNSIGNED'}</td>
+              <td><span class="badge badge-${qualityStatusClass(r.clientStatus || 'pending')}">${esc(String(r.clientStatus || 'pending').toUpperCase())}</span></td>
+            </tr>`).join('') || '<tr><td colspan="5" class="text-center text-stone-400 py-4">No client lab reports.</td></tr>'}</tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="px-5 py-3 border-b border-stone-100 flex justify-between items-center">
+            <div><div class="font-display font-bold">DPR Submissions</div><div class="text-xs text-stone-500 mt-1">Daily progress reports requiring client acknowledgement.</div></div>
+            <button class="btn btn-ghost text-xs" onclick="navTo('dpr')">DPR</button>
+          </div>
+          <table class="data">
+            <thead><tr><th>DPR</th><th>Date</th><th>Activity</th><th>Ack</th><th></th></tr></thead>
+            <tbody>${dprs.map(d => `<tr>
+              <td class="font-mono text-xs">${esc(d.id)}</td>
+              <td class="font-mono text-xs">${fmtDateShort(d.date)}</td>
+              <td class="text-xs">${esc(String(d.activitiesExecuted||'').slice(0,90))}</td>
+              <td><span class="badge badge-${d.clientAck === 'acknowledged' ? 'ok' : d.clientAck === 'rejected' ? 'bad' : 'warn'}">${esc(String(d.clientAck || 'pending').toUpperCase())}</span></td>
+              <td class="text-right"><button class="btn btn-ghost text-xs" onclick="submitDPRToClient('${d.id}')">Submit</button></td>
+            </tr>`).join('') || '<tr><td colspan="5" class="text-center text-stone-400 py-4">No DPRs filed yet.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    document.querySelectorAll('#view-clientportal [data-client-act]').forEach(btn => {
+      btn.onclick = () => {
+        if (btn.dataset.clientAct === 'notify') notifyAllClientPending();
+        if (btn.dataset.clientAct === 'submit-package') clientPackageModal();
+      };
+    });
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function submitDPRToClient(id) {
+    const d = State.dprs.find(x => x.id === id); if (!d) return;
+    d.status = 'submitted';
+    d.clientAck = d.clientAck === 'acknowledged' ? 'acknowledged' : 'pending';
+    const title = 'DPR - ' + d.date + ' - ' + d.projectId;
+    const s = createClientSubmission({ type:'DPR', recordId:d.id, projectId:d.projectId, title, submittedBy:d.preparedBy || State.session?.user?.name || 'Project team' });
+    audit('create','Client submission - DPR', s.id + ' - ' + d.id);
+    saveState();
+    toast('Client Informed', d.id + ' submitted for approval', 'ok');
+    renderClientPortalView();
+    renderDPRView();
+  }
+  window.submitDPRToClient = submitDPRToClient;
+
+  function notifyClientForSubmission(id) {
+    const s = State.clientSubmissions.find(x => x.id === id); if (!s) return;
+    s.notifiedAt = new Date().toISOString();
+    s.notificationLog = s.notificationLog || [];
+    s.notificationLog.unshift({ at:s.notifiedAt, by:State.session?.user?.name || 'System', message:'Client notification sent.' });
+    audit('update','Client notified', s.id);
+    saveState();
+    toast('Client Notified', s.title, 'ok');
+    renderQualityView();
+    renderClientPortalView();
+  }
+  window.notifyClientForSubmission = notifyClientForSubmission;
+
+  function notifyAllClientPending() {
+    seedQualityData();
+    const pid = qualityProjectId();
+    const subs = (State.clientSubmissions || []).filter(s => (!pid || pid === 'ALL' || s.projectId === pid) && !['approved','rejected'].includes(s.approval));
+    subs.forEach(s => {
+      s.notifiedAt = new Date().toISOString();
+      s.notificationLog = s.notificationLog || [];
+      s.notificationLog.unshift({ at:s.notifiedAt, by:State.session?.user?.name || 'System', message:'Batch client reminder sent.' });
+    });
+    audit('update','Client reminders', subs.length + ' pending submissions');
+    saveState();
+    toast('Client Reminders Sent', subs.length + ' pending submissions', 'ok');
+    renderClientPortalView();
+  }
+
+  function clientApproveSubmission(id) {
+    const s = State.clientSubmissions.find(x => x.id === id); if (!s) return;
+    openModal({
+      title:'Approve Submission',
+      submitLabel:'Approve',
+      body:`<div class="ims-field"><label>Client Comment</label><textarea name="comment" rows="3">Approved for record.</textarea></div>`,
+      onSubmit:(d) => {
+        s.status = 'approved'; s.approval = 'approved'; s.clientComment = d.comment || 'Approved'; s.approvedAt = new Date().toISOString();
+        if (s.type === 'Lab Report') {
+          const r = State.labReports.find(x => x.id === s.recordId);
+          if (r) { r.clientStatus = 'approved'; r.approvedAt = s.approvedAt; }
+        }
+        if (s.type === 'DPR') {
+          const r = State.dprs.find(x => x.id === s.recordId);
+          if (r) r.clientAck = 'acknowledged';
+        }
+        audit('update','Client approved', s.id);
+        saveState();
+        toast('Approved', s.title, 'ok');
+        renderQualityView();
+        renderClientPortalView();
+      }
+    });
+  }
+  window.clientApproveSubmission = clientApproveSubmission;
+
+  function clientRejectSubmission(id) {
+    const s = State.clientSubmissions.find(x => x.id === id); if (!s) return;
+    openModal({
+      title:'Reject / Return Submission',
+      submitLabel:'Return with Comment',
+      submitClass:'btn-danger',
+      body:`<div class="ims-field"><label>Client Comment</label><textarea name="comment" rows="3" required>Returned for clarification.</textarea></div>`,
+      onSubmit:(d) => {
+        s.status = 'rejected'; s.approval = 'rejected'; s.clientComment = d.comment || 'Returned for clarification'; s.rejectedAt = new Date().toISOString();
+        if (s.type === 'Lab Report') {
+          const r = State.labReports.find(x => x.id === s.recordId);
+          if (r) r.clientStatus = 'rejected';
+        }
+        if (s.type === 'DPR') {
+          const r = State.dprs.find(x => x.id === s.recordId);
+          if (r) r.clientAck = 'rejected';
+        }
+        audit('update','Client returned', s.id);
+        saveState();
+        toast('Returned', s.title, 'warn');
+        renderQualityView();
+        renderClientPortalView();
+      }
+    });
+  }
+  window.clientRejectSubmission = clientRejectSubmission;
+
+  function clientPackageModal() {
+    seedQualityData();
+    seedDPRData();
+    const pid = qualityProjectId() === 'ALL' ? (State.projects[0]?.id || 'PRJ-017') : qualityProjectId();
+    const labs = (State.labReports || []).filter(r => r.projectId === pid && r.clientApprovalRequired && !['approved','submitted'].includes(r.clientStatus));
+    const dprs = (State.dprs || []).filter(d => d.projectId === pid && d.clientAck !== 'acknowledged').sort((a,b) => String(b.date).localeCompare(String(a.date))).slice(0,3);
+    openModal({
+      title:'Submit Client Approval Package',
+      submitLabel:'Submit and Inform Client',
+      body:`
+        <div class="text-sm mb-3">This will submit pending lab reports and latest DPRs for <b>${esc(pid)}</b> to the client portal.</div>
+        <div class="grid grid-cols-3 gap-3 mb-3">
+          <div class="card p-3"><div class="font-mono text-[10px] text-stone-500">LAB REPORTS</div><div class="font-display font-black text-2xl">${labs.length}</div></div>
+          <div class="card p-3"><div class="font-mono text-[10px] text-stone-500">DPR</div><div class="font-display font-black text-2xl">${dprs.length}</div></div>
+          <div class="card p-3"><div class="font-mono text-[10px] text-stone-500">DOCUMENT</div><div class="font-display font-black text-2xl">1</div></div>
+        </div>
+        <div class="ims-field"><label>Package Title</label><input name="title" value="Approval package - ${esc(pid)} - ${new Date().toISOString().slice(0,10)}"></div>
+      `,
+      onSubmit:(d) => {
+        labs.forEach(r => submitLabReportToClient(r.id, true));
+        dprs.forEach(dpr => submitDPRToClientSilent(dpr.id));
+        createClientSubmission({ type:'Document', recordId:'DOC-' + Date.now(), projectId:pid, title:d.title || ('Approval package - ' + pid), submittedBy:State.session?.user?.name || 'Project team' });
+        audit('create','Client approval package', pid);
+        saveState();
+        toast('Client Package Submitted', labs.length + ' lab reports, ' + dprs.length + ' DPRs', 'ok');
+        renderQualityView();
+        renderClientPortalView();
+      }
+    });
+  }
+  window.clientPackageModal = clientPackageModal;
+
+  function submitDPRToClientSilent(id) {
+    const d = State.dprs.find(x => x.id === id); if (!d) return;
+    d.status = 'submitted';
+    d.clientAck = d.clientAck === 'acknowledged' ? 'acknowledged' : 'pending';
+    createClientSubmission({ type:'DPR', recordId:d.id, projectId:d.projectId, title:'DPR - ' + d.date + ' - ' + d.projectId, submittedBy:d.preparedBy || State.session?.user?.name || 'Project team' });
+  }
+  // =====================================================================
   //              PROJECT WORK SITES (sub-zones within a project)
   // =====================================================================
   const SITE_TEMPLATES = {
@@ -8510,6 +9317,12 @@
     return ({ low:'#15803D', medium:'#B45309', high:'#E8742C', critical:'#C0383B' })[r] || '#6B7280';
   }
 
+  function canAccessModule(view) {
+    const modules = State.session?.user?.modules;
+    if (!modules || modules === 'ALL') return true;
+    return Array.isArray(modules) && modules.includes(view);
+  }
+
   const LAUNCHER_GROUPS = [
     { label:'Overview', tiles:[
       { view:'projects',   icon:'folder-kanban',  title:'Projects',           sub:'Active project portfolio',  color:'#1E3A4C' },
@@ -8528,6 +9341,7 @@
       { view:'materials',  icon:'package',        title:'Materials & Inventory',sub:'IMS · GRN · Issue · POs', color:'#15803D' },
       { view:'equipment',  icon:'truck',          title:'Plant & Equipment',  sub:'Logsheets · operators · maint',color:'#B45309' },
       { view:'quality',    icon:'badge-check',    title:'Quality (QA/QC)',    sub:'NCRs · tests · checklists', color:'#0EA5E9' },
+      { view:'clientportal',icon:'file-check-2',  title:'Client Portal',      sub:'DPR · lab approvals', color:'#7C3AED' },
       { view:'safety',     icon:'hard-hat',       title:'Safety / HSE',       sub:'Incidents · TBT · permits', color:'#C0383B' }
     ]},
     { label:'Commercial', tiles:[
@@ -8559,7 +9373,8 @@
     if (view === 'procurement') return State.pos?.length || 0;
     if (view === 'tenders')   return State.tenders?.length || 0;
     if (view === 'billing')   return State.raBills?.length || 0;
-    if (view === 'quality')   return State.ncrs?.length || 0;
+    if (view === 'quality')   return State.labReports?.length || State.ncrs?.length || 0;
+    if (view === 'clientportal') return (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status)).length;
     return null;
   }
   function launcherTileAlert(view) {
@@ -8584,11 +9399,15 @@
       if (bk > 0) return { txt: bk + ' breakdown', col:'#C0383B' };
       if (mt > 0) return { txt: mt + ' in maintenance', col:'#B45309' };
     }
+    if (view === 'clientportal') {
+      const pending = (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status)).length;
+      return pending > 0 ? { txt: pending + ' pending', col:'#B45309' } : null;
+    }
     return null;
   }
 
   function buildNotifications() {
-    try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); } catch(e){}
+    try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); seedQualityData?.(); } catch(e){}
     const list = [];
     const now = new Date();
     const add = (level, title, msg, view, icon='bell', actionLabel='Open') =>
@@ -8615,6 +9434,9 @@
     const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed');
     if (openNcrs.length) add('warn', openNcrs.length + ' open NCRs', 'Close corrective actions and keep QA/QC evidence current.', 'quality', 'badge-check', 'Open QA');
 
+    const pendingClient = (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status));
+    if (pendingClient.length) add('warn', pendingClient.length + ' client approvals pending', 'DPRs, lab reports, or packages are waiting for client action.', 'clientportal', 'file-check-2', 'Open portal');
+
     const overdueBills = (State.raBills || []).filter(b => ['overdue','under-review'].includes(b.status));
     if (overdueBills.length) add('warn', overdueBills.length + ' RA bills pending', 'Billing certification needs follow-up with PMC/client.', 'billing', 'receipt', 'Open bills');
 
@@ -8631,6 +9453,7 @@
     const activeTasks = (State.todos || []).filter(t => t.status !== 'completed').length;
     const openEvents = (State.events || []).filter(e => e.status !== 'completed').length;
     const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed').length;
+    const pendingClient = (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status)).length;
     const pendingPOs = (State.pos || []).filter(p => p.status !== 'delivered').length;
     const billed = (State.raBills || []).reduce((s,b) => s + (+b.net || 0), 0);
     const contractValue = (State.projects || []).reduce((s,p) => s + (+p.value || 0), 0);
@@ -8640,7 +9463,8 @@
       { view:'events', icon:'calendar-check', label:'Events', value:openEvents, detail:'active contractual records', color:'#7C3AED' },
       { view:'materials', icon:'package', label:'Materials', value:(State.items || []).length, detail:'catalogued inventory items', color:'#15803D' },
       { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs, detail:'POs not yet delivered', color:'#7C3AED' },
-      { view:'quality', icon:'badge-check', label:'QA/QC', value:openNcrs, detail:'open NCRs', color:openNcrs ? '#C0383B' : '#15803D' },
+      { view:'quality', icon:'badge-check', label:'QA/QC', value:(State.labReports || []).length || openNcrs, detail:'lab reports and NCRs', color:openNcrs ? '#C0383B' : '#15803D' },
+      { view:'clientportal', icon:'file-check-2', label:'Client Portal', value:pendingClient, detail:'pending approvals', color:pendingClient ? '#B45309' : '#15803D' },
       { view:'billing', icon:'receipt', label:'Billing', value:(State.raBills || []).length, detail:'net billed ' + fmtNPR(billed), color:'#E8742C' },
       { view:'finance', icon:'trending-up', label:'Finance', value:(State.revenues || []).length + (State.expenses || []).length, detail:'ledger records', color:'#1E3A4C' }
     ];
@@ -8774,9 +9598,11 @@
           { view:'materials', icon:'package', title:'Inventory Flow', value:fmtINR(projectStockValue), sub:'Project stock, issues, GRN, transfers', color:'#15803D' },
           { view:'equipment', icon:'truck', title:'Equipment', value:project.equipment, sub:'Plant allocation and logsheets', color:'#B45309' },
           { view:'quality', icon:'badge-check', title:'QA / QC', value:openNcrs, sub:'NCRs, inspections, tests', color:openNcrs ? '#C0383B' : '#15803D' },
+          { view:'clientportal', icon:'file-check-2', title:'Client Portal', value:(State.clientSubmissions || []).filter(s => s.projectId === project.id && !['approved','rejected'].includes(s.approval || s.status)).length, sub:'DPR and lab approvals', color:'#7C3AED' },
           { view:'events', icon:'calendar-check', title:'Events & Claims', value:projectEvents.length, sub:'Notices, delay, EOT, VO records', color:'#7C3AED' },
           { view:'finance', icon:'trending-up', title:'Cost & Billing', value:project.margin.toFixed(1) + '%', sub:'Margin, RA bills, EAC, cashflow', color:project.margin < 3 ? '#C0383B' : '#1E3A4C' }
         ];
+        const visibleProjectModules = projectModules.filter(m => canAccessModule(m.view));
 
         if (greetEl) greetEl.textContent = project.name;
         if (stampEl) stampEl.innerHTML = `<i data-lucide="hard-hat" class="w-3 h-3"></i>${project.id} PROJECT WORKSPACE`;
@@ -8833,7 +9659,7 @@
                 <button class="btn btn-ghost text-xs" onclick="exitToPortfolio()"><i data-lucide="arrow-left" class="w-3 h-3"></i>Change Project</button>
               </div>
               <div class="p-3 project-module-grid">
-                ${projectModules.map(m => `<div class="project-module-card" data-launch-view="${m.view}" style="border-top:3px solid ${m.color}">
+                ${visibleProjectModules.map(m => `<div class="project-module-card" data-launch-view="${m.view}" style="border-top:3px solid ${m.color}">
                   <div class="flex items-start justify-between">
                     <div class="notification-dot" style="background:${m.color}18;color:${m.color}"><i data-lucide="${m.icon}" class="w-4 h-4"></i></div>
                     <div class="font-display font-black text-xl" style="color:${m.color}">${m.value}</div>
@@ -8965,7 +9791,7 @@
     `;
 
     const notifications = buildNotifications();
-    const summaryCards = moduleSummaries();
+    const summaryCards = moduleSummaries().filter(s => canAccessModule(s.view));
     const commandCenterHtml = `
       <div class="grid grid-cols-12 gap-4 mb-6">
         <div class="col-span-8">
@@ -9015,7 +9841,7 @@
       <div class="mb-5">
         <div class="text-[10px] font-mono font-bold mb-2 text-stone-500" style="letter-spacing:1px">${group.label.toUpperCase()}</div>
         <div class="dash-tile-grid">
-          ${group.tiles.map(t => {
+          ${group.tiles.filter(t => canAccessModule(t.view)).map(t => {
             const count = launcherTileCount(t.view);
             const alert = launcherTileAlert(t.view);
             return `<div class="launcher-tile" data-launch-view="${t.view}" style="border-top:3px solid ${t.color};padding:12px">
@@ -9164,7 +9990,8 @@
     se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021'], modules:['dashboard','projects','schedule','dpr','workforce','materials','equipment','quality','safety','events','todos'] },
     qc:       { name:'M. Khatri (QC)',        role:'QC Officer · Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019'], modules:['dashboard','projects','quality','safety','dpr','documents','events','todos'] },
     store:    { name:'Store Manager',          role:'Store · Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','events','todos'] },
-    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','finance','documents','events','todos'] }
+    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','finance','documents','events','todos'] },
+    client:   { name:'Client Reviewer',        role:'Client · Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','reports'] }
   };
 
   // Stage-1 (company) identity — used on the portfolio screen before a
@@ -9175,7 +10002,7 @@
   // Change these for production; documented in README.
   const ROLE_PASSCODES = {
     ceo:'ceo123', cfo:'cfo123', pm:'pm123', se:'eng123',
-    qc:'qc123', store:'store123', estimator:'est123'
+    qc:'qc123', store:'store123', estimator:'est123', client:'CL123'
   };
 
   // Current session
@@ -9255,7 +10082,7 @@
           <button type="submit" class="login-btn">ENTER PROJECT <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
           <button type="button" id="projCancel" class="login-btn" style="background:transparent;color:inherit;border:1px solid currentColor;margin-top:8px;opacity:.85">CANCEL</button>
           <div class="login-footer">
-            <div class="text-[10px] text-stone-400">Demo passcodes — Engineer <b>eng123</b> · CEO/Admin <b>ceo123</b> · Store <b>store123</b> · QC <b>qc123</b> · PM <b>pm123</b> · CFO <b>cfo123</b> · Estimator <b>est123</b></div>
+            <div class="text-[10px] text-stone-400">Demo passcodes - Engineer <b>eng123</b> - CEO/Admin <b>ceo123</b> - Store <b>store123</b> - QC <b>qc123</b> - PM <b>pm123</b> - CFO <b>cfo123</b> - Estimator <b>est123</b> - Client <b>CL123</b></div>
           </div>
         </form>
       </div>`;
@@ -9302,7 +10129,7 @@
     if (sel) sel.value = projectId;
     renderProjectBanner();
     filterSidebarByRole();
-    navTo('dashboard');
+    navTo(State.session.role === 'client' ? 'clientportal' : 'dashboard');
     return true;
   }
 
@@ -9326,9 +10153,8 @@
     if (!perm) return;
     document.querySelectorAll('.nav-item[data-view]').forEach(item => {
       const v = item.dataset.view;
-      if (State.session?.inProjectMode) { item.style.display = ''; return; }
       if (perm.modules === 'ALL') { item.style.display = ''; return; }
-      item.style.display = perm.modules.includes(v) ? '' : 'none';
+      item.style.display = Array.isArray(perm.modules) && perm.modules.includes(v) ? '' : 'none';
     });
   }
 
@@ -9970,6 +10796,11 @@
 
   // -------- NAVIGATION --------
   function navTo(view) {
+    if (!canAccessModule(view)) {
+      const fallback = canAccessModule('clientportal') ? 'clientportal' : 'dashboard';
+      toast('Access Restricted', 'This role can open only assigned project modules', 'warn');
+      view = fallback;
+    }
     $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === view));
     $$('.view').forEach(v => v.classList.remove('active'));
     const target = $('#view-' + view);
@@ -9989,6 +10820,8 @@
     if (view === 'todos')     { setTimeout(renderTodosView, 30); }
     if (view === 'estimation'){ setTimeout(renderEstimationView, 30); }
     if (view === 'dpr')       { setTimeout(renderDPRView, 30); }
+    if (view === 'quality')   { setTimeout(renderQualityView, 30); }
+    if (view === 'clientportal') { setTimeout(renderClientPortalView, 30); }
     if (view === 'finance')   { setTimeout(renderFinanceView, 30); }
     if (view === 'projectsites') { setTimeout(renderProjectSitesView, 30); }
     if (view === 'dashboard') { setTimeout(renderLauncher, 30); }
@@ -10007,7 +10840,7 @@
 
   // -------- COMMAND PALETTE (Cmd+K) --------
   const palItems = [
-    ...['dashboard','projects','schedule','tenders','estimation','dpr','workforce','materials','equipment','quality','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
+    ...['dashboard','projects','schedule','tenders','estimation','dpr','workforce','materials','equipment','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
     ...State.projects.map(p => ({ label: p.name, sub: p.id + ' · ' + p.client, kind:'Project', action: () => { navTo('projects'); setTimeout(() => openProjectDetail(p.id), 100); }})),
     { label:'New Project', kind:'Action', action: () => actNewProject() },
     { label:'New Tender', kind:'Action', action: () => actNewTender() },
