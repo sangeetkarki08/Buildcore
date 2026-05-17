@@ -224,6 +224,8 @@
   .ims-field label { display:block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 4px; }
   .ims-field input, .ims-field select, .ims-field textarea { width: 100%; border: 1px solid var(--line); padding: 8px 10px; font-size: 13px; background: #fff; font-family: inherit; }
   .ims-field input:focus, .ims-field select:focus, .ims-field textarea:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 3px rgba(232,116,44,.12); }
+  .dpr-entry-table input, .dpr-entry-table select { width:100%; border:1px solid var(--line); padding:6px 8px; font-size:12px; background:#fff; }
+  .dpr-entry-table input:focus, .dpr-entry-table select:focus { outline:none; border-color:var(--amber); box-shadow:0 0 0 2px rgba(232,116,44,.10); }
   .ims-btn-row { display:flex; gap:8px; padding-top: 8px; border-top: 1px solid var(--line); margin-top: 4px; }
   .ims-empty { text-align: center; padding: 48px 16px; color: var(--muted); }
   .ims-empty .ico { font-size: 32px; opacity: .4; margin-bottom: 12px; }
@@ -1159,7 +1161,7 @@
           <div>
             <div class="stamp mb-3"><i data-lucide="clipboard-list" class="w-3 h-3"></i>DAILY PROGRESS REPORT</div>
             <h1 class="font-display font-black text-3xl title-mark">Daily Progress Reports</h1>
-            <p class="text-sm text-stone-500 mt-3">Full CRUD on DPRs · daily log view · workforce / material / equipment / quality / issues capture per day · auto sign-off workflow · stays as legal record for claims</p>
+            <p class="text-sm text-stone-500 mt-3">Full CRUD on DPRs · project-type formats · structured workforce / material / machine / quality / issue capture · customizable legal record for claims</p>
           </div>
           <div class="flex gap-2">
             <button class="btn btn-ghost" data-dpr-act="export-csv"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
@@ -1172,6 +1174,7 @@
             <button class="ims-tab active" data-dprtab="log"><i data-lucide="calendar-days" class="w-3 h-3"></i>Daily Log</button>
             <button class="ims-tab" data-dprtab="today"><i data-lucide="sun" class="w-3 h-3"></i>Today\'s DPR</button>
             <button class="ims-tab" data-dprtab="summary"><i data-lucide="bar-chart-2" class="w-3 h-3"></i>Summary</button>
+            <button class="ims-tab" data-dprtab="templates"><i data-lucide="layout-template" class="w-3 h-3"></i>DPR Formats</button>
           </div>
           <div id="dprTabContent" class="p-5"></div>
         </div>
@@ -2790,6 +2793,7 @@
   };
   const today = () => new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
   const uid = (p='ID') => p + '-' + Math.floor(Math.random()*9000+1000);
+  const esc = (v='') => String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
   // -------- APP STATE (mutable in-memory) --------
   const State = {
@@ -2898,6 +2902,8 @@
     estCurrentTab: 'boq',
     finCurrentTab: 'pl',
     dprCurrentTab: 'log',
+    dprTemplates: {},
+    dprNextTemplateId: 1,
     estNextId: { item:1, ctr:1, exp:1, rev:1 }
   };
 
@@ -2920,7 +2926,8 @@
           savedAt: new Date().toISOString(),
           projects: State.projects, tenders: State.tenders, materials: State.materials,
           ncrs: State.ncrs, raBills: State.raBills, pos: State.pos, automations: State.automations,
-          dprs: State.dprs, vos: State.vos, risks: State.risks, photos: State.photos,
+          dprs: State.dprs, dprTemplates: State.dprTemplates, dprNextTemplateId: State.dprNextTemplateId,
+          vos: State.vos, risks: State.risks, photos: State.photos,
           activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
           audit: State.audit.slice(0,2000)
         };
@@ -2938,7 +2945,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','vos','risks','photos','activity','audit'].forEach(k => {
+      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -2953,7 +2960,8 @@
       meta: { app:'BuildCore', exportedAt: new Date().toISOString(), version:1 },
       state: { projects:State.projects, tenders:State.tenders, materials:State.materials,
         ncrs:State.ncrs, raBills:State.raBills, pos:State.pos, automations:State.automations,
-        dprs:State.dprs, vos:State.vos, risks:State.risks, photos:State.photos,
+        dprs:State.dprs, dprTemplates:State.dprTemplates, dprNextTemplateId:State.dprNextTemplateId,
+        vos:State.vos, risks:State.risks, photos:State.photos,
         activity:State.activity, audit:State.audit }
     }, null, 2);
     const blob = new Blob([data], {type:'application/json'});
@@ -6806,6 +6814,153 @@
   // =====================================================================
   //                  DAILY PROGRESS REPORTS (DPR) — full CRUD
   // =====================================================================
+  const DPR_DEFAULT_TEMPLATES = {
+    generic: {
+      key:'generic',
+      name:'General Construction DPR',
+      nature:'Building / General',
+      badge:'Default',
+      description:'Common building and civil works DPR with manpower, materials, equipment, output, QA/QC, HSE, delays, and sign-off.',
+      workHeads:['Mobilization and access','Earthwork / concrete / masonry / finishes','MEP and services','Housekeeping and demobilization'],
+      measurements:['Output quantity with BOQ/WBS reference','Location / level / chainage','Inspection hold point status','Balance quantity for tomorrow'],
+      materialFocus:['Cement','TMT / structural steel','Aggregate / sand','Bricks / blocks','Shuttering material','MEP consumables'],
+      equipmentFocus:['Crane / hoist','Concrete mixer / pump','Excavator / loader','Tipper / tractor','Welding set / small tools'],
+      qualityChecks:['Material test certificates','Slump / cube / field density tests','Pre-pour / pre-cover inspection','NCR / snag closure'],
+      safetyChecks:['TBT and PPE compliance','Permit to work','Working at height / lifting plan','Incident and near-miss log'],
+      customFields:['Client instruction','Drawing revision used','Photo reference']
+    },
+    road: {
+      key:'road',
+      name:'Road Building DPR',
+      nature:'Road / Highway',
+      badge:'Road',
+      description:'Road works DPR for chainage-wise progress, earthwork, subgrade, pavement layers, drainage, traffic management, and plant utilization.',
+      workHeads:['Clearing and grubbing','Cut / fill earthwork','Subgrade preparation','GSB / WMM / base course','DBM / asphalt / concrete pavement','Side drains / culverts / shoulders','Road furniture and marking'],
+      measurements:['Chainage from-to','Layer thickness and compacted width','Field density / compaction result','Bitumen / concrete temperature','Trips and haul distance'],
+      materialFocus:['Borrow soil','Aggregate','GSB / WMM mix','Bitumen / emulsion','Cement','Pipe / drain material','Road marking paint'],
+      equipmentFocus:['Excavator','Dozer','Grader','Roller / compactor','Paver','Bitumen sprayer','Tipper / dump truck','Water tanker'],
+      qualityChecks:['FDT / compaction','Gradation test','Core / thickness check','Asphalt temperature log','Level and camber check'],
+      safetyChecks:['Traffic diversion and signage','Plant movement spotter','Night work lighting','Dust suppression','Public access control'],
+      customFields:['Chainage obstruction','Traffic diversion status','Utility crossing status']
+    },
+    bridge: {
+      key:'bridge',
+      name:'Bridge / Underpass DPR',
+      nature:'Bridge / Underpass',
+      badge:'Bridge',
+      description:'Bridge DPR for foundations, substructure, superstructure, bearings, deck slab, approaches, river protection, and lifting records.',
+      workHeads:['Piling / foundation / open footing','Pile cap / abutment / pier','Pier cap / girder / launching','Deck slab / wearing course','Bearing / expansion joint','Approach slab / retaining wall','River training / protection works'],
+      measurements:['Pier / abutment / span reference','Concrete pour card and volume','Rebar BBS reference','Cube / slump / temperature','Lift plan and crane hours'],
+      materialFocus:['Rebar / strands','Concrete / cement','Admixture','Formwork / staging','Bearings / expansion joints','Gabion / stone / riprap'],
+      equipmentFocus:['Crawler / mobile crane','Batching plant / transit mixer','Concrete pump','Vibrator','Hydra / telehandler','Compressor / welding set'],
+      qualityChecks:['Pre-pour checklist','Rebar and cover inspection','Bearing alignment','Cube casting and curing','Survey levels and camber'],
+      safetyChecks:['Lifting permit','Work over water / edge protection','Scaffold and staging inspection','Hot work permit','Exclusion zone'],
+      customFields:['Pour card no.','Lift plan no.','River level / flood watch']
+    },
+    hydro_surface: {
+      key:'hydro_surface',
+      name:'Hydropower Surface DPR',
+      nature:'Hydropower - Surface Only',
+      badge:'Hydro Surface',
+      description:'Surface hydropower DPR for headworks, desander, canal / penstock, powerhouse, switchyard, river diversion, and access works.',
+      workHeads:['River diversion / cofferdam','Intake / headworks','Desander / settling basin','Canal / surface penstock / anchor block','Powerhouse civil works','Switchyard / tailrace','Access road and slope protection'],
+      measurements:['Structure / block / chainage reference','Excavation and concrete quantity','River flow and water level','Dewatering hours','Embedded parts installed'],
+      materialFocus:['Cement / concrete','Rebar','Aggregate / sand','Steel liner / penstock steel','Gabion / riprap','Waterproofing / grout'],
+      equipmentFocus:['Excavator','Loader','Tipper','Batching plant / mixer','Concrete pump','Dewatering pump','Crane / hydra'],
+      qualityChecks:['Concrete temperature / slump / cube','Survey level and alignment','Welding / embedded part inspection','Grout / waterproofing checks','River protection inspection'],
+      safetyChecks:['River safety and flood watch','Dewatering and electrical safety','Slope / rockfall watch','Lifting and confined area controls','Emergency access status'],
+      customFields:['River discharge','Dewatering pump hours','Cofferdam condition']
+    },
+    hydro_underground: {
+      key:'hydro_underground',
+      name:'Hydropower Underground DPR',
+      nature:'Hydropower - With Underground Structure',
+      badge:'Hydro UG',
+      description:'Underground hydropower DPR for adit, tunnel, HRT, surge shaft, underground powerhouse, blasting, mucking, support, and ventilation.',
+      workHeads:['Portal / adit preparation','Drilling and blasting','Mucking and disposal','Rock support - shotcrete / bolts / ribs','HRT / tunnel excavation','Surge shaft / underground cavern','Drainage, ventilation, lighting and services','Concrete lining / grouting'],
+      measurements:['Chainage / face advance','Round length and pull percentage','Muck quantity and trips','Rock class / RMR / Q value','Support installed by type','Gas / ventilation readings'],
+      materialFocus:['Explosives / detonators','Shotcrete material','Rock bolts / lattice girder / ribs','Cement grout','Drainage pipe','Ventilation duct','Diesel / lubricants'],
+      equipmentFocus:['Jumbo drill / jack hammer','Shotcrete machine','Compressor','Loader / LHD','Dumper','Ventilation fan','Dewatering pump','Generator'],
+      qualityChecks:['Blast log and vibration record','Rock class mapping','Shotcrete thickness','Pull-out test / bolt torque','Grout take record','Survey alignment'],
+      safetyChecks:['Blast permit and magazine record','Gas test and ventilation','Scaling / unsupported ground check','Emergency refuge and communication','Water ingress watch','PPE and access control'],
+      customFields:['Face chainage','Rock class','Blast round no.','Gas reading','Ventilation status']
+    }
+  };
+
+  function ensureDPRTemplateState() {
+    if (!State.dprTemplates || typeof State.dprTemplates !== 'object' || Array.isArray(State.dprTemplates)) State.dprTemplates = {};
+    if (!State.dprNextTemplateId) {
+      const ids = Object.keys(State.dprTemplates).map(k => Number((k.match(/custom-(\d+)/) || [])[1] || 0));
+      State.dprNextTemplateId = Math.max(1, ...ids) + 1;
+    }
+  }
+  function dprTemplateMap() {
+    ensureDPRTemplateState();
+    return Object.assign({}, DPR_DEFAULT_TEMPLATES, State.dprTemplates || {});
+  }
+  function dprTemplateOptions() { return Object.values(dprTemplateMap()); }
+  function dprTemplateByKey(key) { return dprTemplateMap()[key] || DPR_DEFAULT_TEMPLATES.generic; }
+  function dprGuessTemplateKey(projectId, siteId) {
+    const p = projectPortfolio().find(x => x.id === projectId) || State.projects.find(x => x.id === projectId) || {};
+    const site = State.projectSites.find(s => String(s.id) === String(siteId)) || {};
+    const text = [p.name, p.type, p.client, site.name, site.type, site.description].filter(Boolean).join(' ').toLowerCase();
+    if (text.includes('hydro') && (text.includes('tunnel') || text.includes('underground') || text.includes('adit') || text.includes('hrt'))) return 'hydro_underground';
+    if (text.includes('hydro')) return 'hydro_surface';
+    if (text.includes('bridge') || text.includes('underpass') || text.includes('culvert') || text.includes('deck') || text.includes('pier')) return 'bridge';
+    if (text.includes('road') || text.includes('highway') || text.includes('pavement') || text.includes('chainage') || text.includes('infrastructure')) return 'road';
+    return 'generic';
+  }
+  function dprListText(list) {
+    if (Array.isArray(list)) return list.filter(Boolean).join('\n');
+    return String(list || '').split(/\n|,/).map(x => x.trim()).filter(Boolean).join('\n');
+  }
+  function dprListFromText(text) {
+    return String(text || '').split(/\n|,/).map(x => x.trim()).filter(Boolean);
+  }
+  function dprTemplatePreviewHTML(key) {
+    const t = dprTemplateByKey(key);
+    const pill = (txt) => `<span class="badge badge-neutral" style="margin:2px">${esc(txt)}</span>`;
+    return `
+      <div class="p-3 border border-stone-200 bg-stone-50">
+        <div class="flex justify-between items-start gap-3 mb-2">
+          <div>
+            <div class="font-semibold text-sm">${esc(t.name)}</div>
+            <div class="text-xs text-stone-500">${esc(t.nature)} - ${esc(t.description || '')}</div>
+          </div>
+          <span class="badge badge-amber">${esc(t.badge || 'Format')}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div><b>Work heads</b><div class="mt-1">${(t.workHeads||[]).map(pill).join('') || '-'}</div></div>
+          <div><b>Measurements</b><div class="mt-1">${(t.measurements||[]).map(pill).join('') || '-'}</div></div>
+          <div><b>Material focus</b><div class="mt-1">${(t.materialFocus||[]).map(pill).join('') || '-'}</div></div>
+          <div><b>Machine focus</b><div class="mt-1">${(t.equipmentFocus||[]).map(pill).join('') || '-'}</div></div>
+        </div>
+      </div>
+    `;
+  }
+  function dprDefaultMaterialRows(template) {
+    return (template.materialFocus || []).slice(0,4).map(item => ({ item, qty:'', unit:'', source:'', location:'', purpose:'', wastage:'', remarks:'' }));
+  }
+  function dprDefaultEquipmentRows(template) {
+    return (template.equipmentFocus || []).slice(0,4).map(equipment => ({ equipment, operator:'', startMeter:'', endMeter:'', workingHours:'', idleHours:'', fuel:'', output:'', condition:'OK', remarks:'' }));
+  }
+  function dprMaterialRows(d) { return Array.isArray(d.materialEntries) ? d.materialEntries : []; }
+  function dprEquipmentRows(d) { return Array.isArray(d.equipmentEntries) ? d.equipmentEntries : []; }
+  function dprCustomRows(d) { return Array.isArray(d.customSections) ? d.customSections : []; }
+  function dprMaterialText(d) {
+    const rows = dprMaterialRows(d).filter(r => r.item || r.qty || r.purpose);
+    if (!rows.length) return d.materialConsumed || '';
+    return rows.map(r => [r.item, [r.qty, r.unit].filter(Boolean).join(' '), r.location, r.purpose].filter(Boolean).join(' - ')).join('\n');
+  }
+  function dprEquipmentText(d) {
+    const rows = dprEquipmentRows(d).filter(r => r.equipment || r.workingHours || r.output);
+    if (!rows.length) return d.equipmentUsed || '';
+    return rows.map(r => [r.equipment, r.operator ? 'Op: ' + r.operator : '', r.workingHours ? r.workingHours + ' hrs' : '', r.fuel ? r.fuel + ' L fuel' : '', r.output].filter(Boolean).join(' - ')).join('\n');
+  }
+  function dprMachineHours(d) {
+    return dprEquipmentRows(d).reduce((s,r) => s + (Number(r.workingHours) || 0), 0);
+  }
+
   function seedDPRData() {
     if (State.dprs.length > 0) return;
     seedProjectSites(); // ensure sites exist
@@ -6836,13 +6991,31 @@
         plannedLabour: 168, actualLabour: labour, ot: i%3===0 ? Math.round(Math.random()*40) : 0,
         masons: Math.round(labour*.34), carpenters: Math.round(labour*.16), steelFixers: Math.round(labour*.10), helpers: Math.round(labour*.30), mep: Math.round(labour*.06), other: Math.round(labour*.04),
         // Activities (free text bullet list)
+        dprTemplateKey: 'generic',
+        projectNature: 'Building / General',
         activitiesPlanned: 'L4 column rebar tying · L4 slab shuttering · Brickwork L3 (240 sqm) · Internal plaster L2 (180 sqm)',
         activitiesExecuted: isRainy ? 'L4 column rebar (50% complete) · Other activities stopped due to rain' : 'L4 column rebar tying (8 columns) · L4 slab shuttering 60% · Brickwork L3 168 sqm · Plaster L2 142 sqm',
         // Material consumed
         materialConsumed: 'OPC 80 bags · TMT 16mm 1.8 MT · Brick A 4,200 nos · Sand 24 cft · Aggregate 18 cft · Binding wire 8 kg',
+        materialEntries: [
+          { item:'OPC 53 Cement', qty:80, unit:'bag', source:'WH-A', location:'L4 / L3', purpose:'Concrete and masonry', wastage:1, remarks:'Batch SHV-OPC-2604-A' },
+          { item:'TMT 16mm', qty:1.8, unit:'MT', source:'Steel yard', location:'L4 columns', purpose:'Rebar fixing', wastage:0.02, remarks:'BBS L4-COL' },
+          { item:'Brick Class-A', qty:4200, unit:'nos', source:'WH-A', location:'L3', purpose:'Brickwork', wastage:45, remarks:'' },
+          { item:'Sand / aggregate', qty:42, unit:'cft', source:'Stock pile', location:'Mixer bay', purpose:'Mortar and concrete', wastage:2, remarks:'' }
+        ],
         // Equipment used
         equipmentUsed: 'Tower crane (8 hrs) · Concrete mixer (6 hrs) · JCB 3DX (4 hrs) · Welding (3 hrs)',
         equipmentBreakdown: i === 7 ? 'Concrete pump · seal leak · 2 hrs downtime · resolved' : '',
+        equipmentEntries: [
+          { equipment:'Tower crane', operator:'Dipak Rai', startMeter:'', endMeter:'', workingHours:8, idleHours:0.5, fuel:0, output:'Lifting reinforcement and shuttering', condition:'OK', remarks:'' },
+          { equipment:'Concrete mixer', operator:'Krishna Lama', startMeter:'', endMeter:'', workingHours:6, idleHours:0.5, fuel:28, output:'Concrete / mortar batching', condition:'OK', remarks:'' },
+          { equipment:'JCB 3DX', operator:'Bishnu Magar', startMeter:'', endMeter:'', workingHours:4, idleHours:1, fuel:22, output:'Material shifting and trench trimming', condition:'OK', remarks:'' },
+          { equipment:'Welding set', operator:'Manoj Khadka', startMeter:'', endMeter:'', workingHours:3, idleHours:0, fuel:4, output:'Rebar and embedded plate tack welds', condition:'OK', remarks:'' }
+        ],
+        customSections: [
+          { label:'Drawing revision used', value:'STR-L4-R2' },
+          { label:'Photo reference', value:'DPR-' + ds + '-PH-01 to 08' }
+        ],
         // Output
         outputCum: output, outputSqm: 80 + Math.round(Math.random()*40),
         productivity: (labour > 0 ? (output / (labour * 8) * 100).toFixed(2) : '0'),
@@ -6888,6 +7061,7 @@
   let dprSelectedDate = null;
 
   function renderDPRView() {
+    ensureDPRTemplateState();
     seedDPRData();
     renderDPRKPIs();
     document.querySelectorAll('#view-dpr .ims-tab').forEach(btn => {
@@ -6911,7 +7085,8 @@
     const dprs = dprCurrentList();
     const last7 = dprs.filter(d => { const days = Math.floor((Date.now() - new Date(d.date).getTime()) / 86400000); return days <= 7; });
     const avgLabour = last7.length > 0 ? Math.round(last7.reduce((s,d) => s + (Number(d.actualLabour)||0), 0) / last7.length) : 0;
-    const avgProductivity = last7.length > 0 ? (last7.reduce((s,d) => s + (Number(d.productivity)||0), 0) / last7.length).toFixed(2) : '0';
+    const materialLines = dprs.reduce((s,d) => s + dprMaterialRows(d).filter(r => r.item || r.qty || r.purpose).length, 0);
+    const machineHours = dprs.reduce((s,d) => s + dprMachineHours(d), 0);
     const today = new Date().toISOString().slice(0,10);
     const todayDPR = dprs.find(d => d.date === today);
     const pendingAck = dprs.filter(d => d.clientAck === 'pending').length;
@@ -6920,7 +7095,8 @@
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">TOTAL DPRs</div><div class="font-display font-black text-2xl tabular">${dprs.length}</div></div>
       <div class="kpi ${todayDPR ? 'kpi-green' : 'kpi-red'}"><div class="font-mono text-[10px] text-stone-500">TODAY'S DPR</div><div class="font-display font-black text-2xl tabular">${todayDPR ? '✓' : '✗'}</div><div class="text-xs text-stone-500 mt-1">${todayDPR ? todayDPR.status.toUpperCase() : 'Not filed'}</div></div>
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">AVG LABOUR · 7d</div><div class="font-display font-black text-2xl tabular">${avgLabour}</div></div>
-      <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">AVG PRODUCTIVITY</div><div class="font-display font-black text-2xl tabular">${avgProductivity}</div></div>
+      <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">MATERIAL LINES</div><div class="font-display font-black text-2xl tabular">${materialLines}</div></div>
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">MACHINE HRS</div><div class="font-display font-black text-2xl tabular" style="color:#B45309">${machineHours.toFixed(1)}</div></div>
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">PENDING ACK</div><div class="font-display font-black text-2xl tabular" style="color:#B45309">${pendingAck}</div></div>
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">DAYS WITH ISSUES</div><div class="font-display font-black text-2xl tabular" style="color:${issues>0?'#C0383B':'#15803D'}">${issues}</div></div>
     `;
@@ -6932,6 +7108,7 @@
     if (tab === 'log')     return renderDPRLog(c);
     if (tab === 'today')   return renderDPRToday(c);
     if (tab === 'summary') return renderDPRSummary(c);
+    if (tab === 'templates') return renderDPRTemplates(c);
   }
 
   function renderDPRLog(c) {
@@ -6946,7 +7123,7 @@
       </div>
       <table class="data">
         <thead><tr>
-          <th class="sortable">Date</th><th>Site</th><th>Weather</th>
+          <th class="sortable">Date</th><th>Site</th><th>Format</th><th>Weather</th>
           <th class="text-right">Labour</th><th class="text-right">Output</th><th class="text-right">Productivity</th>
           <th>Key Activities</th><th>Issues</th>
           <th>Status</th><th>PMC Ack</th><th></th>
@@ -6954,10 +7131,12 @@
         <tbody id="dprLogBody">
           ${dprs.map(d => {
             const site = State.projectSites.find(s => s.id === d.siteId);
-            const sb = (d.date + ' ' + (d.weather||'') + ' ' + (site?.name||'') + ' ' + (d.activitiesExecuted||'') + ' ' + (d.delays||'')).toLowerCase();
+            const tpl = dprTemplateByKey(d.dprTemplateKey || dprGuessTemplateKey(d.projectId, d.siteId));
+            const sb = (d.date + ' ' + (d.weather||'') + ' ' + (site?.name||'') + ' ' + tpl.name + ' ' + dprMaterialText(d) + ' ' + dprEquipmentText(d) + ' ' + (d.activitiesExecuted||'') + ' ' + (d.delays||'')).toLowerCase();
             return `<tr data-search="${sb}" class="clickable" onclick="dprView('${d.id}')">
               <td class="font-mono"><b>${d.date}</b></td>
               <td class="text-xs">${site ? `<b>${site.code}</b><div class="text-[10px] text-stone-500">${site.name.slice(0,20)}</div>` : '<span class="text-stone-400">—</span>'}</td>
+              <td class="text-xs"><span class="badge badge-neutral">${esc(tpl.badge || tpl.nature || 'DPR')}</span></td>
               <td class="text-xs">${d.weather === 'Heavy rain' ? '🌧️' : d.weather === 'Sunny' ? '☀️' : '☁️'} ${d.weather}${d.temperature ? ' · ' + d.temperature : ''}</td>
               <td class="text-right font-mono"><b>${d.actualLabour}</b><span class="text-[10px] text-stone-500">/${d.plannedLabour||168}</span></td>
               <td class="text-right font-mono">${d.outputCum||0} m³</td>
@@ -6971,7 +7150,7 @@
                 <button class="ims-icon-btn danger" onclick="dprDelete('${d.id}')" title="Delete">🗑</button>
               </div></td>
             </tr>`;
-          }).join('') || '<tr><td colspan="11" class="text-center text-stone-400 py-8">No DPRs filed yet · click "New DPR" to create the first one</td></tr>'}
+          }).join('') || '<tr><td colspan="12" class="text-center text-stone-400 py-8">No DPRs filed yet · click "New DPR" to create the first one</td></tr>'}
         </tbody>
       </table>
     `;
@@ -6999,6 +7178,86 @@
     c.innerHTML = renderDPRDetailHTML(dpr);
   }
 
+  function dprTemplateDetailHTML(d) {
+    const tpl = dprTemplateByKey(d.dprTemplateKey || dprGuessTemplateKey(d.projectId, d.siteId));
+    const chips = (list) => (list || []).slice(0,8).map(x => `<span class="badge badge-neutral" style="margin:2px">${esc(x)}</span>`).join('') || '<span class="text-stone-400">-</span>';
+    return `
+      <div class="card p-5 mb-4" style="border-left:4px solid #E8742C">
+        <div class="flex justify-between items-start gap-3 mb-3">
+          <div>
+            <div class="text-xs font-mono font-bold" style="color:#E8742C">DPR FORMAT</div>
+            <div class="font-display font-bold text-lg mt-1">${esc(tpl.name)}</div>
+            <div class="text-xs text-stone-500">${esc(tpl.nature)} - ${esc(tpl.description || '')}</div>
+          </div>
+          <span class="badge badge-amber">${esc(tpl.badge || 'FORMAT')}</span>
+        </div>
+        <div class="grid grid-cols-4 gap-3 text-xs">
+          <div><b>Work heads</b><div class="mt-1">${chips(tpl.workHeads)}</div></div>
+          <div><b>Measurements</b><div class="mt-1">${chips(tpl.measurements)}</div></div>
+          <div><b>QA/QC checks</b><div class="mt-1">${chips(tpl.qualityChecks)}</div></div>
+          <div><b>Safety checks</b><div class="mt-1">${chips(tpl.safetyChecks)}</div></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function dprMaterialDetailHTML(d) {
+    const rows = dprMaterialRows(d).filter(r => r.item || r.qty || r.purpose);
+    if (!rows.length) return `<div class="text-sm whitespace-pre-line">${esc(d.materialConsumed || '—')}</div>`;
+    return `
+      <div class="overflow-x-auto">
+        <table class="data text-xs">
+          <thead><tr><th>Material</th><th class="text-right">Qty</th><th>Source</th><th>Location</th><th>Purpose</th><th class="text-right">Wastage</th><th>Remarks</th></tr></thead>
+          <tbody>${rows.map(r => `<tr>
+            <td><b>${esc(r.item)}</b></td>
+            <td class="text-right font-mono">${esc(r.qty)} ${esc(r.unit || '')}</td>
+            <td>${esc(r.source || '—')}</td>
+            <td>${esc(r.location || '—')}</td>
+            <td>${esc(r.purpose || '—')}</td>
+            <td class="text-right font-mono">${esc(r.wastage || 0)}</td>
+            <td>${esc(r.remarks || '')}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function dprEquipmentDetailHTML(d) {
+    const rows = dprEquipmentRows(d).filter(r => r.equipment || r.workingHours || r.output);
+    if (!rows.length) return `<div class="text-sm whitespace-pre-line">${esc(d.equipmentUsed || '—')}</div>`;
+    return `
+      <div class="overflow-x-auto">
+        <table class="data text-xs">
+          <thead><tr><th>Machine</th><th>Operator</th><th class="text-right">Hrs</th><th class="text-right">Idle</th><th class="text-right">Fuel L</th><th>Output / Work</th><th>Condition</th><th>Remarks</th></tr></thead>
+          <tbody>${rows.map(r => `<tr>
+            <td><b>${esc(r.equipment)}</b></td>
+            <td>${esc(r.operator || '—')}</td>
+            <td class="text-right font-mono">${esc(r.workingHours || 0)}</td>
+            <td class="text-right font-mono">${esc(r.idleHours || 0)}</td>
+            <td class="text-right font-mono">${esc(r.fuel || 0)}</td>
+            <td>${esc(r.output || '—')}</td>
+            <td><span class="badge badge-${String(r.condition || 'OK').toLowerCase().includes('break') ? 'bad' : 'ok'}">${esc(r.condition || 'OK')}</span></td>
+            <td>${esc(r.remarks || '')}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      ${d.equipmentBreakdown ? `<div class="mt-2 p-2 text-xs" style="background:#FEE2E2;border-left:2px solid #C0383B;color:#C0383B"><b>Breakdown:</b> ${esc(d.equipmentBreakdown)}</div>` : ''}
+    `;
+  }
+
+  function dprCustomDetailHTML(d) {
+    const rows = dprCustomRows(d).filter(r => r.label || r.value);
+    if (!rows.length) return '';
+    return `
+      <div class="card p-5 mb-4">
+        <div class="text-xs font-mono font-bold mb-3" style="color:#E8742C">CUSTOM DPR FIELDS</div>
+        <div class="grid grid-cols-3 gap-3 text-sm">
+          ${rows.map(r => `<div class="border border-stone-200 p-3"><div class="text-[10px] text-stone-500">${esc(r.label || 'Field')}</div><div class="font-semibold mt-1 whitespace-pre-line">${esc(r.value || '—')}</div></div>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   function renderDPRDetailHTML(d) {
     return `
       <div class="flex justify-between items-start mb-4 pb-3 border-b border-stone-200">
@@ -7019,6 +7278,7 @@
         <div class="ims-stat" style="border-color:#0EA5E9"><div class="lbl">Wind</div><div class="val">${d.windSpeed || '—'}</div></div>
         <div class="ims-stat" style="border-color:#E8742C"><div class="lbl">Workable Hrs</div><div class="val">${d.workableHours || 0}h</div></div>
       </div>
+      ${dprTemplateDetailHTML(d)}
       <!-- Workforce -->
       <div class="card p-5 mb-4">
         <div class="text-xs font-mono font-bold mb-3" style="color:#E8742C">👷 WORKFORCE</div>
@@ -7052,18 +7312,18 @@
       <div class="grid grid-cols-3 gap-4 mb-4">
         <div class="card p-5">
           <div class="text-xs font-mono font-bold mb-2" style="color:#E8742C">📦 MATERIAL CONSUMED</div>
-          <div class="text-sm whitespace-pre-line">${d.materialConsumed || '—'}</div>
+          ${dprMaterialDetailHTML(d)}
         </div>
         <div class="card p-5">
           <div class="text-xs font-mono font-bold mb-2" style="color:#E8742C">🚜 EQUIPMENT USED</div>
-          <div class="text-sm whitespace-pre-line">${d.equipmentUsed || '—'}</div>
-          ${d.equipmentBreakdown ? `<div class="mt-2 p-2 text-xs" style="background:#FEE2E2;border-left:2px solid #C0383B;color:#C0383B"><b>⚠ Breakdown:</b> ${d.equipmentBreakdown}</div>` : ''}
+          ${dprEquipmentDetailHTML(d)}
         </div>
         <div class="card p-5">
           <div class="text-xs font-mono font-bold mb-2" style="color:#E8742C">📊 OUTPUT</div>
           <div class="grid grid-cols-2 gap-2 text-sm">
             <div><div class="text-[10px] text-stone-500">VOLUME</div><div class="font-mono font-bold">${d.outputCum||0} m³</div></div>
             <div><div class="text-[10px] text-stone-500">AREA</div><div class="font-mono font-bold">${d.outputSqm||0} sqm</div></div>
+            <div><div class="text-[10px] text-stone-500">MACHINE HRS</div><div class="font-mono font-bold">${dprMachineHours(d).toFixed(1)}</div></div>
             <div class="col-span-2"><div class="text-[10px] text-stone-500">PRODUCTIVITY</div><div class="font-mono font-bold" style="color:#E8742C">${d.productivity || '0'} (output/manhour)</div></div>
           </div>
         </div>
@@ -7107,6 +7367,7 @@
         <div class="text-xs font-mono font-bold mb-2" style="color:#E8742C">🗓️ TOMORROW'S PLAN</div>
         <div class="text-sm whitespace-pre-line">${d.tomorrowPlan || '—'}</div>
       </div>
+      ${dprCustomDetailHTML(d)}
       ${d.generalNotes ? `<div class="card p-5 mb-4"><div class="text-xs font-mono font-bold mb-2">📝 GENERAL NOTES</div><div class="text-sm whitespace-pre-line">${d.generalNotes}</div></div>` : ''}
       <!-- Sign-offs -->
       <div class="card p-5">
@@ -7144,6 +7405,83 @@
   }
   window.dprView = dprView;
 
+  function dprMaterialFormRowHTML(r={}) {
+    return `<tr data-dpr-mat>
+      <td><input data-mat-field="item" value="${esc(r.item||'')}" placeholder="Cement / steel / aggregate" style="min-width:150px"></td>
+      <td><input type="number" step="0.001" data-mat-field="qty" value="${esc(r.qty||'')}" style="min-width:90px"></td>
+      <td><input data-mat-field="unit" value="${esc(r.unit||'')}" placeholder="bag, MT, cum" style="min-width:80px"></td>
+      <td><input data-mat-field="source" value="${esc(r.source||'')}" placeholder="Store / vendor" style="min-width:120px"></td>
+      <td><input data-mat-field="location" value="${esc(r.location||'')}" placeholder="Chainage / block / WBS" style="min-width:140px"></td>
+      <td><input data-mat-field="purpose" value="${esc(r.purpose||'')}" placeholder="Used for..." style="min-width:150px"></td>
+      <td><input type="number" step="0.001" data-mat-field="wastage" value="${esc(r.wastage||'')}" style="min-width:90px"></td>
+      <td><input data-mat-field="remarks" value="${esc(r.remarks||'')}" style="min-width:150px"></td>
+      <td><button type="button" class="ims-icon-btn danger" data-row-remove title="Remove">x</button></td>
+    </tr>`;
+  }
+
+  function dprEquipmentFormRowHTML(r={}) {
+    return `<tr data-dpr-eq>
+      <td><input data-eq-field="equipment" value="${esc(r.equipment||'')}" placeholder="Machine name" style="min-width:150px"></td>
+      <td><input data-eq-field="operator" value="${esc(r.operator||'')}" placeholder="Operator" style="min-width:130px"></td>
+      <td><input type="number" step="0.1" data-eq-field="startMeter" value="${esc(r.startMeter||'')}" style="min-width:90px"></td>
+      <td><input type="number" step="0.1" data-eq-field="endMeter" value="${esc(r.endMeter||'')}" style="min-width:90px"></td>
+      <td><input type="number" step="0.1" data-eq-field="workingHours" value="${esc(r.workingHours||'')}" style="min-width:90px"></td>
+      <td><input type="number" step="0.1" data-eq-field="idleHours" value="${esc(r.idleHours||'')}" style="min-width:80px"></td>
+      <td><input type="number" step="0.1" data-eq-field="fuel" value="${esc(r.fuel||'')}" style="min-width:80px"></td>
+      <td><input data-eq-field="output" value="${esc(r.output||'')}" placeholder="Work output" style="min-width:170px"></td>
+      <td><select data-eq-field="condition" style="min-width:100px">${['OK','Idle','Breakdown','Maintenance'].map(v => `<option ${v===(r.condition||'OK')?'selected':''}>${v}</option>`).join('')}</select></td>
+      <td><input data-eq-field="remarks" value="${esc(r.remarks||'')}" style="min-width:150px"></td>
+      <td><button type="button" class="ims-icon-btn danger" data-row-remove title="Remove">x</button></td>
+    </tr>`;
+  }
+
+  function dprCustomFormRowHTML(r={}) {
+    return `<tr data-dpr-custom>
+      <td><input data-custom-field="label" value="${esc(r.label||'')}" placeholder="Field name" style="min-width:220px"></td>
+      <td><input data-custom-field="value" value="${esc(r.value||'')}" placeholder="Value / observation" style="min-width:360px"></td>
+      <td><button type="button" class="ims-icon-btn danger" data-row-remove title="Remove">x</button></td>
+    </tr>`;
+  }
+
+  function dprCollectRows(rowSelector, attrName, fields) {
+    return $$(rowSelector).map(row => {
+      const obj = {};
+      fields.forEach(f => obj[f] = (row.querySelector(`[${attrName}="${f}"]`)?.value || '').trim());
+      return obj;
+    }).filter(obj => fields.some(f => obj[f] !== ''));
+  }
+
+  function dprWireForm() {
+    const body = $('#modalBody');
+    const tplSel = $('#dprTemplateKey');
+    const preview = $('#dprTemplatePreview');
+    const nature = $('#dprProjectNature');
+    const matBody = $('#dprMaterialRows');
+    const eqBody = $('#dprEquipmentRows');
+    const customBody = $('#dprCustomRows');
+    const applyTemplateRows = () => {
+      const tpl = dprTemplateByKey(tplSel?.value);
+      if (nature) nature.value = tpl.nature;
+      if (preview) preview.innerHTML = dprTemplatePreviewHTML(tpl.key);
+      if (matBody) matBody.innerHTML = dprDefaultMaterialRows(tpl).map(dprMaterialFormRowHTML).join('');
+      if (eqBody) eqBody.innerHTML = dprDefaultEquipmentRows(tpl).map(dprEquipmentFormRowHTML).join('');
+      if (customBody) customBody.innerHTML = (tpl.customFields || []).map(label => dprCustomFormRowHTML({ label, value:'' })).join('');
+    };
+    tplSel?.addEventListener('change', () => {
+      const tpl = dprTemplateByKey(tplSel.value);
+      if (nature) nature.value = tpl.nature;
+      if (preview) preview.innerHTML = dprTemplatePreviewHTML(tpl.key);
+    });
+    $('#dprApplyTemplateRows')?.addEventListener('click', applyTemplateRows);
+    $('#dprAddMaterial')?.addEventListener('click', () => { if (matBody) matBody.insertAdjacentHTML('beforeend', dprMaterialFormRowHTML()); });
+    $('#dprAddEquipment')?.addEventListener('click', () => { if (eqBody) eqBody.insertAdjacentHTML('beforeend', dprEquipmentFormRowHTML()); });
+    $('#dprAddCustom')?.addEventListener('click', () => { if (customBody) customBody.insertAdjacentHTML('beforeend', dprCustomFormRowHTML()); });
+    body?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-row-remove]');
+      if (btn) btn.closest('tr')?.remove();
+    });
+  }
+
   function dprEdit(id) {
     const pid = State.session?.projectId || State.activeProject || 'PRJ-017';
     if (pid === 'ALL') { toast('Select project','Enter a project first','warn'); return; }
@@ -7151,8 +7489,15 @@
     if (!id && !ensureSitesExistOrRedirect()) return;
     const today = new Date().toISOString().slice(0,10);
     const sites = projectSitesFor(pid);
+    const blankTemplateKey = dprGuessTemplateKey(pid, sites[0]?.id);
+    const blankTemplate = dprTemplateByKey(blankTemplateKey);
     const d = id ? State.dprs.find(x => x.id === id) : { id:'', projectId:pid, siteId: sites[0]?.id || null, date:today, weather:'Sunny', temperature:'28°C', humidity:'55%', windSpeed:'5 km/h', workableHours:9, plannedLabour:168, actualLabour:0, ot:0, masons:0, carpenters:0, steelFixers:0, helpers:0, mep:0, other:0, activitiesPlanned:'', activitiesExecuted:'', materialConsumed:'', equipmentUsed:'', equipmentBreakdown:'', outputCum:0, outputSqm:0, productivity:0, testsPerformed:'', ncrIssued:'', safetyIncidents:'', tbtTopic:'', tbtAttendance:0, visitors:'', delays:'', rfi:'', waterConsumed:'', dieselConsumed:'', electricity:'', tomorrowPlan:'', preparedBy:State.session?.user?.name || 'R. Tamang (PM)', verifiedBy:'', qcSignoff:'', clientAck:'pending', status:'draft', generalNotes:'' };
     if (!d) return;
+    if (!d.dprTemplateKey) d.dprTemplateKey = blankTemplateKey;
+    if (!d.projectNature) d.projectNature = dprTemplateByKey(d.dprTemplateKey).nature;
+    if (!Array.isArray(d.materialEntries)) d.materialEntries = id ? [] : dprDefaultMaterialRows(blankTemplate);
+    if (!Array.isArray(d.equipmentEntries)) d.equipmentEntries = id ? [] : dprDefaultEquipmentRows(blankTemplate);
+    if (!Array.isArray(d.customSections)) d.customSections = id ? [] : (blankTemplate.customFields || []).map(label => ({ label, value:'' }));
     openModal({
       title: id ? 'Edit DPR · ' + d.date : 'Create New DPR',
       wide: true,
@@ -7165,6 +7510,12 @@
             <div class="ims-field"><label>Project</label><input value="${d.projectId}" readonly style="background:#fafaf6"></div>
             <div class="ims-field"><label>Work Site *</label><select name="siteId" required>${sites.map(s => `<option value="${s.id}" ${s.id===d.siteId?'selected':''}>${s.code} · ${s.name}</option>`).join('')}</select></div>
           </div>
+          <div class="text-xs font-mono font-bold mt-3 mb-1" style="color:#E8742C">DPR FORMAT / PROJECT NATURE</div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Default DPR Format *</label><select name="dprTemplateKey" id="dprTemplateKey" required>${dprTemplateOptions().map(t => `<option value="${esc(t.key)}" ${t.key===d.dprTemplateKey?'selected':''}>${esc(t.name)} - ${esc(t.nature)}</option>`).join('')}</select></div>
+            <div class="ims-field"><label>Project Nature</label><input name="projectNature" id="dprProjectNature" value="${esc(d.projectNature || dprTemplateByKey(d.dprTemplateKey).nature)}" placeholder="Road / Bridge / Hydropower / Custom"></div>
+          </div>
+          <div id="dprTemplatePreview" class="mb-2">${dprTemplatePreviewHTML(d.dprTemplateKey)}</div>
           <div class="ims-form-row">
             <div class="ims-field"><label>Status</label><select name="status">${['draft','submitted','acknowledged'].map(s => `<option value="${s}" ${s===d.status?'selected':''}>${s.toUpperCase()}</option>`).join('')}</select></div>
             <div class="ims-field"></div>
@@ -7202,6 +7553,39 @@
           <div class="ims-field"><label>Material Consumed</label><textarea name="materialConsumed" rows="2" placeholder="Qty + unit of each material used">${d.materialConsumed||''}</textarea></div>
           <div class="ims-field"><label>Equipment Used</label><textarea name="equipmentUsed" rows="2" placeholder="Equipment names with hours">${d.equipmentUsed||''}</textarea></div>
           <div class="ims-field"><label>Equipment Breakdown / Issues</label><input name="equipmentBreakdown" value="${d.equipmentBreakdown||''}" placeholder="Any breakdowns and downtime"></div>
+          <div class="flex justify-between items-center mt-3 mb-2">
+            <div class="text-xs font-mono font-bold" style="color:#E8742C">STRUCTURED MATERIAL USAGE</div>
+            <div class="flex gap-2">
+              <button type="button" class="btn btn-ghost text-xs" id="dprApplyTemplateRows">Load format rows</button>
+              <button type="button" class="btn btn-ghost text-xs" id="dprAddMaterial">+ Material</button>
+            </div>
+          </div>
+          <div class="overflow-x-auto border border-stone-200">
+            <table class="data dpr-entry-table text-xs">
+              <thead><tr><th>Material</th><th class="text-right">Qty</th><th>Unit</th><th>Source</th><th>Location/WBS</th><th>Purpose</th><th class="text-right">Wastage</th><th>Remarks</th><th></th></tr></thead>
+              <tbody id="dprMaterialRows">${d.materialEntries.map(dprMaterialFormRowHTML).join('')}</tbody>
+            </table>
+          </div>
+          <div class="flex justify-between items-center mt-3 mb-2">
+            <div class="text-xs font-mono font-bold" style="color:#E8742C">STRUCTURED MACHINE USAGE</div>
+            <button type="button" class="btn btn-ghost text-xs" id="dprAddEquipment">+ Machine</button>
+          </div>
+          <div class="overflow-x-auto border border-stone-200">
+            <table class="data dpr-entry-table text-xs">
+              <thead><tr><th>Machine</th><th>Operator</th><th class="text-right">Start</th><th class="text-right">End</th><th class="text-right">Hrs</th><th class="text-right">Idle</th><th class="text-right">Fuel</th><th>Output / Work</th><th>Condition</th><th>Remarks</th><th></th></tr></thead>
+              <tbody id="dprEquipmentRows">${d.equipmentEntries.map(dprEquipmentFormRowHTML).join('')}</tbody>
+            </table>
+          </div>
+          <div class="flex justify-between items-center mt-3 mb-2">
+            <div class="text-xs font-mono font-bold" style="color:#E8742C">CUSTOM DPR OPTIONS</div>
+            <button type="button" class="btn btn-ghost text-xs" id="dprAddCustom">+ Custom Field</button>
+          </div>
+          <div class="overflow-x-auto border border-stone-200">
+            <table class="data dpr-entry-table text-xs">
+              <thead><tr><th>Field</th><th>Value / Observation</th><th></th></tr></thead>
+              <tbody id="dprCustomRows">${d.customSections.map(dprCustomFormRowHTML).join('')}</tbody>
+            </table>
+          </div>
           <div class="text-xs font-mono font-bold mt-3 mb-1" style="color:#E8742C">📊 OUTPUT</div>
           <div class="ims-form-row-3">
             <div class="ims-field"><label>Output (m³)</label><input type="number" name="outputCum" min="0" step="0.1" value="${d.outputCum||0}"></div>
@@ -7244,8 +7628,15 @@
         const fd = new FormData($('#dprForm'));
         const obj = id ? {...d} : { projectId: pid };
         fd.forEach((v,k) => obj[k] = v);
+        obj.materialEntries = dprCollectRows('#dprMaterialRows tr', 'data-mat-field', ['item','qty','unit','source','location','purpose','wastage','remarks']);
+        obj.equipmentEntries = dprCollectRows('#dprEquipmentRows tr', 'data-eq-field', ['equipment','operator','startMeter','endMeter','workingHours','idleHours','fuel','output','condition','remarks']);
+        obj.customSections = dprCollectRows('#dprCustomRows tr', 'data-custom-field', ['label','value']);
         // Coerce numeric fields
         ['workableHours','plannedLabour','actualLabour','ot','masons','carpenters','steelFixers','helpers','mep','other','outputCum','outputSqm','productivity','tbtAttendance'].forEach(k => obj[k] = Number(obj[k]||0));
+        obj.materialEntries.forEach(r => { ['qty','wastage'].forEach(k => r[k] = r[k] === '' ? '' : Number(r[k]||0)); });
+        obj.equipmentEntries.forEach(r => { ['startMeter','endMeter','workingHours','idleHours','fuel'].forEach(k => r[k] = r[k] === '' ? '' : Number(r[k]||0)); });
+        if (!obj.materialConsumed) obj.materialConsumed = dprMaterialText(obj);
+        if (!obj.equipmentUsed) obj.equipmentUsed = dprEquipmentText(obj);
         if (obj.siteId) obj.siteId = Number(obj.siteId);
         if (id) { Object.assign(d, obj); audit('update','DPR · ' + d.id, obj.date); }
         else { obj.id = 'DPR-' + obj.date + '-' + obj.projectId.replace('-',''); State.dprs.push(obj); audit('create','DPR · ' + obj.id, obj.date + ' · ' + obj.activitiesExecuted.slice(0,40)); }
@@ -7254,6 +7645,7 @@
         renderDPRView();
       }
     });
+    setTimeout(dprWireForm, 60);
   }
   window.dprEdit = dprEdit;
 
@@ -7266,6 +7658,126 @@
   }
   window.dprDelete = dprDelete;
 
+  function renderDPRTemplates(c) {
+    ensureDPRTemplateState();
+    const list = dprTemplateOptions();
+    c.innerHTML = `
+      <div class="flex justify-between items-start mb-4 gap-3 flex-wrap">
+        <div>
+          <div class="font-display font-bold text-lg">DPR Formats by Project Nature</div>
+          <div class="text-xs text-stone-500">Built-in formats for road, bridge, hydropower surface, hydropower underground, and general construction. Custom formats are saved with the project data.</div>
+        </div>
+        <button class="btn btn-amber" onclick="dprTemplateEdit()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Custom Format</button>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        ${list.map(t => {
+          const isDefault = !!DPR_DEFAULT_TEMPLATES[t.key];
+          const used = State.dprs.filter(d => d.dprTemplateKey === t.key).length;
+          return `<div class="card p-4" style="border-top:3px solid ${isDefault ? '#E8742C' : '#15803D'}">
+            <div class="flex justify-between items-start gap-2">
+              <div>
+                <div class="font-display font-bold text-base">${esc(t.name)}</div>
+                <div class="text-xs text-stone-500 mt-1">${esc(t.nature)} - ${esc(t.description || '')}</div>
+              </div>
+              <span class="badge badge-${isDefault ? 'amber' : 'ok'}">${isDefault ? 'BUILT-IN' : 'CUSTOM'}</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 mt-3 text-center">
+              <div class="p-2 bg-stone-50"><div class="text-[9px] text-stone-500">WORK</div><div class="font-mono font-bold">${(t.workHeads||[]).length}</div></div>
+              <div class="p-2 bg-stone-50"><div class="text-[9px] text-stone-500">MATERIAL</div><div class="font-mono font-bold">${(t.materialFocus||[]).length}</div></div>
+              <div class="p-2 bg-stone-50"><div class="text-[9px] text-stone-500">MACHINE</div><div class="font-mono font-bold">${(t.equipmentFocus||[]).length}</div></div>
+              <div class="p-2 bg-stone-50"><div class="text-[9px] text-stone-500">USED</div><div class="font-mono font-bold">${used}</div></div>
+            </div>
+            <div class="text-xs mt-3"><b>Default work heads:</b><br>${esc((t.workHeads||[]).slice(0,6).join(', '))}</div>
+            <div class="flex gap-2 mt-4">
+              <button class="btn btn-ghost text-xs" onclick="dprTemplateEdit('${t.key}')">${isDefault ? 'Customize Copy' : 'Edit'}</button>
+              ${isDefault ? '' : `<button class="btn btn-ghost text-xs" onclick="dprTemplateDelete('${t.key}')">Delete</button>`}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function dprTemplateEdit(key) {
+    ensureDPRTemplateState();
+    const base = key ? dprTemplateByKey(key) : DPR_DEFAULT_TEMPLATES.generic;
+    const isCustom = key && !!State.dprTemplates[key];
+    openModal({
+      title: isCustom ? 'Edit DPR Format - ' + base.name : 'Create Custom DPR Format',
+      wide: true,
+      submitLabel: isCustom ? 'Save Format' : 'Create Format',
+      body: `
+        <form id="dprTplForm" class="ims-form" style="max-height:70vh;overflow-y:auto;padding-right:8px">
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Format Name *</label><input name="name" value="${esc(isCustom ? base.name : base.name + ' - Custom')}" required></div>
+            <div class="ims-field"><label>Project Nature *</label><input name="nature" value="${esc(base.nature || '')}" required placeholder="Road / Bridge / Hydropower"></div>
+            <div class="ims-field"><label>Short Badge</label><input name="badge" value="${esc(isCustom ? (base.badge||'Custom') : 'Custom')}" placeholder="Custom"></div>
+          </div>
+          <div class="ims-field"><label>Description</label><textarea name="description" rows="2">${esc(base.description||'')}</textarea></div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Work Heads (one per line)</label><textarea name="workHeads" rows="6">${esc(dprListText(base.workHeads))}</textarea></div>
+            <div class="ims-field"><label>Measurement Fields (one per line)</label><textarea name="measurements" rows="6">${esc(dprListText(base.measurements))}</textarea></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Material Usage Options (one per line)</label><textarea name="materialFocus" rows="6">${esc(dprListText(base.materialFocus))}</textarea></div>
+            <div class="ims-field"><label>Machine Usage Options (one per line)</label><textarea name="equipmentFocus" rows="6">${esc(dprListText(base.equipmentFocus))}</textarea></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Quality Checklist (one per line)</label><textarea name="qualityChecks" rows="5">${esc(dprListText(base.qualityChecks))}</textarea></div>
+            <div class="ims-field"><label>Safety Checklist (one per line)</label><textarea name="safetyChecks" rows="5">${esc(dprListText(base.safetyChecks))}</textarea></div>
+          </div>
+          <div class="ims-field"><label>Extra Custom DPR Fields (one per line)</label><textarea name="customFields" rows="4">${esc(dprListText(base.customFields))}</textarea></div>
+        </form>
+      `,
+      onSubmit: () => {
+        const fd = new FormData($('#dprTplForm'));
+        const obj = {
+          key: isCustom ? key : 'custom-' + String(State.dprNextTemplateId++).padStart(3,'0'),
+          name: (fd.get('name') || '').trim(),
+          nature: (fd.get('nature') || '').trim(),
+          badge: (fd.get('badge') || 'Custom').trim(),
+          description: (fd.get('description') || '').trim(),
+          workHeads: dprListFromText(fd.get('workHeads')),
+          measurements: dprListFromText(fd.get('measurements')),
+          materialFocus: dprListFromText(fd.get('materialFocus')),
+          equipmentFocus: dprListFromText(fd.get('equipmentFocus')),
+          qualityChecks: dprListFromText(fd.get('qualityChecks')),
+          safetyChecks: dprListFromText(fd.get('safetyChecks')),
+          customFields: dprListFromText(fd.get('customFields'))
+        };
+        if (!obj.name || !obj.nature) return false;
+        State.dprTemplates[obj.key] = obj;
+        audit(isCustom ? 'update' : 'create', 'DPR Format - ' + obj.name, obj.nature);
+        saveState();
+        toast(isCustom ? 'Format Updated' : 'Format Created', obj.name, 'ok');
+        renderDPRView();
+      }
+    });
+  }
+  window.dprTemplateEdit = dprTemplateEdit;
+
+  function dprTemplateDelete(key) {
+    const t = State.dprTemplates?.[key];
+    if (!t) return;
+    const used = State.dprs.filter(d => d.dprTemplateKey === key).length;
+    openModal({
+      title:'Delete DPR Format',
+      submitLabel:'Delete',
+      submitClass:'btn-danger',
+      body:`<div class="text-sm">Delete custom format <b>${esc(t.name)}</b>?${used ? `<br><br>${used} existing DPR(s) will keep their saved data but will fall back to the General format label.` : ''}</div>`,
+      onSubmit: () => {
+        delete State.dprTemplates[key];
+        State.dprs.forEach(d => { if (d.dprTemplateKey === key) d.dprTemplateKey = 'generic'; });
+        audit('delete','DPR Format - ' + t.name, t.nature);
+        saveState();
+        toast('Format Deleted', t.name, 'warn');
+        renderDPRView();
+      }
+    });
+  }
+  window.dprTemplateDelete = dprTemplateDelete;
+
   function renderDPRSummary(c) {
     const dprs = dprCurrentList();
     const last30 = dprs.filter(d => Math.floor((Date.now() - new Date(d.date).getTime()) / 86400000) <= 30);
@@ -7274,6 +7786,8 @@
     const avgLabour = totalDays ? Math.round(totalLabour/totalDays) : 0;
     const totalOutput = last30.reduce((s,d) => s + (Number(d.outputCum)||0), 0);
     const totalDelay = last30.filter(d => d.delays).length;
+    const totalMaterialLines = last30.reduce((s,d) => s + dprMaterialRows(d).filter(r => r.item || r.qty || r.purpose).length, 0);
+    const totalMachineHours = last30.reduce((s,d) => s + dprMachineHours(d), 0);
     c.innerHTML = `
       <div class="mb-4"><div class="font-display font-bold text-lg">DPR Summary · Last 30 days</div><div class="text-xs text-stone-500">${last30.length} DPRs filed · cumulative metrics</div></div>
       <div class="grid grid-cols-4 gap-3">
@@ -7282,6 +7796,8 @@
         <div class="ims-stat" style="border-color:#15803D"><div class="lbl">Avg Daily Labour</div><div class="val">${avgLabour}</div></div>
         <div class="ims-stat" style="border-color:#15803D"><div class="lbl">Cum Output</div><div class="val">${totalOutput.toFixed(0)} m³</div></div>
         <div class="ims-stat" style="border-color:#B45309"><div class="lbl">Days with Delay</div><div class="val">${totalDelay}</div></div>
+        <div class="ims-stat" style="border-color:#E8742C"><div class="lbl">Material Lines</div><div class="val">${totalMaterialLines}</div></div>
+        <div class="ims-stat" style="border-color:#B45309"><div class="lbl">Machine Hours</div><div class="val">${totalMachineHours.toFixed(1)}</div></div>
         <div class="ims-stat" style="border-color:#C0383B"><div class="lbl">NCR Days</div><div class="val">${last30.filter(d => d.ncrIssued).length}</div></div>
         <div class="ims-stat" style="border-color:#C0383B"><div class="lbl">Incident Days</div><div class="val">${last30.filter(d => d.safetyIncidents).length}</div></div>
         <div class="ims-stat" style="border-color:#15803D"><div class="lbl">Avg Productivity</div><div class="val">${last30.length ? (last30.reduce((s,d)=>s+(Number(d.productivity)||0),0)/last30.length).toFixed(2) : '0'}</div></div>
@@ -7291,8 +7807,12 @@
 
   function dprExportCSV() {
     const dprs = dprCurrentList();
-    const headers = ['ID','Project','Date','Weather','Labour Actual','Labour Planned','OT','Output m3','Output sqm','Productivity','Activities Executed','Material','Equipment','Tests','NCR','Safety','Delays','Tomorrow','Status'];
-    const rows = dprs.map(d => [d.id, d.projectId, d.date, d.weather, d.actualLabour, d.plannedLabour, d.ot, d.outputCum, d.outputSqm, d.productivity, d.activitiesExecuted, d.materialConsumed, d.equipmentUsed, d.testsPerformed, d.ncrIssued||'', d.safetyIncidents||'', d.delays||'', d.tomorrowPlan, d.status]);
+    const headers = ['ID','Project','Date','DPR Format','Project Nature','Weather','Labour Actual','Labour Planned','OT','Output m3','Output sqm','Productivity','Machine Hours','Activities Executed','Material Usage','Machine Usage','Custom Fields','Tests','NCR','Safety','Delays','Tomorrow','Status'];
+    const rows = dprs.map(d => {
+      const tpl = dprTemplateByKey(d.dprTemplateKey || dprGuessTemplateKey(d.projectId, d.siteId));
+      const custom = dprCustomRows(d).map(r => [r.label, r.value].filter(Boolean).join(': ')).join(' | ');
+      return [d.id, d.projectId, d.date, tpl.name, d.projectNature || tpl.nature, d.weather, d.actualLabour, d.plannedLabour, d.ot, d.outputCum, d.outputSqm, d.productivity, dprMachineHours(d), d.activitiesExecuted, dprMaterialText(d), dprEquipmentText(d), custom, d.testsPerformed, d.ncrIssued||'', d.safetyIncidents||'', d.delays||'', d.tomorrowPlan, d.status];
+    });
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\\n');
     const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'buildcore-dprs-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
@@ -7306,6 +7826,8 @@
   const SITE_TEMPLATES = {
     'Building / High-rise':       ['Block A','Block B','Common area','Basement','MEP room','Pump room','Lift well'],
     'Hydropower':                 ['Headworks','Diversion tunnel','Settling basin','Alignment / HRT','Surge shaft','Penstock','Powerhouse','Switchyard','Tailrace','Access road'],
+    'Hydropower - Surface Only':  ['Headworks','Intake','Settling basin','Surface canal','Penstock alignment','Anchor blocks','Powerhouse','Switchyard','Tailrace','Access road'],
+    'Hydropower - Underground':   ['Portal','Adit','HRT tunnel','Surge shaft','Underground cavern','Penstock tunnel','Pressure shaft','Tailrace tunnel','Muck disposal','Ventilation station'],
     'Road / Highway':             ['Section 1','Section 2','Section 3','Junction','Bridge approach','Drainage','Side berms'],
     'Bridge / Underpass':         ['North entry','South entry','Box culvert','Approach slab','Retaining wall','Deck slab'],
     'Industrial / Plant':         ['Foundation','Process building','Tank farm','MEP block','Utility yard','Control room','Effluent treatment'],
