@@ -580,6 +580,7 @@
               <option value="PRJ-019">PRJ-019 · Pokhara Lakeside Resort</option>
               <option value="PRJ-024">PRJ-024 · NIC Asia Corporate HQ</option>
               <option value="PRJ-013">PRJ-013 · KMC School Balaju</option>
+              <option value="PRJ-030">PRJ-030 · Mewa Khola Hydropower</option>
               <option value="ALL">— All Projects (Portfolio) —</option>
             </select>
           </div>
@@ -2835,7 +2836,8 @@
       { id:'PRJ-021', name:'Ring Road Underpass · Kalanki', client:'DoR · Govt of Nepal', loc:'Kathmandu', value:1240000000, progress:62.3, margin:8.7, end:'Aug 26', status:'warn', team:96, issues:7 },
       { id:'PRJ-019', name:'Pokhara Lakeside Resort', client:'Annapurna Hospitality', loc:'Pokhara', value:386000000, progress:78.4, margin:14.1, end:'Dec 25', status:'ok', team:64, issues:2 },
       { id:'PRJ-024', name:'NIC Asia Corporate HQ · Naxal', client:'NIC Asia Bank', loc:'Kathmandu', value:512000000, progress:18.2, margin:13.5, end:'Jun 27', status:'ok', team:38, issues:3 },
-      { id:'PRJ-013', name:'KMC School · Balaju', client:'Kathmandu Metro', loc:'Kathmandu', value:148000000, progress:91.5, margin:7.8, end:'Nov 25', status:'bad', team:42, issues:5 }
+      { id:'PRJ-013', name:'KMC School · Balaju', client:'Kathmandu Metro', loc:'Kathmandu', value:148000000, progress:91.5, margin:7.8, end:'Nov 25', status:'bad', team:42, issues:5 },
+      { id:'PRJ-030', name:'Mewa Khola Hydropower Project', client:'High Himal-Jade Infra JV / UMHL', loc:'Taplejung', value:1380082100.12, progress:12.8, margin:8.3, end:'Jun 28', status:'warn', team:176, issues:9 }
     ],
     materials: [
       { code:'CEM-OPC53', name:'OPC 53 Cement (Shivam)', unit:'bag', stock:1240, reorder:800, days:6, value:881600, status:'ok' },
@@ -7876,12 +7878,17 @@
     { category:'Aggregate', name:'Sieve Analysis / Gradation', method:'IS 2386', specification:'Within approved grading envelope', unit:'%', frequency:'Weekly / source change', clientApprovalDefault:false },
     { category:'Aggregate', name:'Aggregate Crushing Value', method:'IS 2386 Part IV', specification:'Within project limit', unit:'%', frequency:'Monthly / source approval', clientApprovalDefault:true },
     { category:'Aggregate', name:'Aggregate Impact Value', method:'IS 2386 Part IV', specification:'Within project limit', unit:'%', frequency:'Monthly / source approval', clientApprovalDefault:true },
+    { category:'Aggregate', name:'LA Abrasion Test', method:'IS 2386 Part IV / ASTM C131', specification:'Abrasion value within project limit', unit:'%', frequency:'Monthly / source approval', clientApprovalDefault:true },
+    { category:'Aggregate', name:'Specific Gravity and Water Absorption', method:'IS 2386 Part III', specification:'Specific gravity and absorption within approved source limits', unit:'SG / %', frequency:'Monthly / source approval', clientApprovalDefault:false },
     { category:'Aggregate', name:'Flakiness and Elongation Index', method:'IS 2386 Part I', specification:'Within approved limits', unit:'%', frequency:'Monthly', clientApprovalDefault:false },
     { category:'Soil / Road', name:'Field Density Test', method:'Sand cone / core cutter', specification:'Compaction as per layer requirement', unit:'% MDD', frequency:'Each layer / chainage', clientApprovalDefault:true },
     { category:'Soil / Road', name:'Proctor Compaction Test', method:'IS 2720', specification:'MDD and OMC approval', unit:'MDD/OMC', frequency:'Source/material change', clientApprovalDefault:true },
     { category:'Soil / Road', name:'CBR Test', method:'IS 2720 Part 16', specification:'As per pavement design', unit:'%', frequency:'Subgrade/source approval', clientApprovalDefault:true },
+    { category:'Soil / Road', name:'Atterberg Limits', method:'IS 2720 Part 5', specification:'LL, PL and PI within material class limit', unit:'%', frequency:'Borrow/source approval', clientApprovalDefault:true },
+    { category:'Soil / Road', name:'Moisture Content', method:'IS 2720 Part 2', specification:'Recorded for compaction and earthwork control', unit:'%', frequency:'Each layer / sample', clientApprovalDefault:false },
     { category:'Bitumen / Asphalt', name:'Bitumen Penetration Test', method:'IS 1203', specification:'Grade compliance', unit:'0.1 mm', frequency:'Each tanker / batch', clientApprovalDefault:true },
     { category:'Bitumen / Asphalt', name:'Softening Point Test', method:'IS 1205', specification:'Grade compliance', unit:'deg C', frequency:'Each batch', clientApprovalDefault:true },
+    { category:'Bitumen / Asphalt', name:'Bitumen Extraction Test', method:'ASTM D2172 / MoRTH', specification:'Binder content within approved JMF tolerance', unit:'%', frequency:'Each asphalt lot', clientApprovalDefault:true },
     { category:'Bitumen / Asphalt', name:'Marshall Stability Test', method:'ASTM D6927 / MoRTH', specification:'Approved job mix formula', unit:'kN / flow', frequency:'Each asphalt mix lot', clientApprovalDefault:true },
     { category:'Masonry', name:'Brick Compressive Strength', method:'IS 3495', specification:'Class requirement', unit:'N/mm2', frequency:'Each source / lot', clientApprovalDefault:true },
     { category:'Masonry', name:'Brick Water Absorption', method:'IS 3495', specification:'Within project limit', unit:'%', frequency:'Each source / lot', clientApprovalDefault:false },
@@ -7895,14 +7902,376 @@
     { category:'Hydropower Underground', name:'Blast Vibration Record', method:'Seismograph record', specification:'PPV within limit', unit:'mm/s', frequency:'Each blast near structures', clientApprovalDefault:true }
   ];
 
+  function labField(key, label, type='text', unit='', def='', options=[]) {
+    return { key, label, type, unit, default:def, options };
+  }
+
+  const LAB_GENERIC_FORMAT = {
+    commonFields: [
+      labField('sample_date','Sample Date','date'),
+      labField('spec_limit','Specification / Limit','text'),
+      labField('environment','Lab / Site Condition','text')
+    ],
+    specimenFields: [
+      labField('observation','Observation / Reading','text'),
+      labField('measured','Measured Value','number'),
+      labField('unit','Unit','text'),
+      labField('remarks','Remarks','text')
+    ],
+    calcDefs: [{ key:'measured', label:'Measured', unit:'' }],
+    calcKey:'generic',
+    defaultSpecimens:1,
+    groupLabel:'Test set'
+  };
+
+  const LAB_STRUCTURED_TESTS = {
+    'Concrete Cube Compressive Strength': {
+      commonFields:[labField('grade','Concrete Grade','text','', 'M25'), labField('age_days','Age','number','days','28'), labField('cube_size','Cube Size','number','mm','150'), labField('area','Loaded Area','number','mm2','22500')],
+      specimenFields:[labField('specimen_id','Cube ID','text'), labField('weight','Weight','number','kg'), labField('load','Failure Load','number','kN'), labField('failure_mode','Failure Mode','text')],
+      calcDefs:[{key:'strength', label:'Strength', unit:'N/mm2'}], calcKey:'concrete_strength', defaultSpecimens:3, groupLabel:'Age / grade', groupName:'Cube set'
+    },
+    'Concrete Slump Test': {
+      commonFields:[labField('mix_grade','Mix Grade','text','', 'M25'), labField('approved_range','Approved Range','text','mm','75-125'), labField('truck_no','Transit Mixer / Batch','text')],
+      specimenFields:[labField('trial','Trial','text'), labField('slump','Slump','number','mm'), labField('temperature','Concrete Temp','number','deg C'), labField('remarks','Remarks','text')],
+      calcDefs:[{key:'slump', label:'Slump', unit:'mm'}], calcKey:'generic', defaultSpecimens:1, groupLabel:'Pour / batch'
+    },
+    'Concrete Core Test': {
+      commonFields:[labField('core_dia','Core Diameter','number','mm','100'), labField('l_d_ratio','L/D Ratio','number','','2'), labField('correction','Correction Factor','number','','1')],
+      specimenFields:[labField('core_id','Core ID','text'), labField('location','Core Location','text'), labField('load','Failure Load','number','kN'), labField('area','Area','number','mm2','7854')],
+      calcDefs:[{key:'corrected_strength', label:'Corrected Strength', unit:'N/mm2'}], calcKey:'core_strength', defaultSpecimens:2, groupLabel:'Core set'
+    },
+    'Concrete Mix Design Trial': {
+      commonFields:[labField('grade','Grade','text','', 'M25'), labField('target_strength','Target Mean Strength','number','N/mm2'), labField('cement_content','Cement Content','number','kg/m3'), labField('wc_ratio','W/C Ratio','number')],
+      specimenFields:[labField('trial_id','Trial ID','text'), labField('slump','Slump','number','mm'), labField('density','Density','number','kg/m3'), labField('strength_7d','7d Strength','number','N/mm2'), labField('strength_28d','28d Strength','number','N/mm2')],
+      calcDefs:[{key:'strength_28d', label:'28d Strength', unit:'N/mm2'}], calcKey:'generic', defaultSpecimens:1, groupLabel:'Trial mix'
+    },
+    'TMT Tensile / Yield / Elongation': {
+      commonFields:[labField('bar_dia','Bar Dia','number','mm','16'), labField('gauge_length','Gauge Length','number','mm','80'), labField('heat_no','Heat / Lot No.','text'), labField('grade','Steel Grade','text','', 'Fe500')],
+      specimenFields:[labField('specimen_id','Specimen ID','text'), labField('yield_load','Yield Load','number','kN'), labField('ultimate_load','Ultimate Load','number','kN'), labField('final_length','Final Gauge Length','number','mm'), labField('weight','Weight','number','kg')],
+      calcDefs:[{key:'yield_strength', label:'Yield', unit:'MPa'}, {key:'ultimate_strength', label:'UTS', unit:'MPa'}, {key:'elongation', label:'Elongation', unit:'%'}], calcKey:'steel_tensile', defaultSpecimens:3, groupLabel:'Heat / dia'
+    },
+    'Bend and Re-bend Test': {
+      commonFields:[labField('bar_dia','Bar Dia','number','mm'), labField('bend_angle','Bend Angle','text','', '180'), labField('mandrel','Mandrel Dia','text')],
+      specimenFields:[labField('specimen_id','Specimen ID','text'), labField('bend_result','Bend Result','select','', 'Pass', ['Pass','Fail']), labField('rebend_result','Re-bend Result','select','', 'Pass', ['Pass','Fail']), labField('remarks','Remarks','text')],
+      calcDefs:[{key:'status', label:'Status', unit:''}], calcKey:'pass_fail', defaultSpecimens:3, groupLabel:'Lot'
+    },
+    'Steel Chemical Analysis': {
+      commonFields:[labField('heat_no','Heat No.','text'), labField('grade','Grade','text','', 'Fe500')],
+      specimenFields:[labField('sample_id','Sample ID','text'), labField('carbon','Carbon','number','%'), labField('sulphur','Sulphur','number','%'), labField('phosphorus','Phosphorus','number','%'), labField('ce','Carbon Equivalent','number','%')],
+      calcDefs:[{key:'status', label:'Status', unit:''}], calcKey:'chemical_steel', defaultSpecimens:1, groupLabel:'Heat'
+    },
+    'Sieve Analysis / Gradation': {
+      commonFields:[labField('material','Material','text','', '20mm aggregate'), labField('total_weight','Total Sample Weight','number','g','1000'), labField('grading_zone','Grading Zone / Envelope','text')],
+      specimenFields:[labField('sieve','Sieve Size','text'), labField('retained','Retained Weight','number','g'), labField('limit','Specification Limit','text','%')],
+      calcDefs:[{key:'pct_retained', label:'Retained', unit:'%'}, {key:'pct_passing', label:'Passing', unit:'%'}], calcKey:'sieve_retained', defaultSpecimens:6, groupLabel:'Sieve stack'
+    },
+    'Aggregate Crushing Value': {
+      commonFields:[labField('fraction','Aggregate Fraction','text','', '10-12.5mm'), labField('initial_weight','Initial Weight','number','g','3000')],
+      specimenFields:[labField('trial','Trial','text'), labField('passing_weight','Passing 2.36mm','number','g'), labField('remarks','Remarks','text')],
+      calcDefs:[{key:'crushing_value', label:'ACV', unit:'%'}], calcKey:'crushing_value', defaultSpecimens:2, groupLabel:'Trial'
+    },
+    'Aggregate Impact Value': {
+      commonFields:[labField('fraction','Aggregate Fraction','text','', '10-12.5mm'), labField('initial_weight','Initial Weight','number','g','500')],
+      specimenFields:[labField('trial','Trial','text'), labField('passing_weight','Passing 2.36mm','number','g'), labField('remarks','Remarks','text')],
+      calcDefs:[{key:'impact_value', label:'AIV', unit:'%'}], calcKey:'impact_value', defaultSpecimens:2, groupLabel:'Trial'
+    },
+    'LA Abrasion Test': {
+      commonFields:[labField('grading','Grading','text','', 'B'), labField('initial_weight','Initial Weight','number','g','5000'), labField('revolutions','Revolutions','number','','500')],
+      specimenFields:[labField('trial','Trial','text'), labField('final_weight','Weight Retained','number','g'), labField('remarks','Remarks','text')],
+      calcDefs:[{key:'abrasion_value', label:'Abrasion', unit:'%'}], calcKey:'la_abrasion', defaultSpecimens:1, groupLabel:'Trial'
+    },
+    'Specific Gravity and Water Absorption': {
+      commonFields:[labField('material','Material','text','', 'Coarse aggregate')],
+      specimenFields:[labField('trial','Trial','text'), labField('od_weight','Oven Dry Wt','number','g'), labField('ssd_weight','SSD Wt','number','g'), labField('water_weight','Wt in Water','number','g')],
+      calcDefs:[{key:'specific_gravity', label:'Bulk SG', unit:''}, {key:'water_absorption', label:'Absorption', unit:'%'}], calcKey:'specific_gravity', defaultSpecimens:2, groupLabel:'Trial'
+    },
+    'Flakiness and Elongation Index': {
+      commonFields:[labField('fraction','Aggregate Fraction','text'), labField('sample_weight','Sample Weight','number','g')],
+      specimenFields:[labField('size','Size Fraction','text'), labField('flaky_weight','Flaky Weight','number','g'), labField('elongated_weight','Elongated Weight','number','g')],
+      calcDefs:[{key:'flakiness', label:'Flakiness', unit:'%'}, {key:'elongation', label:'Elongation', unit:'%'}], calcKey:'shape_index', defaultSpecimens:4, groupLabel:'Size fraction'
+    },
+    'Field Density Test': {
+      commonFields:[labField('mdd','MDD','number','g/cc'), labField('omc','OMC','number','%'), labField('layer','Layer / Lift','text'), labField('chainage','Chainage','text')],
+      specimenFields:[labField('test_point','Test Point','text'), labField('wet_density','Wet Density','number','g/cc'), labField('moisture','Moisture','number','%')],
+      calcDefs:[{key:'dry_density', label:'Dry Density', unit:'g/cc'}, {key:'compaction', label:'Compaction', unit:'% MDD'}], calcKey:'field_density', defaultSpecimens:3, groupLabel:'Chainage / layer'
+    },
+    'Proctor Compaction Test': {
+      commonFields:[labField('mould_volume','Mould Volume','number','cc','944'), labField('hammer','Hammer / Energy','text','', 'Modified')],
+      specimenFields:[labField('point','Point','text'), labField('wet_weight','Wet Soil Weight','number','g'), labField('moisture','Moisture','number','%')],
+      calcDefs:[{key:'dry_density', label:'Dry Density', unit:'g/cc'}], calcKey:'proctor_dd', defaultSpecimens:5, groupLabel:'Moisture-density points'
+    },
+    'CBR Test': {
+      commonFields:[labField('penetration','Penetration','select','mm','2.5', ['2.5','5.0']), labField('surcharge','Surcharge','number','kg'), labField('condition','Soaked / Unsoaked','select','', 'Soaked', ['Soaked','Unsoaked'])],
+      specimenFields:[labField('specimen_id','Specimen ID','text'), labField('load','Load','number','kN'), labField('mdd_pct','Compaction','number','% MDD')],
+      calcDefs:[{key:'cbr', label:'CBR', unit:'%'}], calcKey:'cbr', defaultSpecimens:3, groupLabel:'Specimen'
+    },
+    'Atterberg Limits': {
+      commonFields:[labField('soil_type','Soil Type','text'), labField('sample_location','Sample Location','text')],
+      specimenFields:[labField('trial','Trial','text'), labField('liquid_limit','Liquid Limit','number','%'), labField('plastic_limit','Plastic Limit','number','%')],
+      calcDefs:[{key:'plasticity_index', label:'PI', unit:'%'}], calcKey:'atterberg', defaultSpecimens:2, groupLabel:'Trial'
+    },
+    'Moisture Content': {
+      commonFields:[labField('sample_location','Sample Location','text')],
+      specimenFields:[labField('container','Container','text'), labField('wet_weight','Wet + Container','number','g'), labField('dry_weight','Dry + Container','number','g'), labField('container_weight','Container Weight','number','g')],
+      calcDefs:[{key:'moisture', label:'Moisture', unit:'%'}], calcKey:'moisture_content', defaultSpecimens:2, groupLabel:'Trial'
+    },
+    'Bitumen Penetration Test': {
+      commonFields:[labField('grade','Bitumen Grade','text','', 'VG-30'), labField('temperature','Temperature','number','deg C','25')],
+      specimenFields:[labField('reading_1','Reading 1','number','0.1mm'), labField('reading_2','Reading 2','number','0.1mm'), labField('reading_3','Reading 3','number','0.1mm')],
+      calcDefs:[{key:'penetration', label:'Penetration', unit:'0.1mm'}], calcKey:'penetration_avg', defaultSpecimens:1, groupLabel:'Sample'
+    },
+    'Softening Point Test': {
+      commonFields:[labField('grade','Bitumen Grade','text','', 'VG-30')],
+      specimenFields:[labField('ball_1','Ball 1','number','deg C'), labField('ball_2','Ball 2','number','deg C')],
+      calcDefs:[{key:'softening_point', label:'Softening Point', unit:'deg C'}], calcKey:'softening_point', defaultSpecimens:1, groupLabel:'Sample'
+    },
+    'Bitumen Extraction Test': {
+      commonFields:[labField('mix_type','Mix Type','text','', 'DBM'), labField('job_mix','JMF Ref','text')],
+      specimenFields:[labField('sample_id','Sample ID','text'), labField('sample_weight','Sample Weight','number','g'), labField('aggregate_weight','Aggregate After Extraction','number','g'), labField('filler_loss','Filler / Correction','number','g','0')],
+      calcDefs:[{key:'bitumen_content', label:'Binder Content', unit:'%'}], calcKey:'bitumen_extraction', defaultSpecimens:1, groupLabel:'Sample'
+    },
+    'Marshall Stability Test': {
+      commonFields:[labField('mix_type','Mix Type','text','', 'DBM'), labField('bitumen_content','Binder Content','number','%'), labField('specimen_dia','Specimen Dia','number','mm','101.6')],
+      specimenFields:[labField('specimen_id','Specimen ID','text'), labField('stability','Stability','number','kN'), labField('flow','Flow','number','mm'), labField('air_voids','Air Voids','number','%')],
+      calcDefs:[{key:'stability', label:'Stability', unit:'kN'}, {key:'flow', label:'Flow', unit:'mm'}], calcKey:'generic', defaultSpecimens:3, groupLabel:'Marshall set'
+    },
+    'Brick Compressive Strength': {
+      commonFields:[labField('brick_class','Brick Class','text'), labField('area','Loaded Area','number','mm2')],
+      specimenFields:[labField('brick_id','Brick ID','text'), labField('load','Failure Load','number','kN')],
+      calcDefs:[{key:'strength', label:'Strength', unit:'N/mm2'}], calcKey:'brick_strength', defaultSpecimens:5, groupLabel:'Lot'
+    },
+    'Brick Water Absorption': {
+      commonFields:[labField('brick_class','Brick Class','text')],
+      specimenFields:[labField('brick_id','Brick ID','text'), labField('dry_weight','Dry Weight','number','g'), labField('wet_weight','Wet Weight','number','g')],
+      calcDefs:[{key:'absorption', label:'Absorption', unit:'%'}], calcKey:'water_absorption_simple', defaultSpecimens:5, groupLabel:'Lot'
+    },
+    'Cement Fineness / Setting Time': {
+      commonFields:[labField('cement_type','Cement Type','text','', 'OPC 53'), labField('lot_no','Lot No.','text')],
+      specimenFields:[labField('test','Test','text'), labField('value','Value','number'), labField('unit','Unit','text'), labField('limit','Limit','text')],
+      calcDefs:[{key:'value', label:'Value', unit:''}], calcKey:'generic', defaultSpecimens:3, groupLabel:'Cement lot'
+    },
+    'Construction Water Quality': {
+      commonFields:[labField('source','Water Source','text'), labField('sample_date','Sample Date','date')],
+      specimenFields:[labField('parameter','Parameter','text'), labField('value','Value','number'), labField('unit','Unit','text'), labField('limit','Limit','text')],
+      calcDefs:[{key:'value', label:'Value', unit:''}], calcKey:'generic', defaultSpecimens:4, groupLabel:'Chemical parameters'
+    },
+    'DPT / MPI Weld Inspection': {
+      commonFields:[labField('weld_no','Weld / Joint No.','text'), labField('procedure','Procedure / WPS','text')],
+      specimenFields:[labField('joint','Joint','text'), labField('indication','Indication','text'), labField('result','Result','select','', 'Pass', ['Pass','Fail','Repair']), labField('remarks','Remarks','text')],
+      calcDefs:[{key:'status', label:'Status', unit:''}], calcKey:'pass_fail', defaultSpecimens:3, groupLabel:'Joint'
+    },
+    'Ultrasonic Testing': {
+      commonFields:[labField('procedure','Procedure','text'), labField('acceptance_level','Acceptance Level','text')],
+      specimenFields:[labField('joint','Joint','text'), labField('thickness','Thickness','number','mm'), labField('defect','Defect / Echo','text'), labField('result','Result','select','', 'Pass', ['Pass','Fail','Repair'])],
+      calcDefs:[{key:'status', label:'Status', unit:''}], calcKey:'pass_fail', defaultSpecimens:3, groupLabel:'Joint'
+    },
+    'Shotcrete Thickness Test': {
+      commonFields:[labField('tunnel_chainage','Tunnel Chainage','text'), labField('support_class','Support Class','text'), labField('design_thickness','Design Thickness','number','mm','100')],
+      specimenFields:[labField('point','Point / Core','text'), labField('measured_thickness','Measured Thickness','number','mm'), labField('rebound','Rebound / Defect','text')],
+      calcDefs:[{key:'thickness_ratio', label:'Design Achieved', unit:'%'}], calcKey:'shotcrete_thickness', defaultSpecimens:5, groupLabel:'Tunnel round'
+    },
+    'Rock Bolt Pull-out Test': {
+      commonFields:[labField('tunnel_chainage','Tunnel Chainage','text'), labField('bolt_length','Bolt Length','number','m','6'), labField('design_load','Design Load','number','kN','120')],
+      specimenFields:[labField('bolt_id','Bolt ID','text'), labField('proof_load','Proof Load','number','kN'), labField('displacement','Displacement','number','mm')],
+      calcDefs:[{key:'load_ratio', label:'Load Achieved', unit:'%'}], calcKey:'rock_bolt_pull', defaultSpecimens:3, groupLabel:'Support class'
+    },
+    'Grout Take / Lugeon Test': {
+      commonFields:[labField('stage','Grouting Stage','text'), labField('pressure','Pressure','number','bar'), labField('target_lugeon','Target Lugeon','number','','3')],
+      specimenFields:[labField('hole','Hole No.','text'), labField('water_take','Water Take','number','L/min/m'), labField('cement_take','Cement Take','number','kg'), labField('lugeon','Lugeon','number')],
+      calcDefs:[{key:'lugeon', label:'Lugeon', unit:''}, {key:'status', label:'Status', unit:''}], calcKey:'grout_lugeon', defaultSpecimens:3, groupLabel:'Hole / stage'
+    },
+    'Blast Vibration Record': {
+      commonFields:[labField('blast_round','Blast Round','text'), labField('distance','Distance from Blast','number','m'), labField('ppv_limit','PPV Limit','number','mm/s','25')],
+      specimenFields:[labField('station','Monitoring Station','text'), labField('ppv','PPV','number','mm/s'), labField('frequency','Frequency','number','Hz'), labField('remarks','Remarks','text')],
+      calcDefs:[{key:'status', label:'Status', unit:''}], calcKey:'blast_vibration', defaultSpecimens:2, groupLabel:'Monitoring station'
+    }
+  };
+
+  function labClone(v) { return JSON.parse(JSON.stringify(v || {})); }
+  function labFormatForName(name) { return LAB_STRUCTURED_TESTS[name] || LAB_GENERIC_FORMAT; }
+  function labApplyFormat(t) {
+    const f = labFormatForName(t?.name);
+    if (!Array.isArray(t.commonFields) || !t.commonFields.length) t.commonFields = labClone(f.commonFields);
+    if (!Array.isArray(t.specimenFields) || !t.specimenFields.length) t.specimenFields = labClone(f.specimenFields);
+    if (!Array.isArray(t.calcDefs) || !t.calcDefs.length) t.calcDefs = labClone(f.calcDefs);
+    if (!t.calcKey) t.calcKey = f.calcKey || 'generic';
+    if (!t.defaultSpecimens) t.defaultSpecimens = f.defaultSpecimens || 1;
+    if (!t.groupLabel) t.groupLabel = f.groupLabel || 'Test set';
+    if (!t.groupName && f.groupName) t.groupName = f.groupName;
+    return t;
+  }
+
+  function labNum(v) {
+    const n = Number(String(v ?? '').replace(/,/g,''));
+    return Number.isFinite(n) ? n : 0;
+  }
+  function labFmt(v, digits=2) {
+    if (v === '' || v === null || v === undefined || Number.isNaN(Number(v))) return '';
+    return Number(v).toFixed(digits).replace(/\.?0+$/,'');
+  }
+  function labDefaultCommonValues(t) {
+    t = labApplyFormat(t || {});
+    const out = {};
+    (t.commonFields || []).forEach(f => out[f.key] = f.default || '');
+    return out;
+  }
+  function labDefaultSpecimen(t, index=1) {
+    t = labApplyFormat(t || {});
+    const out = {};
+    (t.specimenFields || []).forEach(f => {
+      out[f.key] = f.default || '';
+      if (['specimen_id','trial','point','test_point','sample_id','brick_id','core_id','cube_id','bolt_id','joint','station'].includes(f.key) && !out[f.key]) out[f.key] = String(index);
+    });
+    return out;
+  }
+  function labDefaultGroups(t) {
+    t = labApplyFormat(t || {});
+    const count = Math.max(1, Number(t.defaultSpecimens || 1));
+    return [{ name:t.groupName || 'Set 1', specimens:Array.from({length:count}, (_,i) => labDefaultSpecimen(t, i+1)) }];
+  }
+  function labReportDataForType(r, t) {
+    t = labApplyFormat(t || qualityTestById(r?.testTypeId) || {});
+    const data = {
+      commonValues:Object.assign(labDefaultCommonValues(t), labClone(r?.commonValues || {})),
+      groups:Array.isArray(r?.groups) && r.groups.length ? labClone(r.groups) : labDefaultGroups(t)
+    };
+    if ((!r?.groups || !r.groups.length) && r?.resultValue) {
+      const first = data.groups[0]?.specimens?.[0];
+      if (first) {
+        const resultField = (t.specimenFields || []).find(f => ['measured','value','result','observation','remarks','slump','load','ppv'].includes(f.key));
+        if (resultField) first[resultField.key] = r.resultValue;
+      }
+    }
+    return data;
+  }
+
+  function labCalcSpecimen(t, specimen={}, common={}) {
+    const c = common || {};
+    const s = specimen || {};
+    const key = t?.calcKey || 'generic';
+    const out = {};
+    if (key === 'concrete_strength') out.strength = labNum(s.load) && labNum(c.area || 22500) ? labNum(s.load) * 1000 / labNum(c.area || 22500) : '';
+    else if (key === 'core_strength') out.corrected_strength = labNum(s.load) && labNum(s.area || c.area || 7854) ? labNum(s.load) * 1000 / labNum(s.area || c.area || 7854) * labNum(c.correction || 1) : '';
+    else if (key === 'steel_tensile') {
+      const dia = labNum(c.bar_dia), area = dia ? Math.PI * dia * dia / 4 : 0;
+      out.yield_strength = area && labNum(s.yield_load) ? labNum(s.yield_load) * 1000 / area : '';
+      out.ultimate_strength = area && labNum(s.ultimate_load) ? labNum(s.ultimate_load) * 1000 / area : '';
+      out.elongation = labNum(c.gauge_length) && labNum(s.final_length) ? (labNum(s.final_length) - labNum(c.gauge_length)) / labNum(c.gauge_length) * 100 : '';
+    } else if (key === 'sieve_retained') {
+      const pct = labNum(c.total_weight) ? labNum(s.retained) / labNum(c.total_weight) * 100 : '';
+      out.pct_retained = pct; out.pct_passing = pct === '' ? '' : 100 - pct;
+    } else if (key === 'crushing_value') out.crushing_value = labNum(c.initial_weight) ? labNum(s.passing_weight) / labNum(c.initial_weight) * 100 : '';
+    else if (key === 'impact_value') out.impact_value = labNum(c.initial_weight) ? labNum(s.passing_weight) / labNum(c.initial_weight) * 100 : '';
+    else if (key === 'la_abrasion') out.abrasion_value = labNum(c.initial_weight) ? (labNum(c.initial_weight) - labNum(s.final_weight)) / labNum(c.initial_weight) * 100 : '';
+    else if (key === 'specific_gravity') {
+      out.specific_gravity = (labNum(s.ssd_weight) - labNum(s.water_weight)) ? labNum(s.od_weight) / (labNum(s.ssd_weight) - labNum(s.water_weight)) : '';
+      out.water_absorption = labNum(s.od_weight) ? (labNum(s.ssd_weight) - labNum(s.od_weight)) / labNum(s.od_weight) * 100 : '';
+    } else if (key === 'shape_index') {
+      out.flakiness = labNum(c.sample_weight) ? labNum(s.flaky_weight) / labNum(c.sample_weight) * 100 : '';
+      out.elongation = labNum(c.sample_weight) ? labNum(s.elongated_weight) / labNum(c.sample_weight) * 100 : '';
+    } else if (key === 'field_density') {
+      out.dry_density = labNum(s.wet_density) ? labNum(s.wet_density) / (1 + labNum(s.moisture)/100) : '';
+      out.compaction = out.dry_density && labNum(c.mdd) ? out.dry_density / labNum(c.mdd) * 100 : '';
+    } else if (key === 'proctor_dd') out.dry_density = labNum(c.mould_volume) ? (labNum(s.wet_weight) / labNum(c.mould_volume)) / (1 + labNum(s.moisture)/100) : '';
+    else if (key === 'cbr') {
+      const standard = String(c.penetration || '2.5') === '5.0' ? 20.16 : 13.44;
+      out.cbr = labNum(s.load) ? labNum(s.load) / standard * 100 : '';
+    } else if (key === 'atterberg') out.plasticity_index = labNum(s.liquid_limit) - labNum(s.plastic_limit);
+    else if (key === 'moisture_content') {
+      const drySoil = labNum(s.dry_weight) - labNum(s.container_weight);
+      out.moisture = drySoil ? (labNum(s.wet_weight) - labNum(s.dry_weight)) / drySoil * 100 : '';
+    } else if (key === 'penetration_avg') out.penetration = (labNum(s.reading_1) + labNum(s.reading_2) + labNum(s.reading_3)) / 3;
+    else if (key === 'softening_point') out.softening_point = (labNum(s.ball_1) + labNum(s.ball_2)) / 2;
+    else if (key === 'bitumen_extraction') out.bitumen_content = labNum(s.sample_weight) ? (labNum(s.sample_weight) - labNum(s.aggregate_weight) - labNum(s.filler_loss)) / labNum(s.sample_weight) * 100 : '';
+    else if (key === 'brick_strength') out.strength = labNum(c.area) ? labNum(s.load) * 1000 / labNum(c.area) : '';
+    else if (key === 'water_absorption_simple') out.absorption = labNum(s.dry_weight) ? (labNum(s.wet_weight) - labNum(s.dry_weight)) / labNum(s.dry_weight) * 100 : '';
+    else if (key === 'shotcrete_thickness') out.thickness_ratio = labNum(c.design_thickness) ? labNum(s.measured_thickness) / labNum(c.design_thickness) * 100 : '';
+    else if (key === 'rock_bolt_pull') out.load_ratio = labNum(c.design_load) ? labNum(s.proof_load) / labNum(c.design_load) * 100 : '';
+    else if (key === 'grout_lugeon') { out.lugeon = labNum(s.lugeon); out.status = labNum(s.lugeon) <= labNum(c.target_lugeon || 3) ? 'PASS' : 'HOLD'; }
+    else if (key === 'blast_vibration') out.status = labNum(s.ppv) <= labNum(c.ppv_limit || 25) ? 'PASS' : 'HOLD';
+    else if (key === 'pass_fail') out.status = Object.values(s).some(v => String(v).toLowerCase().includes('fail') || String(v).toLowerCase().includes('repair')) ? 'HOLD' : 'PASS';
+    else if (key === 'chemical_steel') out.status = (labNum(s.carbon) <= 0.30 && labNum(s.sulphur) <= 0.055 && labNum(s.phosphorus) <= 0.055) ? 'PASS' : 'CHECK';
+    (t.calcDefs || []).forEach(d => {
+      if (out[d.key] === undefined && s[d.key] !== undefined) out[d.key] = s[d.key];
+      if (out[d.key] === undefined && s.measured !== undefined) out[d.key] = s.measured;
+      if (typeof out[d.key] === 'number') out[d.key] = labFmt(out[d.key]);
+    });
+    return out;
+  }
+  function labCalculatedGroups(t, groups=[], common={}) {
+    t = labApplyFormat(t || {});
+    return (groups || []).map(g => ({
+      name:g.name || 'Set',
+      specimens:(g.specimens || []).map(sp => {
+        const row = Object.assign({}, sp);
+        row.calculated = labCalcSpecimen(t, row, common);
+        return row;
+      })
+    }));
+  }
+  function labResultValues(r) {
+    const t = labApplyFormat(qualityTestById(r.testTypeId) || { name:r.testName, calcDefs:[] });
+    const groups = labCalculatedGroups(t, r.groups || [], r.commonValues || {});
+    const vals = [];
+    groups.forEach(g => (g.specimens || []).forEach(sp => (t.calcDefs || []).forEach(d => {
+      const raw = sp.calculated?.[d.key];
+      const n = Number(raw);
+      if (Number.isFinite(n)) vals.push({ key:d.key, label:d.label, unit:d.unit || '', value:n });
+    })));
+    return vals;
+  }
+  function labReportResultText(r) {
+    const vals = labResultValues(r);
+    if (vals.length) {
+      const byKey = vals.reduce((m,v) => ((m[v.key] = m[v.key] || []).push(v), m), {});
+      return Object.keys(byKey).map(k => {
+        const list = byKey[k], avg = list.reduce((s,v) => s+v.value,0) / list.length;
+        return `${list[0].label}: ${labFmt(avg)}${list[0].unit ? ' ' + list[0].unit : ''}`;
+      }).join(' | ');
+    }
+    const t = labApplyFormat(qualityTestById(r.testTypeId) || { name:r.testName, calcDefs:[] });
+    const groups = labCalculatedGroups(t, r.groups || [], r.commonValues || {});
+    const textVals = [];
+    groups.forEach(g => (g.specimens || []).forEach(sp => (t.calcDefs || []).forEach(d => {
+      const raw = sp.calculated?.[d.key];
+      if (raw !== undefined && raw !== '' && !Number.isFinite(Number(raw))) textVals.push({ label:d.label, value:String(raw).toUpperCase() });
+    })));
+    if (textVals.length) {
+      const counts = textVals.reduce((m,v) => ((m[v.value] = (m[v.value] || 0) + 1), m), {});
+      return `${textVals[0].label}: ${Object.keys(counts).map(k => counts[k] > 1 ? `${k} x${counts[k]}` : k).join(', ')}`;
+    }
+    if (r.groups?.length) return `${labSpecimenCount(r)} specimen reading${labSpecimenCount(r) === 1 ? '' : 's'} recorded`;
+    return r.resultValue || 'Data recorded';
+  }
+  function labSpecimenCount(r) {
+    return (r.groups || []).reduce((sum,g) => sum + ((g.specimens || []).length), 0);
+  }
+  function labFieldsToText(fields=[], calc=false) {
+    return (fields || []).map(f => calc ? `${f.key}|${f.label}|${f.unit || ''}` : `${f.key}|${f.label}|${f.type || 'text'}|${f.unit || ''}|${f.default || ''}|${(f.options || []).join(';')}`).join('\n');
+  }
+  function labParseFieldLines(text='', calc=false) {
+    return String(text || '').split(/\n+/).map(x => x.trim()).filter(Boolean).map(line => {
+      const p = line.split('|').map(x => x.trim());
+      return calc ? { key:p[0], label:p[1] || p[0], unit:p[2] || '' } : labField(p[0], p[1] || p[0], p[2] || 'text', p[3] || '', p[4] || '', p[5] ? p[5].split(';').map(x => x.trim()).filter(Boolean) : []);
+    }).filter(f => f.key);
+  }
+
   function ensureQualityState() {
     if (!Array.isArray(State.labReports)) State.labReports = [];
     if (!Array.isArray(State.labTestTypes)) State.labTestTypes = [];
     if (!Array.isArray(State.clientSubmissions)) State.clientSubmissions = [];
     if (!State.labTestTypes.length) {
-      State.labTestTypes = LAB_TEST_DEFAULTS.map((t,i) => Object.assign({ id:'LT-' + String(i+1).padStart(3,'0'), active:true, builtIn:true }, t));
+      State.labTestTypes = LAB_TEST_DEFAULTS.map((t,i) => labApplyFormat(Object.assign({ id:'LT-' + String(i+1).padStart(3,'0'), active:true, builtIn:true }, t)));
       State.labTestNextId = State.labTestTypes.length + 1;
     }
+    const existing = new Set(State.labTestTypes.map(t => t.name));
+    LAB_TEST_DEFAULTS.forEach(t => {
+      if (!existing.has(t.name)) {
+        State.labTestTypes.push(labApplyFormat(Object.assign({ id:'LT-' + String(State.labTestTypes.length + 1).padStart(3,'0'), active:true, builtIn:true }, t)));
+        existing.add(t.name);
+      }
+    });
+    State.labTestTypes.forEach(labApplyFormat);
     if (!State.labNextId) {
       const ids = State.labReports.map(r => Number((String(r.id||'').match(/LAB-(\d+)/)||[])[1] || 0));
       State.labNextId = Math.max(0, ...ids) + 1;
@@ -7911,54 +8280,109 @@
       const ids = State.labTestTypes.map(r => Number((String(r.id||'').match(/LT-(\d+)/)||[])[1] || 0));
       State.labTestNextId = Math.max(0, ...ids) + 1;
     }
+    State.labTestNextId = Math.max(State.labTestNextId || 1, State.labTestTypes.length + 1);
     if (!State.clientSubmissionNextId) {
       const ids = State.clientSubmissions.map(r => Number((String(r.id||'').match(/SUB-(\d+)/)||[])[1] || 0));
       State.clientSubmissionNextId = Math.max(0, ...ids) + 1;
     }
   }
 
-  function seedQualityData() {
+  function labSeedDynamicData(type, common={}, specimens=[{}], groupName='Set 1') {
+    type = labApplyFormat(type || {});
+    const commonValues = Object.assign(labDefaultCommonValues(type), common || {});
+    const rows = (specimens || [{}]).map((sp,i) => Object.assign(labDefaultSpecimen(type, i+1), sp || {}));
+    return { commonValues, groups:labCalculatedGroups(type, [{ name:groupName, specimens:rows }], commonValues) };
+  }
+
+  function labSeedReportRecord(s) {
     ensureQualityState();
-    if (State.labReports.length > 0) return;
-    seedDPRData();
-    const ds = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0,10); };
-    const byName = (name) => State.labTestTypes.find(t => t.name === name) || State.labTestTypes[0];
-    const samples = [
-      { projectId:'PRJ-017', date:ds(-1), type:byName('Concrete Cube Compressive Strength'), sampleNo:'CUBE-L5-017-A', location:'Block A L5 column pour', source:'DPR concrete pour', result:'34.8', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'submitted' },
-      { projectId:'PRJ-017', date:ds(-1), type:byName('Concrete Slump Test'), sampleNo:'SLUMP-L5-017-A', location:'Transit mixer TM-07', source:'Batch plant', result:'105', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:false, clientStatus:'internal' },
-      { projectId:'PRJ-017', date:ds(-3), type:byName('TMT Tensile / Yield / Elongation'), sampleNo:'TMT16-HEAT-8841', location:'Steel yard', source:'Panchakanya Steel', result:'Yield 548 / UTS 641 / El 18', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'approved' },
-      { projectId:'PRJ-021', date:ds(-2), type:byName('Field Density Test'), sampleNo:'FDT-CH0+420-L2', location:'Underpass north approach CH 0+420', source:'Subgrade layer 2', result:'96.2', acceptance:'Passed', status:'passed', sig:'S. Adhikari', client:true, clientStatus:'submitted' },
-      { projectId:'PRJ-021', date:ds(-4), type:byName('Marshall Stability Test'), sampleNo:'ASPH-JMF-021-03', location:'Batch plant / lab', source:'DBM trial mix', result:'11.8 kN / flow 3.1', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'pending' },
-      { projectId:'PRJ-019', date:ds(-5), type:byName('Brick Water Absorption'), sampleNo:'BR-POK-119', location:'Main building masonry', source:'Bhaktapur brick lot', result:'14.6', acceptance:'Passed', status:'passed', sig:'K. Lama (PM)', client:false, clientStatus:'internal' }
-    ];
-    State.labReports = samples.map((s,i) => ({
-      id:'LAB-' + String(i+1).padStart(4,'0'),
+    const type = labApplyFormat(s.type || qualityTestById(s.testTypeId) || State.labTestTypes[0] || {});
+    const fallback = labReportDataForType({ testTypeId:type.id, resultValue:s.result || '' }, type);
+    const data = s.data || fallback;
+    const obj = {
+      id:s.id || 'LAB-' + String(State.labNextId++).padStart(4,'0'),
       projectId:s.projectId,
-      reportDate:s.date,
-      testTypeId:s.type.id,
-      category:s.type.category,
-      testName:s.type.name,
-      method:s.type.method,
-      specification:s.type.specification,
-      unit:s.type.unit,
-      sampleNo:s.sampleNo,
-      location:s.location,
-      sampleSource:s.source,
-      resultValue:s.result,
-      acceptance:s.acceptance,
-      status:s.status,
-      testedBy:s.sig,
-      reviewedBy:'Quality Manager',
-      digitalSignature:s.sig,
-      signatureAt:new Date().toISOString(),
-      remarks:'Auto-seeded QA/QC lab record for project workflow.',
-      clientApprovalRequired:s.client,
-      clientStatus:s.clientStatus,
+      reportDate:s.date || s.reportDate || new Date().toISOString().slice(0,10),
+      testTypeId:type.id,
+      category:type.category || s.category || '',
+      testName:type.name || s.testName || '',
+      method:type.method || s.method || '',
+      specification:type.specification || s.specification || '',
+      unit:type.unit || s.unit || '',
+      sampleNo:s.sampleNo || '',
+      location:s.location || '',
+      sampleSource:s.source || s.sampleSource || '',
+      commonValues:Object.assign(labDefaultCommonValues(type), data.commonValues || {}),
+      groups:labCalculatedGroups(type, data.groups || labDefaultGroups(type), Object.assign(labDefaultCommonValues(type), data.commonValues || {})),
+      acceptance:s.acceptance || 'Passed',
+      status:s.status || 'passed',
+      testedBy:s.testedBy || s.sig || State.session?.user?.name || '',
+      reviewedBy:s.reviewedBy || 'Quality Manager',
+      approvedBy:s.approvedBy || '',
+      digitalSignature:s.digitalSignature || s.sig || '',
+      signatureAt:s.signatureAt || (s.sig || s.digitalSignature ? new Date().toISOString() : ''),
+      remarks:s.remarks || 'Structured lab record with full test data, specimen readings and calculated summary.',
+      clientApprovalRequired:!!s.client,
+      clientStatus:s.clientStatus || (s.client ? 'pending' : 'internal'),
       submittedAt:s.client && s.clientStatus !== 'pending' ? new Date().toISOString() : '',
       approvedAt:s.clientStatus === 'approved' ? new Date().toISOString() : '',
       notifiedAt:s.client && s.clientStatus !== 'pending' ? new Date().toISOString() : ''
-    }));
-    State.labNextId = State.labReports.length + 1;
+    };
+    obj.resultValue = labReportResultText(obj);
+    obj.summary = obj.resultValue;
+    State.labReports.push(obj);
+    return obj;
+  }
+
+  function ensureHydropowerQualityData() {
+    ensureQualityState();
+    if ((State.labReports || []).some(r => r.projectId === 'PRJ-030')) return;
+    const ds = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0,10); };
+    const byName = (name) => State.labTestTypes.find(t => t.name === name) || State.labTestTypes[0];
+    const shotcrete = byName('Shotcrete Thickness Test');
+    const bolt = byName('Rock Bolt Pull-out Test');
+    const grout = byName('Grout Take / Lugeon Test');
+    const blast = byName('Blast Vibration Record');
+    const cube = byName('Concrete Cube Compressive Strength');
+    const steel = byName('TMT Tensile / Yield / Elongation');
+    const added = [
+      { projectId:'PRJ-030', date:ds(-1), type:shotcrete, sampleNo:'SC-HRT-0+420-R18', location:'HRT CH 0+420 left wall / crown', source:'Tunnel support DPR', data:labSeedDynamicData(shotcrete, { tunnel_chainage:'HRT CH 0+420', support_class:'Class III', design_thickness:100 }, [{point:'Crown', measured_thickness:118, rebound:'OK'}, {point:'Left wall', measured_thickness:106, rebound:'OK'}, {point:'Right wall', measured_thickness:111, rebound:'OK'}, {point:'Invert shoulder', measured_thickness:98, rebound:'Local patch'}], 'Round 18'), acceptance:'Passed with local patch note', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'submitted' },
+      { projectId:'PRJ-030', date:ds(-1), type:bolt, sampleNo:'RB-HRT-0+420-SCIII', location:'HRT CH 0+420 support class III', source:'Tunnel support DPR', data:labSeedDynamicData(bolt, { tunnel_chainage:'HRT CH 0+420', bolt_length:6, design_load:120 }, [{bolt_id:'RB-18-01', proof_load:128, displacement:3.1}, {bolt_id:'RB-18-02', proof_load:132, displacement:2.8}, {bolt_id:'RB-18-03', proof_load:125, displacement:3.4}], 'Support class III'), acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'submitted' },
+      { projectId:'PRJ-030', date:ds(-2), type:grout, sampleNo:'GT-HW-CURTAIN-03', location:'Headworks curtain grouting stage 3', source:'Grouting log', data:labSeedDynamicData(grout, { stage:'Curtain stage 3', pressure:5, target_lugeon:3 }, [{hole:'CG-03A', water_take:1.8, cement_take:42, lugeon:2.1}, {hole:'CG-03B', water_take:2.4, cement_take:56, lugeon:2.8}, {hole:'CG-03C', water_take:1.2, cement_take:35, lugeon:1.6}], 'Curtain stage 3'), acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'pending' },
+      { projectId:'PRJ-030', date:ds(-2), type:blast, sampleNo:'BL-HRT-ROUND-18', location:'HRT portal settlement monitor', source:'Blast monitoring record', data:labSeedDynamicData(blast, { blast_round:'HRT Round 18', distance:185, ppv_limit:25 }, [{station:'Portal house', ppv:9.6, frequency:42, remarks:'Within limit'}, {station:'Adit slope', ppv:12.4, frequency:38, remarks:'Within limit'}], 'Round 18'), acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'submitted' },
+      { projectId:'PRJ-030', date:ds(-3), type:cube, sampleNo:'CUBE-WEIR-M25-01', location:'Diversion weir RCC M25 block 1', source:'Batch plant / pour card', data:labSeedDynamicData(cube, { grade:'M25', age_days:7, cube_size:150, area:22500 }, [{specimen_id:'A', weight:8.3, load:590, failure_mode:'Satisfactory'}, {specimen_id:'B', weight:8.2, load:612, failure_mode:'Satisfactory'}, {specimen_id:'C', weight:8.4, load:604, failure_mode:'Satisfactory'}], '7 day set'), acceptance:'Passed for 7 day trend', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'pending' },
+      { projectId:'PRJ-030', date:ds(-4), type:steel, sampleNo:'TMT20-HYD-HEAT-221', location:'Penstock anchor block steel yard', source:'Supplier lot / mill TC', data:labSeedDynamicData(steel, { bar_dia:20, gauge_length:100, heat_no:'HYD-221', grade:'Fe500' }, [{specimen_id:'S1', yield_load:178, ultimate_load:236, final_length:119, weight:2.46}, {specimen_id:'S2', yield_load:181, ultimate_load:241, final_length:120, weight:2.48}, {specimen_id:'S3', yield_load:176, ultimate_load:234, final_length:118, weight:2.45}], '20mm lot'), acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'approved' }
+    ].map(labSeedReportRecord);
+    added.filter(r => r.clientApprovalRequired && r.clientStatus !== 'internal').forEach(r => {
+      if (!clientSubmissionFor('Lab Report', r.id)) {
+        const s = createClientSubmission({ type:'Lab Report', recordId:r.id, projectId:r.projectId, title:r.testName + ' - ' + r.sampleNo, submittedBy:r.digitalSignature || 'QC', dueDate:ds(3) });
+        if (r.clientStatus === 'approved') { s.status = 'approved'; s.approval = 'approved'; s.clientComment = 'Accepted for record.'; }
+      }
+    });
+    saveState();
+  }
+
+  function seedQualityData() {
+    ensureQualityState();
+    if (State.labReports.length > 0) { ensureHydropowerQualityData(); return; }
+    seedDPRData();
+    const ds = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().slice(0,10); };
+    const byName = (name) => State.labTestTypes.find(t => t.name === name) || State.labTestTypes[0];
+    const sample = (typeName, base, common, specimens, groupName) => {
+      const type = byName(typeName);
+      return Object.assign({ type, data:labSeedDynamicData(type, common, specimens, groupName) }, base);
+    };
+    const samples = [
+      sample('Concrete Cube Compressive Strength', { projectId:'PRJ-017', date:ds(-1), sampleNo:'CUBE-L5-017-A', location:'Block A L5 column pour', source:'DPR concrete pour', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'submitted' }, { grade:'M25', age_days:28, cube_size:150, area:22500 }, [{specimen_id:'A', weight:8.2, load:780, failure_mode:'Satisfactory'}, {specimen_id:'B', weight:8.3, load:792, failure_mode:'Satisfactory'}, {specimen_id:'C', weight:8.2, load:776, failure_mode:'Satisfactory'}], '28 day set'),
+      sample('Concrete Slump Test', { projectId:'PRJ-017', date:ds(-1), sampleNo:'SLUMP-L5-017-A', location:'Transit mixer TM-07', source:'Batch plant', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:false, clientStatus:'internal' }, { mix_grade:'M25', approved_range:'75-125', truck_no:'TM-07 / B-124' }, [{trial:'T1', slump:105, temperature:24, remarks:'Within approved workability'}], 'Transit mixer TM-07'),
+      sample('TMT Tensile / Yield / Elongation', { projectId:'PRJ-017', date:ds(-3), sampleNo:'TMT16-HEAT-8841', location:'Steel yard', source:'Panchakanya Steel', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'approved' }, { bar_dia:16, gauge_length:80, heat_no:'8841', grade:'Fe500' }, [{specimen_id:'S1', yield_load:110, ultimate_load:129, final_length:94.5, weight:1.58}, {specimen_id:'S2', yield_load:111, ultimate_load:131, final_length:95, weight:1.57}, {specimen_id:'S3', yield_load:109, ultimate_load:128, final_length:94, weight:1.59}], '16mm heat 8841'),
+      sample('Field Density Test', { projectId:'PRJ-021', date:ds(-2), sampleNo:'FDT-CH0+420-L2', location:'Underpass north approach CH 0+420', source:'Subgrade layer 2', acceptance:'Passed', status:'passed', sig:'S. Adhikari', client:true, clientStatus:'submitted' }, { mdd:1.92, omc:11.2, layer:'Layer 2', chainage:'CH 0+420' }, [{test_point:'TP-1', wet_density:2.03, moisture:10.4}, {test_point:'TP-2', wet_density:2.01, moisture:10.8}, {test_point:'TP-3', wet_density:2.04, moisture:10.6}], 'CH 0+420 L2'),
+      sample('Marshall Stability Test', { projectId:'PRJ-021', date:ds(-4), sampleNo:'ASPH-JMF-021-03', location:'Batch plant / lab', source:'DBM trial mix', acceptance:'Passed', status:'passed', sig:'M. Khatri (QC)', client:true, clientStatus:'pending' }, { mix_type:'DBM', bitumen_content:4.8, specimen_dia:101.6 }, [{specimen_id:'M1', stability:11.6, flow:3.0, air_voids:4.1}, {specimen_id:'M2', stability:11.9, flow:3.2, air_voids:4.0}, {specimen_id:'M3', stability:11.8, flow:3.1, air_voids:4.2}], 'JMF trial set'),
+      sample('Brick Water Absorption', { projectId:'PRJ-019', date:ds(-5), sampleNo:'BR-POK-119', location:'Main building masonry', source:'Bhaktapur brick lot', acceptance:'Passed', status:'passed', sig:'K. Lama (PM)', client:false, clientStatus:'internal' }, { brick_class:'Class A' }, [{brick_id:'B1', dry_weight:2800, wet_weight:3205}, {brick_id:'B2', dry_weight:2760, wet_weight:3168}, {brick_id:'B3', dry_weight:2825, wet_weight:3238}, {brick_id:'B4', dry_weight:2795, wet_weight:3200}, {brick_id:'B5', dry_weight:2810, wet_weight:3222}], 'Brick lot 119')
+    ];
+    State.labReports = [];
+    State.labNextId = 1;
+    samples.forEach(labSeedReportRecord);
     State.clientSubmissions = State.labReports
       .filter(r => r.clientApprovalRequired && r.clientStatus !== 'internal')
       .map((r,i) => ({
@@ -7977,6 +8401,7 @@
         notificationLog:[{ at:new Date().toISOString(), by:'System', message:'Client informed for approval.' }]
       }));
     State.clientSubmissionNextId = State.clientSubmissions.length + 1;
+    ensureHydropowerQualityData();
     saveState();
   }
 
@@ -7991,7 +8416,7 @@
     return ({ passed:'ok', failed:'bad', hold:'warn', draft:'neutral', submitted:'info', approved:'ok', rejected:'bad', pending:'warn', internal:'neutral' })[String(status||'').toLowerCase()] || 'neutral';
   }
   function labSignatureHash(r) {
-    const text = [r.id, r.projectId, r.sampleNo, r.resultValue, r.digitalSignature, r.signatureAt].join('|');
+    const text = [r.id, r.projectId, r.sampleNo, labReportResultText(r), JSON.stringify(r.commonValues || {}), JSON.stringify(r.groups || []), r.digitalSignature, r.signatureAt].join('|');
     let h = 0;
     for (let i = 0; i < text.length; i++) h = ((h << 5) - h) + text.charCodeAt(i) | 0;
     return 'SIG-' + Math.abs(h).toString(36).toUpperCase().padStart(8,'0');
@@ -8080,13 +8505,13 @@
       <div class="flex justify-between items-start mb-4 gap-3">
         <div>
           <div class="font-display font-bold text-lg">Saved Lab Reports</div>
-          <div class="text-xs text-stone-500">Every test report is stored with sample, result, acceptance, digital signature and client approval status.</div>
+          <div class="text-xs text-stone-500">Every lab report stores full test parameters, specimen readings, calculated summary, digital signature and client approval status.</div>
         </div>
         <button class="btn btn-amber" onclick="labReportEdit()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Lab Report</button>
       </div>
       <div class="overflow-x-auto">
         <table class="data">
-          <thead><tr><th>Report</th><th>Project</th><th>Date</th><th>Test</th><th>Sample / Location</th><th>Result</th><th>Status</th><th>Signature</th><th>Client</th><th></th></tr></thead>
+          <thead><tr><th>Report</th><th>Project</th><th>Date</th><th>Test</th><th>Sample / Location</th><th>Data / Summary</th><th>Status</th><th>Signature</th><th>Client</th><th></th></tr></thead>
           <tbody>
             ${reports.map(r => `<tr>
               <td class="font-mono text-xs">${esc(r.id)}</td>
@@ -8094,7 +8519,7 @@
               <td class="font-mono text-xs">${fmtDateShort(r.reportDate)}</td>
               <td><div class="font-semibold text-xs">${esc(r.testName)}</div><div class="text-[10px] text-stone-500">${esc(r.category)} - ${esc(r.method)}</div></td>
               <td><div class="text-xs">${esc(r.sampleNo)}</div><div class="text-[10px] text-stone-500">${esc(r.location)}</div></td>
-              <td><div class="font-mono text-xs">${esc(r.resultValue)} ${esc(r.unit || '')}</div><div class="text-[10px] text-stone-500">${esc(r.acceptance || '')}</div></td>
+              <td><div class="font-mono text-xs">${esc(labReportResultText(r))}</div><div class="text-[10px] text-stone-500">${labSpecimenCount(r)} readings - ${esc(r.acceptance || '')}</div></td>
               <td><span class="badge badge-${qualityStatusClass(r.status)}">${esc(String(r.status||'draft').toUpperCase())}</span></td>
               <td>${r.digitalSignature ? `<span class="badge badge-ok">${labSignatureHash(r)}</span><div class="text-[10px] text-stone-500">${esc(r.digitalSignature)}</div>` : '<span class="badge badge-warn">UNSIGNED</span>'}</td>
               <td><span class="badge badge-${qualityStatusClass(r.clientStatus || (r.clientApprovalRequired ? 'pending' : 'internal'))}">${esc(String(r.clientStatus || (r.clientApprovalRequired ? 'pending' : 'internal')).toUpperCase())}</span></td>
@@ -8148,7 +8573,7 @@
                 <div>
                   <div class="font-semibold text-xs">${esc(t.name)}</div>
                   <div class="text-[10px] text-stone-500 mt-1">${esc(t.method)} - ${esc(t.specification)}</div>
-                  <div class="text-[10px] text-stone-500 mt-1">Frequency: ${esc(t.frequency || '-')} - Unit: ${esc(t.unit || '-')}</div>
+                  <div class="text-[10px] text-stone-500 mt-1">Frequency: ${esc(t.frequency || '-')} - Unit: ${esc(t.unit || '-')} - Fields: ${(t.commonFields||[]).length + (t.specimenFields||[]).length}</div>
                 </div>
                 <span class="badge badge-${t.clientApprovalDefault ? 'amber' : 'neutral'}">${t.clientApprovalDefault ? 'CLIENT' : 'INTERNAL'}</span>
               </div>
@@ -8182,6 +8607,168 @@
     if (window.lucide) try { lucide.createIcons(); } catch(e){}
   }
 
+  function labFieldInputHTML(field, value, attrs='') {
+    const common = `${attrs} data-lab-key="${esc(field.key)}"`;
+    if (field.type === 'select') {
+      const opts = field.options?.length ? field.options : ['Pass','Fail','Hold'];
+      return `<select ${common}>${opts.map(o => `<option value="${esc(o)}" ${String(value ?? field.default ?? '') === String(o) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    }
+    if (field.type === 'textarea') return `<textarea rows="2" ${common}>${esc(value ?? field.default ?? '')}</textarea>`;
+    const type = field.type === 'date' ? 'date' : field.type === 'number' ? 'number' : 'text';
+    const step = type === 'number' ? ' step="any"' : '';
+    return `<input type="${type}"${step} value="${esc(value ?? field.default ?? '')}" ${common}>`;
+  }
+
+  function labDynamicFieldsHTML(t, r) {
+    t = labApplyFormat(t || {});
+    const data = labReportDataForType(r || {}, t);
+    const groups = labCalculatedGroups(t, data.groups, data.commonValues);
+    return `
+      <div id="labDynamicFields" data-test-type-id="${esc(t.id || '')}" class="space-y-3">
+        <div class="p-3 border border-stone-200 bg-stone-50">
+          <div class="flex justify-between items-start gap-3">
+            <div>
+              <div class="font-display font-bold text-sm">Full Test Data Sheet</div>
+              <div class="text-[10px] text-stone-500">Enter specimen readings here. The summary is calculated from this data and stored in the report.</div>
+            </div>
+            <button type="button" class="btn btn-ghost text-xs" data-lab-act="add-group"><i data-lucide="plus" class="w-3 h-3"></i>Add Set</button>
+          </div>
+          <div class="grid grid-cols-3 gap-3 mt-3">
+            ${(t.commonFields || []).map(f => `<div class="ims-field"><label>${esc(f.label)}${f.unit ? ` <span class="text-stone-400">(${esc(f.unit)})</span>` : ''}</label>${labFieldInputHTML(f, data.commonValues?.[f.key], `data-lab-common="${esc(f.key)}"` )}</div>`).join('')}
+          </div>
+        </div>
+        <div class="space-y-3">
+          ${groups.map((g,gi) => `<div class="card p-3 lab-group" data-group-index="${gi}">
+            <div class="flex justify-between items-center gap-3 mb-2">
+              <div class="ims-field" style="margin:0;min-width:220px"><label>${esc(t.groupLabel || 'Set')}</label><input class="lab-group-name" value="${esc(g.name || 'Set ' + (gi+1))}"></div>
+              <button type="button" class="btn btn-ghost text-xs" data-lab-act="remove-group">Remove Set</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="data">
+                <thead><tr>${(t.specimenFields || []).map(f => `<th>${esc(f.label)}${f.unit ? ` (${esc(f.unit)})` : ''}</th>`).join('')}${(t.calcDefs || []).map(d => `<th>${esc(d.label)}${d.unit ? ` (${esc(d.unit)})` : ''}</th>`).join('')}<th></th></tr></thead>
+                <tbody>
+                  ${(g.specimens || []).map((sp,si) => `<tr class="lab-specimen-row" data-specimen-index="${si}">
+                    ${(t.specimenFields || []).map(f => `<td style="min-width:130px">${labFieldInputHTML(f, sp[f.key], `data-lab-specimen="${esc(f.key)}"` )}</td>`).join('')}
+                    ${(t.calcDefs || []).map(d => `<td class="font-mono text-[10px]" data-lab-calc="${esc(d.key)}">${esc(sp.calculated?.[d.key] ?? '')}</td>`).join('')}
+                    <td class="text-right"><button type="button" class="btn btn-ghost text-xs" data-lab-act="remove-specimen">Remove</button></td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-ghost text-xs mt-2" data-lab-act="add-specimen"><i data-lucide="plus" class="w-3 h-3"></i>Add Specimen</button>
+          </div>`).join('')}
+        </div>
+        <div class="p-3 border border-stone-200 bg-white">
+          <div class="font-mono text-[10px] text-stone-500">CALCULATED SUMMARY</div>
+          <div id="labCalcPreview" class="font-semibold text-sm mt-1">${esc(labReportResultText(Object.assign({}, r || {}, { testTypeId:t.id, commonValues:data.commonValues, groups })))}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function labCollectDynamicData(t) {
+    const root = $('#labDynamicFields');
+    const commonValues = {};
+    if (!root) return { commonValues:labDefaultCommonValues(t), groups:labDefaultGroups(t) };
+    $$('[data-lab-common]', root).forEach(el => commonValues[el.dataset.labCommon] = el.value);
+    const groups = $$('.lab-group', root).map(g => ({
+      name:$('.lab-group-name', g)?.value || 'Set',
+      specimens:$$('.lab-specimen-row', g).map(row => {
+        const sp = {};
+        $$('[data-lab-specimen]', row).forEach(el => sp[el.dataset.labSpecimen] = el.value);
+        return sp;
+      })
+    }));
+    return { commonValues, groups };
+  }
+
+  function labUpdateDynamicPreview() {
+    const form = $('#labReportForm'); if (!form) return;
+    const t = qualityTestById(form.testTypeId.value) || State.labTestTypes[0] || {};
+    const data = labCollectDynamicData(t);
+    const groups = labCalculatedGroups(t, data.groups, data.commonValues);
+    groups.forEach((g,gi) => {
+      const groupEl = $(`.lab-group[data-group-index="${gi}"]`, $('#labDynamicFields'));
+      (g.specimens || []).forEach((sp,si) => {
+        const row = $(`.lab-specimen-row[data-specimen-index="${si}"]`, groupEl);
+        if (!row) return;
+        (t.calcDefs || []).forEach(d => {
+          const cell = $(`[data-lab-calc="${d.key}"]`, row);
+          if (cell) cell.textContent = sp.calculated?.[d.key] ?? '';
+        });
+      });
+    });
+    const preview = $('#labCalcPreview');
+    if (preview) preview.textContent = labReportResultText({ testTypeId:t.id, commonValues:data.commonValues, groups });
+  }
+
+  function labRerenderDynamic(t, data) {
+    const mount = $('#labDynamicMount'); if (!mount) return;
+    mount.innerHTML = labDynamicFieldsHTML(t, { testTypeId:t.id, commonValues:data.commonValues, groups:data.groups });
+    labAttachDynamicEvents();
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
+  function labAttachDynamicEvents() {
+    const root = $('#labDynamicFields'); if (!root) return;
+    const form = $('#labReportForm');
+    root.addEventListener('input', labUpdateDynamicPreview);
+    root.addEventListener('change', labUpdateDynamicPreview);
+    root.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-lab-act]');
+      if (!btn) return;
+      const t = qualityTestById(form.testTypeId.value) || State.labTestTypes[0] || {};
+      const data = labCollectDynamicData(t);
+      const act = btn.dataset.labAct;
+      const gi = Number(btn.closest('.lab-group')?.dataset.groupIndex || 0);
+      if (act === 'add-group') data.groups.push({ name:'Set ' + (data.groups.length + 1), specimens:[labDefaultSpecimen(t, 1)] });
+      if (act === 'remove-group' && data.groups.length > 1) data.groups.splice(gi, 1);
+      if (act === 'add-specimen') data.groups[gi].specimens.push(labDefaultSpecimen(t, data.groups[gi].specimens.length + 1));
+      if (act === 'remove-specimen') {
+        const si = Number(btn.closest('.lab-specimen-row')?.dataset.specimenIndex || 0);
+        if (data.groups[gi].specimens.length > 1) data.groups[gi].specimens.splice(si, 1);
+      }
+      labRerenderDynamic(t, data);
+    });
+    labUpdateDynamicPreview();
+  }
+
+  function labReportDataHTML(r) {
+    const t = labApplyFormat(qualityTestById(r.testTypeId) || { name:r.testName, commonFields:[], specimenFields:[], calcDefs:[], calcKey:'generic' });
+    const data = labReportDataForType(r, t);
+    const groups = labCalculatedGroups(t, data.groups, data.commonValues);
+    return `
+      <div class="card p-4 mb-4">
+        <div class="font-display font-bold">Test Parameters</div>
+        <table class="data mt-2"><tbody>
+          ${(t.commonFields || []).map(f => `<tr><th>${esc(f.label)}${f.unit ? ` (${esc(f.unit)})` : ''}</th><td>${esc(data.commonValues?.[f.key] || '-')}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      ${groups.map(g => `<div class="card p-4 mb-4">
+        <div class="font-display font-bold">${esc(g.name || 'Test Set')}</div>
+        <div class="overflow-x-auto mt-2"><table class="data">
+          <thead><tr>${(t.specimenFields || []).map(f => `<th>${esc(f.label)}</th>`).join('')}${(t.calcDefs || []).map(d => `<th>${esc(d.label)}${d.unit ? ` (${esc(d.unit)})` : ''}</th>`).join('')}</tr></thead>
+          <tbody>${(g.specimens || []).map(sp => `<tr>${(t.specimenFields || []).map(f => `<td>${esc(sp[f.key] || '')}</td>`).join('')}${(t.calcDefs || []).map(d => `<td class="font-mono">${esc(sp.calculated?.[d.key] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table></div>
+      </div>`).join('')}
+      <div class="card p-4 mb-4" style="border-left:3px solid #0EA5E9">
+        <div class="font-mono text-[10px] text-stone-500">CALCULATED RESULT SUMMARY</div>
+        <div class="font-display font-bold text-lg mt-1">${esc(labReportResultText(Object.assign({}, r, { groups })))}</div>
+        <div class="text-xs text-stone-500 mt-1">${labSpecimenCount({groups})} specimen reading${labSpecimenCount({groups}) === 1 ? '' : 's'} stored with this report.</div>
+      </div>
+    `;
+  }
+
+  function labReportPrint(id) {
+    const r = State.labReports.find(x => x.id === id); if (!r) return;
+    const w = window.open('', '_blank');
+    if (!w) { toast('Print Blocked','Allow popups to print the lab report','warn'); return; }
+    w.document.write(`<!doctype html><html><head><title>${esc(r.id)} Lab Report</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{font-size:20px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #ccc;padding:6px;font-size:12px;text-align:left}th{background:#f3f3f3}.meta{font-size:12px;color:#555;margin-bottom:14px}.sig{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}.box{border:1px solid #ccc;padding:10px;min-height:48px}</style></head><body><h1>${esc(r.testName)}</h1><div class="meta">${esc(r.id)} | ${esc(r.projectId)} | ${fmtDateShort(r.reportDate)} | ${esc(r.sampleNo)}</div>${labReportDataHTML(r)}<div class="sig"><div class="box"><b>Tested By</b><br>${esc(r.testedBy || '-')}</div><div class="box"><b>Checked By</b><br>${esc(r.reviewedBy || '-')}</div><div class="box"><b>Approved / Signature</b><br>${esc(r.digitalSignature || '-')}<br>${r.digitalSignature ? labSignatureHash(r) : ''}</div></div></body></html>`);
+    w.document.close();
+    setTimeout(() => { try { w.print(); } catch(e){} }, 200);
+  }
+  window.labReportPrint = labReportPrint;
+
   function labReportEdit(id=null) {
     seedQualityData();
     const pid = qualityProjectId() === 'ALL' ? (State.projects[0]?.id || 'PRJ-017') : qualityProjectId();
@@ -8190,10 +8777,12 @@
       projectId:pid, reportDate:new Date().toISOString().slice(0,10), testTypeId:firstType?.id || '',
       category:firstType?.category || '', testName:firstType?.name || '', method:firstType?.method || '',
       specification:firstType?.specification || '', unit:firstType?.unit || '', sampleNo:'', location:'',
-      sampleSource:'', resultValue:'', acceptance:'', status:'passed', testedBy:State.session?.user?.name || '',
+      sampleSource:'', commonValues:labDefaultCommonValues(firstType), groups:labDefaultGroups(firstType), acceptance:'', status:'passed', testedBy:State.session?.user?.name || '',
       reviewedBy:'', digitalSignature:State.session?.user?.name || '', signatureAt:'',
       remarks:'', clientApprovalRequired:firstType?.clientApprovalDefault || false, clientStatus:'pending'
     };
+    if (!r) return;
+    const activeType = qualityTestById(r.testTypeId) || firstType || {};
     const projects = projectPortfolio();
     openModal({
       title: id ? 'Edit Lab Report - ' + r.id : 'Create Lab Report',
@@ -8212,10 +8801,11 @@
             <div class="ims-field"><label>Sample Source / Supplier</label><input name="sampleSource" value="${esc(r.sampleSource||'')}"></div>
           </div>
           <div class="ims-form-row-3">
-            <div class="ims-field"><label>Result Value</label><input name="resultValue" value="${esc(r.resultValue||'')}" required placeholder="34.8 / 96.2 / Pass"></div>
             <div class="ims-field"><label>Acceptance / Limit</label><input name="acceptance" value="${esc(r.acceptance||'')}" placeholder="Passed as per spec"></div>
             <div class="ims-field"><label>Status</label><select name="status">${['passed','failed','hold','draft'].map(s => `<option value="${s}" ${s===r.status?'selected':''}>${s.toUpperCase()}</option>`).join('')}</select></div>
+            <div class="ims-field"><label>Report Summary</label><input value="${esc(labReportResultText(r))}" readonly style="background:#fafaf6"></div>
           </div>
+          <div id="labDynamicMount">${labDynamicFieldsHTML(activeType, r)}</div>
           <div class="ims-form-row-3">
             <div class="ims-field"><label>Tested By</label><input name="testedBy" value="${esc(r.testedBy||'')}"></div>
             <div class="ims-field"><label>Reviewed By</label><input name="reviewedBy" value="${esc(r.reviewedBy||'')}"></div>
@@ -8234,14 +8824,19 @@
       onSubmit: () => {
         const fd = new FormData($('#labReportForm'));
         const type = qualityTestById(fd.get('testTypeId')) || firstType || {};
+        const dynamic = labCollectDynamicData(type);
         const obj = id ? {...r} : {};
-        fd.forEach((v,k) => obj[k] = v);
+        ['projectId','reportDate','testTypeId','sampleNo','location','sampleSource','acceptance','status','testedBy','reviewedBy','digitalSignature','remarks'].forEach(k => obj[k] = fd.get(k) || '');
         obj.category = type.category || obj.category || '';
         obj.testName = type.name || obj.testName || '';
         obj.method = type.method || obj.method || '';
         obj.specification = type.specification || obj.specification || '';
         obj.unit = type.unit || obj.unit || '';
-        obj.clientApprovalRequired = obj.clientApprovalRequired === 'yes';
+        obj.commonValues = dynamic.commonValues;
+        obj.groups = labCalculatedGroups(type, dynamic.groups, dynamic.commonValues);
+        obj.resultValue = labReportResultText(obj);
+        obj.summary = obj.resultValue;
+        obj.clientApprovalRequired = fd.get('clientApprovalRequired') === 'yes';
         obj.digitalSignature = (obj.digitalSignature || '').trim();
         if (obj.digitalSignature && !obj.signatureAt) obj.signatureAt = new Date().toISOString();
         if (!obj.clientApprovalRequired) obj.clientStatus = 'internal';
@@ -8258,6 +8853,16 @@
         renderQualityView();
       }
     });
+    const form = $('#labReportForm');
+    if (form) {
+      form.testTypeId.addEventListener('change', () => {
+        const t = qualityTestById(form.testTypeId.value) || firstType || {};
+        labRerenderDynamic(t, { commonValues:labDefaultCommonValues(t), groups:labDefaultGroups(t) });
+        const approval = form.clientApprovalRequired;
+        if (approval) approval.value = t.clientApprovalDefault ? 'yes' : 'no';
+      });
+      labAttachDynamicEvents();
+    }
   }
   window.labReportEdit = labReportEdit;
 
@@ -8279,10 +8884,11 @@
             <tr><th>Sample No.</th><td>${esc(r.sampleNo)}</td></tr>
             <tr><th>Location</th><td>${esc(r.location)}</td></tr>
             <tr><th>Source</th><td>${esc(r.sampleSource)}</td></tr>
-            <tr><th>Result</th><td><b>${esc(r.resultValue)} ${esc(r.unit||'')}</b> - ${esc(r.acceptance || '')}</td></tr>
+            <tr><th>Summary</th><td><b>${esc(labReportResultText(r))}</b> - ${esc(r.acceptance || '')}</td></tr>
             <tr><th>Remarks</th><td>${esc(r.remarks || '-')}</td></tr>
           </tbody></table>
         </div>
+        ${labReportDataHTML(r)}
         <div class="card p-4 mb-4" style="border-left:3px solid ${r.digitalSignature ? '#15803D' : '#B45309'}">
           <div class="font-display font-bold">Digital Signature</div>
           <div class="grid grid-cols-3 gap-3 mt-3 text-xs">
@@ -8297,6 +8903,7 @@
           ${sub ? `<div class="text-xs text-stone-500 mt-2">Submission ${sub.id} - notified ${sub.notifiedAt ? fmtDateShort(sub.notifiedAt) : '-'}</div>` : '<div class="text-xs text-stone-500 mt-2">Not submitted to client yet.</div>'}
           <div class="flex gap-2 mt-4">
             <button class="btn btn-ghost" onclick="closeDrawer(); labReportEdit('${r.id}')">Edit</button>
+            <button class="btn btn-ghost" onclick="labReportPrint('${r.id}')">Print Report</button>
             ${r.clientApprovalRequired ? `<button class="btn btn-amber" onclick="submitLabReportToClient('${r.id}'); closeDrawer();">Submit to Client</button>` : ''}
           </div>
         </div>
@@ -8324,7 +8931,7 @@
 
   function labTestTypeEdit(id=null) {
     ensureQualityState();
-    const t = id ? State.labTestTypes.find(x => x.id === id) : { category:'Custom', name:'', method:'', specification:'', unit:'', frequency:'', clientApprovalDefault:true, active:true };
+    const t = id ? State.labTestTypes.find(x => x.id === id) : labApplyFormat({ category:'Custom', name:'', method:'', specification:'', unit:'', frequency:'', clientApprovalDefault:true, active:true });
     if (!t) return;
     openModal({
       title: id ? 'Edit Test Type - ' + t.name : 'Add Custom Test Type',
@@ -8345,6 +8952,13 @@
             <div class="ims-field"><label>Default Client Approval</label><select name="clientApprovalDefault"><option value="yes" ${t.clientApprovalDefault?'selected':''}>YES</option><option value="no" ${!t.clientApprovalDefault?'selected':''}>NO</option></select></div>
             <div class="ims-field"><label>Active</label><select name="active"><option value="yes" ${t.active!==false?'selected':''}>YES</option><option value="no" ${t.active===false?'selected':''}>NO</option></select></div>
           </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Calculation Key</label><input name="calcKey" value="${esc(t.calcKey || 'generic')}" placeholder="generic / concrete_strength / field_density"></div>
+            <div class="ims-field"><label>Default Specimens</label><input type="number" name="defaultSpecimens" value="${esc(t.defaultSpecimens || 1)}" min="1"></div>
+          </div>
+          <div class="ims-field"><label>Common Fields (key|label|type|unit|default|option1;option2)</label><textarea name="commonFields" rows="4">${esc(labFieldsToText(t.commonFields || []))}</textarea></div>
+          <div class="ims-field"><label>Specimen Fields (key|label|type|unit|default|option1;option2)</label><textarea name="specimenFields" rows="4">${esc(labFieldsToText(t.specimenFields || []))}</textarea></div>
+          <div class="ims-field"><label>Calculated Output Columns (key|label|unit)</label><textarea name="calcDefs" rows="3">${esc(labFieldsToText(t.calcDefs || [], true))}</textarea></div>
         </form>
       `,
       onSubmit: () => {
@@ -8353,6 +8967,12 @@
         ['category','name','method','specification','unit','frequency'].forEach(k => obj[k] = (fd.get(k) || '').trim());
         obj.clientApprovalDefault = fd.get('clientApprovalDefault') === 'yes';
         obj.active = fd.get('active') === 'yes';
+        obj.calcKey = (fd.get('calcKey') || 'generic').trim();
+        obj.defaultSpecimens = Math.max(1, Number(fd.get('defaultSpecimens') || 1));
+        obj.commonFields = labParseFieldLines(fd.get('commonFields') || '');
+        obj.specimenFields = labParseFieldLines(fd.get('specimenFields') || '');
+        obj.calcDefs = labParseFieldLines(fd.get('calcDefs') || '', true);
+        labApplyFormat(obj);
         if (!obj.category || !obj.name) return false;
         if (!id) State.labTestTypes.push(obj);
         audit(id ? 'update' : 'create','Lab Test Type', obj.name);
@@ -8386,8 +9006,8 @@
   function qualityExportCSV() {
     seedQualityData();
     const reports = qualityProjectReports();
-    const headers = ['ID','Project','Date','Category','Test','Sample','Location','Source','Result','Unit','Acceptance','Status','Tested By','Reviewed By','Digital Signature','Signature Hash','Client Required','Client Status'];
-    const rows = reports.map(r => [r.id,r.projectId,r.reportDate,r.category,r.testName,r.sampleNo,r.location,r.sampleSource,r.resultValue,r.unit,r.acceptance,r.status,r.testedBy,r.reviewedBy,r.digitalSignature,labSignatureHash(r),r.clientApprovalRequired ? 'YES' : 'NO',r.clientStatus]);
+    const headers = ['ID','Project','Date','Category','Test','Sample','Location','Source','Specimen Count','Calculated Summary','Acceptance','Status','Tested By','Reviewed By','Digital Signature','Signature Hash','Client Required','Client Status'];
+    const rows = reports.map(r => [r.id,r.projectId,r.reportDate,r.category,r.testName,r.sampleNo,r.location,r.sampleSource,labSpecimenCount(r),labReportResultText(r),r.acceptance,r.status,r.testedBy,r.reviewedBy,r.digitalSignature,labSignatureHash(r),r.clientApprovalRequired ? 'YES' : 'NO',r.clientStatus]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'buildcore-lab-reports-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
@@ -8453,15 +9073,15 @@
       <div class="grid grid-cols-2 gap-4 mb-5">
         <div class="card">
           <div class="px-5 py-3 border-b border-stone-100 flex justify-between items-center">
-            <div><div class="font-display font-bold">Lab Reports for Approval</div><div class="text-xs text-stone-500 mt-1">Digital signature and lab result visible to client.</div></div>
+            <div><div class="font-display font-bold">Lab Reports for Approval</div><div class="text-xs text-stone-500 mt-1">Full lab data, calculated summary and digital signature visible to client.</div></div>
             <button class="btn btn-ghost text-xs" onclick="navTo('quality')">QA/QC</button>
           </div>
           <table class="data">
-            <thead><tr><th>Report</th><th>Test</th><th>Result</th><th>Signature</th><th>Approval</th></tr></thead>
+            <thead><tr><th>Report</th><th>Test</th><th>Data Summary</th><th>Signature</th><th>Approval</th></tr></thead>
             <tbody>${reports.map(r => `<tr>
               <td class="font-mono text-xs">${esc(r.id)}</td>
               <td><div class="text-xs font-semibold">${esc(r.testName)}</div><div class="text-[10px] text-stone-500">${esc(r.sampleNo)}</div></td>
-              <td class="font-mono text-xs">${esc(r.resultValue)} ${esc(r.unit||'')}</td>
+              <td class="font-mono text-xs">${esc(labReportResultText(r))}<div class="text-[10px] text-stone-500">${labSpecimenCount(r)} readings</div></td>
               <td class="font-mono text-[10px]">${r.digitalSignature ? labSignatureHash(r) : 'UNSIGNED'}</td>
               <td><span class="badge badge-${qualityStatusClass(r.clientStatus || 'pending')}">${esc(String(r.clientStatus || 'pending').toUpperCase())}</span></td>
             </tr>`).join('') || '<tr><td colspan="5" class="text-center text-stone-400 py-4">No client lab reports.</td></tr>'}</tbody>
@@ -8643,8 +9263,25 @@
     'Generic':                    ['Site 1','Site 2','Site 3','Zone A','Zone B']
   };
 
+  function ensureHydropowerProjectSites() {
+    if (!Array.isArray(State.projectSites)) State.projectSites = [];
+    if (State.projectSites.some(s => s.projectId === 'PRJ-030')) return;
+    let i = Math.max(0, ...State.projectSites.map(s => Number(s.id) || 0)) + 1;
+    State.projectSites.push(
+      { id:i++, projectId:'PRJ-030', code:'HW', name:'Headworks and intake', type:'Hydropower', status:'active', description:'Headworks, intake, undersluice and desanding approach', location:'Mewa Khola intake', manager:'Hydro PM', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'WEIR', name:'Diversion weir', type:'Hydropower', status:'active', description:'Excavation 8,400 m3, RCC M-25 1,850 m3, formwork and reinforcement', location:'River bed', manager:'Hydro PM', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'HRT', name:'Headrace tunnel CH 0+000-4+820', type:'Tunnel', status:'active', description:'Underground excavation, support class logging, shotcrete and rock bolt records', location:'HRT alignment', manager:'Tunnel Engineer', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'SS', name:'Surge shaft', type:'Hydropower', status:'planned', description:'Tunnel excavation 4,800 m3, shotcrete 2,400 m2, rock bolts and RCC M-30', location:'Surge shaft ridge', manager:'Tunnel Engineer', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'PEN', name:'Penstock alignment 1,840 m', type:'Hydropower', status:'planned', description:'Surface and buried penstock, anchor blocks, saddle supports and hydrostatic test zones', location:'Penstock corridor', manager:'Mechanical Lead', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'PH', name:'Powerhouse and tailrace', type:'Hydropower', status:'planned', description:'Powerhouse civil works, tailrace outlet, switchyard interface and EM coordination', location:'Powerhouse terrace', manager:'Hydro PM', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'AR', name:'Access Road / Bill 21', type:'Road', status:'active', description:'Access road chainage progress, drainage, retaining works and material haul route', location:'CH 0+000 to 5+000', manager:'Road Engineer', createdAt:'2026-04-10' }
+    );
+    State.psNextId = Math.max(State.psNextId || 1, i);
+    saveState();
+  }
+
   function seedProjectSites() {
-    if (State.projectSites.length > 0) return;
+    if (State.projectSites.length > 0) { ensureHydropowerProjectSites(); return; }
     let i = 1;
     const sites = [
       // PRJ-017 Skyline Towers
@@ -8665,7 +9302,15 @@
       { id:i++, projectId:'PRJ-024', code:'FL-2-5',name:'Floor 2-5 · Offices',  type:'Building', status:'planned',  description:'Corporate offices · 4 floors · ~1,920 sqm',            location:'Above',         manager:'B. Magar (PM)',       createdAt:'2025-03-15' },
       // PRJ-013 KMC School
       { id:i++, projectId:'PRJ-013', code:'BLK-A', name:'Block A · Classrooms', type:'School',   status:'completed',description:'G+2 classroom block · 12 classrooms',                  location:'Main wing',     manager:'D. Rai (PM)',         createdAt:'2024-06-01' },
-      { id:i++, projectId:'PRJ-013', code:'BLK-B', name:'Block B · Labs',       type:'School',   status:'active',   description:'G+1 science labs &amp; library',                       location:'East wing',     manager:'D. Rai (PM)',         createdAt:'2024-09-12' }
+      { id:i++, projectId:'PRJ-013', code:'BLK-B', name:'Block B · Labs',       type:'School',   status:'active',   description:'G+1 science labs &amp; library',                       location:'East wing',     manager:'D. Rai (PM)',         createdAt:'2024-09-12' },
+      // PRJ-030 Mewa Khola Hydropower Project
+      { id:i++, projectId:'PRJ-030', code:'HW',    name:'Headworks and intake',       type:'Hydropower', status:'active',  description:'Headworks, intake, undersluice and desanding approach',       location:'Mewa Khola intake', manager:'Hydro PM', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'WEIR',  name:'Diversion weir',             type:'Hydropower', status:'active',  description:'Excavation 8,400 m3, RCC M-25 1,850 m3, formwork and reinforcement', location:'River bed', manager:'Hydro PM', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'HRT',   name:'Headrace tunnel CH 0+000-4+820', type:'Tunnel', status:'active', description:'Underground excavation, support class logging, shotcrete and rock bolt records', location:'HRT alignment', manager:'Tunnel Engineer', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'SS',    name:'Surge shaft',                type:'Hydropower', status:'planned', description:'Tunnel excavation 4,800 m3, shotcrete 2,400 m2, rock bolts and RCC M-30', location:'Surge shaft ridge', manager:'Tunnel Engineer', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'PEN',   name:'Penstock alignment 1,840 m', type:'Hydropower', status:'planned', description:'Surface and buried penstock, anchor blocks, saddle supports and hydrostatic test zones', location:'Penstock corridor', manager:'Mechanical Lead', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'PH',    name:'Powerhouse and tailrace',    type:'Hydropower', status:'planned', description:'Powerhouse civil works, tailrace outlet, switchyard interface and EM coordination', location:'Powerhouse terrace', manager:'Hydro PM', createdAt:'2026-04-10' },
+      { id:i++, projectId:'PRJ-030', code:'AR',    name:'Access Road / Bill 21',      type:'Road',       status:'active',  description:'Access road chainage progress, drainage, retaining works and material haul route', location:'CH 0+000 to 5+000', manager:'Road Engineer', createdAt:'2026-04-10' }
     ];
     State.projectSites = sites;
     State.psNextId = i;
@@ -9306,8 +9951,19 @@
       { id:'PRJ-021', name:'Ring Road Underpass',       client:'DoR Nepal',       type:'Infrastructure',         startDate:'2024-11-15', endDate:'2026-08-30', contract:124.00, billed:68.40, incurred:68.40, eac:122.10,pctComplete:55, spi:0.88, cpi:0.91, margin:1.53, status:'At Risk',   risk:'high',     location:'Kalanki, KTM',         manpower:86,  equipment:6,  alerts:5, pm:'S. Pradhan' },
       { id:'PRJ-019', name:'Pokhara Lakeside Resort',   client:'Privati Hospitality',type:'Resort / Hospitality', startDate:'2025-02-01', endDate:'2026-12-15', contract:38.60, billed:24.20, incurred:24.20, eac:32.80, pctComplete:62, spi:1.01, cpi:1.04, margin:15.03,status:'On Track',   risk:'low',      location:'Lakeside, Pokhara',    manpower:64,  equipment:4,  alerts:1, pm:'K. Lama'    },
       { id:'PRJ-024', name:'NIC Asia Corporate HQ',     client:'NIC Asia Bank',   type:'Commercial · Interiors', startDate:'2025-03-15', endDate:'2026-09-30', contract:51.20, billed:8.40,  incurred:8.40,  eac:44.10, pctComplete:18, spi:1.02, cpi:1.00, margin:13.87,status:'On Track',   risk:'low',      location:'Thapathali, KTM',      manpower:32,  equipment:2,  alerts:0, pm:'B. Magar'   },
-      { id:'PRJ-013', name:'KMC School · Balaju',       client:'KMC',             type:'Public · Education',     startDate:'2024-06-01', endDate:'2026-05-30', contract:14.80, billed:13.50, incurred:13.50, eac:15.10, pctComplete:92, spi:0.78, cpi:0.84, margin:-2.03,status:'Delayed',   risk:'critical', location:'Balaju, KTM',          manpower:18,  equipment:1,  alerts:4, pm:'D. Rai'     }
+      { id:'PRJ-013', name:'KMC School · Balaju',       client:'KMC',             type:'Public · Education',     startDate:'2024-06-01', endDate:'2026-05-30', contract:14.80, billed:13.50, incurred:13.50, eac:15.10, pctComplete:92, spi:0.78, cpi:0.84, margin:-2.03,status:'Delayed',   risk:'critical', location:'Balaju, KTM',          manpower:18,  equipment:1,  alerts:4, pm:'D. Rai'     },
+      { id:'PRJ-030', name:'Mewa Khola Hydropower Project', client:'High Himal-Jade Infra JV / UMHL', type:'Hydropower - Underground', startDate:'2026-04-10', endDate:'2028-06-01', contract:138.01, billed:8.20, incurred:10.80, eac:126.60, pctComplete:12.8, spi:0.91, cpi:0.94, margin:8.27, status:'At Risk', risk:'high', location:'Taplejung, Province No. 1', manpower:176, equipment:18, alerts:9, pm:'Hydro PM', contractNo:'HH-JIJV/MKHPP/2080-81/CW-01 + UMHL/5T-Ropeway/2025/CW-01', capacity:'23 MW', employer:'High Himal-Jade Infra JV', contractor:'High Himalaya Hydro Construction Pvt. Ltd. (3HC)' }
     ];
+  }
+
+  function ensureHydropowerProjects() {
+    State.projects = Array.isArray(State.projects) ? State.projects : [];
+    const defaults = [
+      { id:'PRJ-030', name:'Mewa Khola Hydropower Project', client:'High Himal-Jade Infra JV / UMHL', loc:'Taplejung', value:1380082100.12, progress:12.8, margin:8.3, end:'Jun 28', status:'warn', team:176, issues:9 }
+    ];
+    defaults.forEach(p => {
+      if (!State.projects.some(x => x.id === p.id)) State.projects.push(p);
+    });
   }
 
   function statusColor(s) {
@@ -9986,9 +10642,9 @@
   const ROLE_PERMS = {
     ceo:      { name:'Mr. Rajesh Tamang',     role:'CEO · Full Access',           avatar:'RT', projects:'ALL', modules:'ALL' },
     cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO · Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','finance','billing','procurement','analytics','audit','reports'] },
-    pm:       { name:'R. Tamang (PM)',        role:'Project Manager · PRJ-017',   avatar:'RT', projects:['PRJ-017'], modules:'ALL' },
-    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021'], modules:['dashboard','projects','schedule','dpr','workforce','materials','equipment','quality','safety','events','todos'] },
-    qc:       { name:'M. Khatri (QC)',        role:'QC Officer · Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019'], modules:['dashboard','projects','quality','safety','dpr','documents','events','todos'] },
+    pm:       { name:'R. Tamang (PM)',        role:'Project Manager · Projects',  avatar:'RT', projects:['PRJ-017','PRJ-030'], modules:'ALL' },
+    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','dpr','workforce','materials','equipment','quality','safety','events','todos'] },
+    qc:       { name:'M. Khatri (QC)',        role:'QC Officer · Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019','PRJ-030'], modules:['dashboard','projects','quality','safety','dpr','documents','events','todos'] },
     store:    { name:'Store Manager',          role:'Store · Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','events','todos'] },
     estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','finance','documents','events','todos'] },
     client:   { name:'Client Reviewer',        role:'Client · Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','reports'] }
@@ -12218,6 +12874,7 @@
 
   // -------- INITIAL SEED & RENDERS --------
   const _hadStored = loadState();
+  ensureHydropowerProjects();
   const now = new Date();
   if (!_hadStored) {
     State.activity = [
