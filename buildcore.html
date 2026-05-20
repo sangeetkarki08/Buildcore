@@ -2869,6 +2869,22 @@
   const today = () => new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
   const uid = (p='ID') => p + '-' + Math.floor(Math.random()*9000+1000);
   const esc = (v='') => String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const STARTER_MODE = true;
+  const SAMPLE_PROJECT = {
+    id:'PRJ-001',
+    name:'Sample Starter Project',
+    client:'Sample Client',
+    loc:'Kathmandu',
+    value:0,
+    progress:0,
+    margin:0,
+    end:'',
+    status:'ok',
+    team:0,
+    issues:0,
+    sample:true,
+    previewOnly:true
+  };
 
   // -------- APP STATE (mutable in-memory) --------
   const State = {
@@ -3028,8 +3044,75 @@
     estNextId: { item:1, ctr:1, exp:1, rev:1 }
   };
 
+  function applyStarterWorkspace() {
+    State.projects = [];
+    State.activeProject = 'ALL';
+    State.materials = [];
+    State.tenders = [];
+    State.boq = [];
+    State.ncrs = [];
+    State.raBills = [];
+    State.pos = [];
+    State.vendors = [];
+    State.activity = [];
+    State.audit = [];
+    State.dprs = [];
+    State.labReports = [];
+    State.labTestTypes = [];
+    State.clientSubmissions = [];
+    State.documents = [];
+    State.vos = [];
+    State.risks = [];
+    State.photos = [];
+    State.aiDocSourceMode = '';
+    State.aiDocSelectedProject = '';
+    State.aiDocSelectedDocs = [];
+    State.aiDocQuestion = '';
+    State.aiDocCurrentAnswer = null;
+    State.aiDocAnswerHistory = [];
+    State.items = [];
+    State.stockMovements = [];
+    State.toolIssues = [];
+    State.sites = [];
+    State.imsNextId = { items:1, mov:1, tool:1, po:1 };
+    State.equipment = [];
+    State.equipLogs = [];
+    State.operators = [];
+    State.maintenance = [];
+    State.eqSites = [];
+    State.eqNextId = { equip:1, log:1, op:1, mt:1 };
+    State.assets = [];
+    State.assetAllocations = [];
+    State.assetTransfers = [];
+    State.assetMaintenance = [];
+    State.assetBreakdowns = [];
+    State.assetFuelLogs = [];
+    State.assetInspections = [];
+    State.assetDocuments = [];
+    State.assetDisposals = [];
+    State.assetNotifications = [];
+    State.projectSites = [];
+    State.psNextId = 1;
+    State.estItems = [];
+    State.contracts = [];
+    State.expenses = [];
+    State.revenues = [];
+    State.bccBoq = [];
+    State.bccResources = [];
+    State.bccRecipes = [];
+    State.bccActuals = [];
+    State.bccPackages = [];
+    State.bccContracts = [];
+    State.bccOverheads = [];
+    State.bccMilestones = [];
+    State.bccApprovals = [];
+    State.bccNextId = { boq:1, res:1, recipe:1, actual:1, pkg:1, contract:1, overhead:1, milestone:1, approval:1 };
+    State.dprTemplates = {};
+    State.dprNextTemplateId = 1;
+  }
+
   // ============== PERSISTENCE LAYER ==============
-  const STORAGE_KEY = 'buildcore.state.v1';
+  const STORAGE_KEY = STARTER_MODE ? 'buildcore.state.starter.v1' : 'buildcore.state.v1';
   const STORAGE_AVAILABLE = (() => {
     try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }
     catch(e) { return false; }
@@ -3156,6 +3239,7 @@
 
   // ----- Seed data (only on first load) -----
   function seedIMSData() {
+    if (STARTER_MODE) { normalizeStockMovements(); return; }
     if (State.items.length > 0) { seedVendorData(); normalizeStockMovements(); return; }
     State.items = [
       { id:1,  sku:'CEM-001', name:'OPC 53 Grade Cement', category:'Cement', unit:'bag', reorderLevel:200, costPrice:712, supplier:'Shivam Cement', notes:'50kg bags, mfg within 30d' },
@@ -3315,6 +3399,7 @@
   const fmtDateShort = (ts) => { if (!ts) return '—'; const d = new Date(typeof ts === 'string' ? ts : ts); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}); };
 
   function seedVendorData() {
+    if (STARTER_MODE) { State.vendors = Array.isArray(State.vendors) ? State.vendors : []; return; }
     State.vendors = Array.isArray(State.vendors) ? State.vendors : [];
     const base = [
       { id:'VND-018', name:'Shivam Cement', legalName:'Shivam Cement Industries', category:'Cement', contact:'Bikash Adhikari', phone:'9851000001', email:'sales@shivamcement.com', address:'Hetauda Industrial Area, Makwanpur', location:'Hetauda / Kathmandu depot', pan:'301234567', terms:'30 days post-delivery', score:92 },
@@ -4542,6 +4627,7 @@
   function assetCategoryOptions(sel='') { return (State.assetCategories || []).map(c => `<option ${c.name===sel?'selected':''}>${esc(c.name)}</option>`).join(''); }
 
   function seedAssetData() {
+    if (STARTER_MODE) { buildAssetNotifications(); return; }
     State.assetCategories = Array.isArray(State.assetCategories) ? State.assetCategories : [];
     ASSET_DEFAULT_CATEGORIES.forEach((name, i) => { if (!State.assetCategories.some(c => c.name === name)) State.assetCategories.push({ id:'AC' + String(i+1).padStart(3,'0'), name, active:true }); });
     State.assetNextId = State.assetNextId || { asset:1, cat:1, alloc:1, transfer:1, mt:1, br:1, fuel:1, insp:1, doc:1, disp:1, note:1 };
@@ -4875,6 +4961,7 @@
 
   // ----- Seed data -----
   function seedEqData() {
+    if (STARTER_MODE) { ensureEquipmentComplianceFields(); return; }
     if (State.equipment.length > 0) { ensureEquipmentComplianceFields(); return; }
     const today = Date.now();
     const day = 86400000;
@@ -5830,6 +5917,7 @@
   ];
 
   function seedEventsData() {
+    if (STARTER_MODE) return;
     if (State.events.length > 0) return;
     const today = new Date();
     const dayStr = (offset) => { const d = new Date(today); d.setDate(d.getDate() + offset); return d.toISOString().slice(0,10); };
@@ -5853,6 +5941,7 @@
   }
 
   function seedTodosData() {
+    if (STARTER_MODE) return;
     if (State.todos.length > 0) return;
     const today = new Date();
     const dayStr = (offset) => { const d = new Date(today); d.setDate(d.getDate() + offset); return d.toISOString().slice(0,10); };
@@ -6616,6 +6705,7 @@
   const BCC_REPORTS = ['Project Budget Dashboard','Resource Budget Dashboard','BOQ Item Cost Dashboard','Location-Wise Cost Dashboard','Back-to-Back Package Dashboard','Overhead Dashboard','Schedule and Milestone Dashboard','Cash Flow Dashboard','Risk and Alert Dashboard'];
 
   function seedBCCData() {
+    if (STARTER_MODE) return;
     State.bccNextId = State.bccNextId || { boq:1, res:1, recipe:1, actual:1, pkg:1, contract:1, overhead:1, milestone:1, approval:1 };
     if (State.bccBoq?.length) return;
     State.bccBoq = [
@@ -6800,6 +6890,7 @@
   }
 
   function seedEstimationData() {
+    if (STARTER_MODE) return;
     if (State.estItems.length > 0) return;
     State.estItems = [
       // PRJ-017 — Skyline Towers
@@ -7714,6 +7805,7 @@
   }
 
   function seedDPRData() {
+    if (STARTER_MODE) return;
     if (State.dprs.length > 0) return;
     seedProjectSites(); // ensure sites exist
     const todayDate = new Date();
@@ -8968,6 +9060,7 @@
     if (!Array.isArray(State.labReports)) State.labReports = [];
     if (!Array.isArray(State.labTestTypes)) State.labTestTypes = [];
     if (!Array.isArray(State.clientSubmissions)) State.clientSubmissions = [];
+    if (STARTER_MODE) return;
     if (!State.labTestTypes.length) {
       State.labTestTypes = LAB_TEST_DEFAULTS.map((t,i) => labApplyFormat(Object.assign({ id:'LT-' + String(i+1).padStart(3,'0'), active:true, builtIn:true }, t)));
       State.labTestNextId = State.labTestTypes.length + 1;
@@ -9071,6 +9164,7 @@
   }
 
   function seedQualityData() {
+    if (STARTER_MODE) { ensureQualityState(); return; }
     ensureQualityState();
     if (State.labReports.length > 0) { ensureHydropowerQualityData(); return; }
     seedDPRData();
@@ -9972,6 +10066,7 @@
   };
 
   function ensureHydropowerProjectSites() {
+    if (STARTER_MODE) return;
     if (!Array.isArray(State.projectSites)) State.projectSites = [];
     if (State.projectSites.some(s => s.projectId === 'PRJ-030')) return;
     let i = Math.max(0, ...State.projectSites.map(s => Number(s.id) || 0)) + 1;
@@ -9989,6 +10084,7 @@
   }
 
   function seedProjectSites() {
+    if (STARTER_MODE) { State.projectSites = Array.isArray(State.projectSites) ? State.projectSites : []; return; }
     if (State.projectSites.length > 0) { ensureHydropowerProjectSites(); return; }
     let i = 1;
     const sites = [
@@ -10254,6 +10350,7 @@
 
 
   function seedRevenuesData() {
+    if (STARTER_MODE) return;
     if (State.revenues.length > 0) return;
     const today = Date.now();
     const day = 86400000;
@@ -10654,6 +10751,34 @@
 
   // PROJECT PORTFOLIO (canonical per-project rollup data)
   function projectPortfolio() {
+    if (STARTER_MODE) {
+      const records = (State.projects || []).filter(p => !isSampleProject(p)).concat([{ ...SAMPLE_PROJECT }]);
+      return records.map(p => ({
+        id:p.id,
+        name:p.name,
+        client:p.client || '',
+        type:p.type || 'Project',
+        startDate:p.startDate || '',
+        endDate:p.endDate || '',
+        contract:(+p.contract || +p.value / 10000000 || 0),
+        billed:+p.billed || 0,
+        incurred:+p.incurred || 0,
+        eac:+p.eac || (+p.contract || +p.value / 10000000 || 0),
+        pctComplete:+p.pctComplete || +p.progress || 0,
+        spi:+p.spi || 1,
+        cpi:+p.cpi || 1,
+        margin:+p.margin || 0,
+        status:({ ok:'On Track', warn:'At Risk', bad:'Delayed' }[p.status] || p.status || 'On Track'),
+        risk:p.risk || (+p.issues > 0 ? 'medium' : 'low'),
+        location:p.location || p.loc || '',
+        manpower:+p.manpower || +p.team || 0,
+        equipment:+p.equipment || 0,
+        alerts:+p.alerts || +p.issues || 0,
+        pm:p.pm || '',
+        sample:!!p.sample,
+        previewOnly:!!p.previewOnly
+      }));
+    }
     return [
       { id:'PRJ-017', name:'Skyline Towers · Block A',  client:'NIC Asia / NCC',  type:'High-rise residential',  startDate:'2024-09-01', endDate:'2027-02-06', contract:84.50, billed:39.20, incurred:39.20, eac:76.85, pctComplete:48, spi:0.94, cpi:0.96, margin:9.05, status:'On Track',   risk:'medium',   location:'Sanepa, Lalitpur',     manpower:142, equipment:8,  alerts:2, pm:'R. Tamang' },
       { id:'PRJ-021', name:'Ring Road Underpass',       client:'DoR Nepal',       type:'Infrastructure',         startDate:'2024-11-15', endDate:'2026-08-30', contract:124.00, billed:68.40, incurred:68.40, eac:122.10,pctComplete:55, spi:0.88, cpi:0.91, margin:1.53, status:'At Risk',   risk:'high',     location:'Kalanki, KTM',         manpower:86,  equipment:6,  alerts:5, pm:'S. Pradhan' },
@@ -10665,6 +10790,11 @@
   }
 
   function ensureHydropowerProjects() {
+    if (STARTER_MODE) {
+      State.projects = Array.isArray(State.projects) ? State.projects.filter(p => !isSampleProject(p)) : [];
+      if (isSampleProject(State.activeProject)) State.activeProject = 'ALL';
+      return;
+    }
     State.projects = Array.isArray(State.projects) ? State.projects : [];
     const defaults = [
       { id:'PRJ-030', name:'Mewa Khola Hydropower Project', client:'High Himal-Jade Infra JV / UMHL', loc:'Taplejung', value:1380082100.12, progress:12.8, margin:8.3, end:'Jun 28', status:'warn', team:176, issues:9 }
@@ -10674,12 +10804,24 @@
     });
   }
 
+  function isSampleProject(projectOrId) {
+    const id = typeof projectOrId === 'string' ? projectOrId : projectOrId?.id;
+    if (!id) return false;
+    const p = (State.projects || []).find(x => x.id === id) || (typeof projectOrId === 'object' ? projectOrId : null);
+    return !!(p?.sample || p?.previewOnly || id === SAMPLE_PROJECT.id);
+  }
+
+  function operationalPortfolio() {
+    return projectPortfolio().filter(p => !isSampleProject(p));
+  }
+
   function activeProjectId() {
     return State.session?.inProjectMode && State.session?.projectId ? State.session.projectId : (State.activeProject || 'ALL');
   }
 
   function activeProjectRecord(id = activeProjectId()) {
     if (!id || id === 'ALL') return null;
+    if (isSampleProject(id)) return null;
     return projectPortfolio().find(p => p.id === id) || (State.projects || []).find(p => p.id === id) || null;
   }
 
@@ -10688,11 +10830,11 @@
   }
 
   function syncActiveProjectUI() {
-    const portfolio = projectPortfolio();
+    const portfolio = operationalPortfolio();
     const current = activeProjectId();
     const topbar = $('#activeProjectSelect');
     const sidebar = $('#active-project');
-    const topbarOptions = [`<option value="ALL">All Projects · Portfolio</option>`]
+    const topbarOptions = [`<option value="ALL">${portfolio.length ? 'All Projects · Portfolio' : 'Create a project to begin'}</option>`]
       .concat(portfolio.map(p => `<option value="${p.id}">${projectOptionLabel(p)}</option>`))
       .join('');
     const sidebarOptions = portfolio.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
@@ -10701,9 +10843,9 @@
       topbar.value = current && portfolio.some(p => p.id === current) ? current : 'ALL';
     }
     if (sidebar) {
-      sidebar.innerHTML = sidebarOptions;
+      sidebar.innerHTML = sidebarOptions || `<option value="">No real project yet</option>`;
       sidebar.value = current && current !== 'ALL' && portfolio.some(p => p.id === current) ? current : (portfolio[0]?.id || '');
-      sidebar.disabled = current === 'ALL';
+      sidebar.disabled = current === 'ALL' || !portfolio.length;
     }
     const p = activeProjectRecord(current);
     const meta = $('#activeProjectMeta');
@@ -10713,6 +10855,11 @@
   }
 
   function applyActiveProjectSelection(projectId) {
+    if (isSampleProject(projectId)) {
+      syncActiveProjectUI();
+      showSampleProjectPreview();
+      return;
+    }
     if (State.session?.inProjectMode && State.session?.projectId && projectId !== State.session.projectId) {
       syncActiveProjectUI();
       toast('Project Locked', 'Exit to Portfolio to choose another project.', 'info');
@@ -10775,7 +10922,7 @@
     if (view === 'assets')    { seedAssetData(); return State.assets?.length || 0; }
     if (view === 'events')    return State.events?.length || 0;
     if (view === 'todos')     return State.todos?.filter(t => t.status !== 'completed').length || 0;
-    if (view === 'projects')  return State.projects?.length || 0;
+    if (view === 'projects')  return operationalPortfolio().length;
     if (view === 'projectsites') { const pid = State.session?.projectId || State.activeProject; return pid && pid !== 'ALL' ? projectSitesFor(pid).length : State.projectSites?.length || 0; }
     if (view === 'audit')     return State.audit?.length || 0;
     if (view === 'documents') { seedDocumentsData(); return State.documents?.length || 0; }
@@ -10863,7 +11010,7 @@
     const assetAlerts = (State.assetNotifications || []).filter(n => n.status !== 'Closed');
     if (assetAlerts.length) add('warn', assetAlerts.length + ' asset alerts', 'Review maintenance, calibration, insurance, rental, return and document exceptions.', 'assets', 'qr-code', 'Open assets');
 
-    const portfolioRisk = projectPortfolio().filter(p => p.status === 'At Risk' || p.status === 'Delayed');
+    const portfolioRisk = operationalPortfolio().filter(p => p.status === 'At Risk' || p.status === 'Delayed');
     if (portfolioRisk.length) add('bad', portfolioRisk.length + ' projects at risk', 'Use the dashboard rollup to review schedule, cost, and alert pressure.', 'projects', 'folder-kanban', 'Open projects');
 
     return list;
@@ -10878,9 +11025,10 @@
     const pendingClient = (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status)).length;
     const pendingPOs = (State.pos || []).filter(p => p.status !== 'delivered').length;
     const billed = (State.raBills || []).reduce((s,b) => s + (+b.net || 0), 0);
-    const contractValue = (State.projects || []).reduce((s,p) => s + (+p.value || 0), 0);
+    const realProjects = (State.projects || []).filter(p => !isSampleProject(p));
+    const contractValue = realProjects.reduce((s,p) => s + (+p.value || 0), 0);
     return [
-      { view:'projects', icon:'folder-kanban', label:'Projects', value:(State.projects || []).length, detail:'portfolio value ' + fmtNPR(contractValue), color:'#1E3A4C' },
+      { view:'projects', icon:'folder-kanban', label:'Projects', value:realProjects.length, detail:'portfolio value ' + fmtNPR(contractValue), color:'#1E3A4C' },
       { view:'todos', icon:'check-square', label:'To-Do', value:activeTasks, detail:'open work items', color:activeTasks ? '#B45309' : '#15803D' },
       { view:'events', icon:'calendar-check', label:'Events', value:openEvents, detail:'active contractual records', color:'#7C3AED' },
       { view:'budgetcontrol', icon:'circle-dollar-sign', label:'Budget Control', value:(State.bccBoq || []).length, detail:'BOQ profitability and milestones', color:'#1E3A4C' },
@@ -10969,16 +11117,16 @@
     try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); } catch(e){}
 
     // ===== Build new launcher HTML =====
-    const portfolio = projectPortfolio();
+    const portfolio = operationalPortfolio();
 
     // Company-level rollup
     const totalContract = portfolio.reduce((s,p) => s + p.contract, 0);
     const totalIncurred = portfolio.reduce((s,p) => s + p.incurred, 0);
     const totalBilled = portfolio.reduce((s,p) => s + p.billed, 0);
     const totalEAC = portfolio.reduce((s,p) => s + p.eac, 0);
-    const fcMargin = ((totalContract - totalEAC) / totalContract * 100);
-    const avgSPI = portfolio.reduce((s,p) => s + p.spi * p.contract, 0) / totalContract;
-    const avgCPI = portfolio.reduce((s,p) => s + p.cpi * p.contract, 0) / totalContract;
+    const fcMargin = totalContract ? ((totalContract - totalEAC) / totalContract * 100) : 0;
+    const avgSPI = totalContract ? portfolio.reduce((s,p) => s + p.spi * p.contract, 0) / totalContract : 1;
+    const avgCPI = totalContract ? portfolio.reduce((s,p) => s + p.cpi * p.contract, 0) / totalContract : 1;
     const totalAlerts = portfolio.reduce((s,p) => s + p.alerts, 0);
     const totalManpower = portfolio.reduce((s,p) => s + p.manpower, 0);
     const totalEquipment = portfolio.reduce((s,p) => s + p.equipment, 0);
@@ -11393,6 +11541,10 @@
     });
     document.querySelectorAll('[data-portfolio-id]').forEach(card => {
       card.onclick = () => {
+        if (isSampleProject(card.dataset.portfolioId)) {
+          showSampleProjectPreview();
+          return;
+        }
         State.activeProject = card.dataset.portfolioId;
         syncActiveProjectUI();
         navTo('projects');
@@ -11465,9 +11617,29 @@
   // Stage 2: clicking a project card opens a job-role + passcode gate.
   function enterProject(projectId) {
     if (!State.session?.loggedIn) return signOut();
+    if (isSampleProject(projectId)) return showSampleProjectPreview();
     openProjectLogin(projectId);
   }
   window.enterProject = enterProject;
+
+  function showSampleProjectPreview() {
+    openDrawer({
+      title:'Sample Project Preview',
+      body:`
+        <div class="stamp mb-3"><i data-lucide="eye" class="w-3 h-3"></i>PREVIEW ONLY</div>
+        <div class="card p-4 mb-3">
+          <div class="font-display font-black text-xl">${esc(SAMPLE_PROJECT.name)}</div>
+          <div class="text-sm text-stone-500 mt-2">This sample is only here to show how a project card looks. It is not linked to DPR, BOQ, billing, inventory, QA, documents, reports, or project filters.</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="card p-3"><div class="font-mono text-[10px] text-stone-500">AFFECTS KPI</div><div class="font-display font-black text-xl text-green-700">No</div></div>
+          <div class="card p-3"><div class="font-mono text-[10px] text-stone-500">CAN SAVE RECORDS</div><div class="font-display font-black text-xl text-green-700">No</div></div>
+        </div>
+        <button class="btn btn-amber" onclick="closeDrawer(); actNewProject();"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Create Real Project</button>
+      `
+    });
+  }
+  window.showSampleProjectPreview = showSampleProjectPreview;
 
   function openProjectLogin(projectId) {
     const proj = (State.projects || []).find(p => p.id === projectId) || { id:projectId, name:projectId };
@@ -11535,9 +11707,13 @@
   }
 
   function doEnterProject(projectId) {
+    if (isSampleProject(projectId)) {
+      showSampleProjectPreview();
+      return false;
+    }
     const perm = State.session?.user;
     if (!perm) { signOut(); return false; }
-    if (perm.projects !== 'ALL' && !perm.projects.includes(projectId)) {
+    if (!STARTER_MODE && perm.projects !== 'ALL' && !perm.projects.includes(projectId)) {
       toast('Access Denied','This role has no access to ' + projectId + ' — pick another role','bad');
       return false;
     }
@@ -11620,7 +11796,8 @@
     document.getElementById('portfolioUserAvatar').textContent = perm.avatar;
 
     const allProjects = projectPortfolio();
-    const accessibleProjects = perm.projects === 'ALL' ? allProjects : allProjects.filter(p => perm.projects.includes(p.id));
+    const visibleProjects = perm.projects === 'ALL' ? allProjects : allProjects.filter(p => perm.projects.includes(p.id) || isSampleProject(p));
+    const accessibleProjects = visibleProjects.filter(p => !isSampleProject(p));
     const accessContractTotal = accessibleProjects.reduce((s,p) => s + p.contract, 0);
     const accessBilledTotal = accessibleProjects.reduce((s,p) => s + p.billed, 0);
     const accessEACTotal = accessibleProjects.reduce((s,p) => s + p.eac, 0);
@@ -11640,7 +11817,7 @@
             <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff;padding:14px">
               <div class="font-mono text-[10px] opacity-60">PROJECTS</div>
               <div class="font-display font-black text-3xl">${accessibleProjects.length}</div>
-              <div class="text-[10px] opacity-60">available to your account</div>
+              <div class="text-[10px] opacity-60">real projects only</div>
             </div>
             <div class="card" style="background:rgba(232,116,44,.18);border-color:rgba(232,116,44,.34);color:#fff;padding:14px">
               <div class="font-mono text-[10px] opacity-70">ALERTS</div>
@@ -11664,21 +11841,23 @@
           <div class="text-xs text-stone-500 mt-3">Each project opens with a simplified module set for the selected role.</div>
         </div>
         <div class="flex gap-2">
+          <button class="btn btn-amber" onclick="actNewProject()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Project</button>
           <button class="btn btn-ghost" onclick="enterAdminMode('analytics')"><i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>Portfolio Analytics</button>
           <button class="btn btn-ghost" onclick="signOut()"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Sign Out</button>
         </div>
       </div>
 
       <div class="project-name-grid">
-        ${accessibleProjects.map(p => {
+        ${visibleProjects.map(p => {
           const sc = statusColor(p.status);
           const rc = riskColor(p.risk);
+          const sample = isSampleProject(p);
           return `<div class="project-name-card" onclick="enterProject('${p.id}')">
             <div class="project-card-top" style="background:${sc}"></div>
             <div class="p-4">
               <div class="flex items-center justify-between mb-3">
                 <span class="font-mono text-[11px] text-stone-500">${p.id}</span>
-                <span class="badge" style="background:${sc}18;color:${sc};border:1px solid ${sc}44">${p.status}</span>
+                <span class="badge" style="background:${sample ? '#DBEAFE' : sc + '18'};color:${sample ? '#1E3A8A' : sc};border:1px solid ${sample ? '#93C5FD' : sc + '44'}">${sample ? 'Preview only' : p.status}</span>
               </div>
               <div class="font-display font-black text-xl leading-tight">${p.name}</div>
               <div class="text-xs text-stone-500 mt-2">${p.client}</div>
@@ -11688,7 +11867,7 @@
               </div>
             </div>
             <div class="project-enter-btn">
-              <span>Enter project</span>
+              <span>${sample ? 'View sample' : 'Enter project'}</span>
               <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </div>
           </div>`;
@@ -11873,7 +12052,7 @@
   // Pull the user's Supabase workspace into State (or seed it on first
   // run), then enter the app via the existing role-based UI flow.
   async function bcAfterAuth() {
-    if (window.BC && BC.enabled) {
+    if (window.BC && BC.enabled && !STARTER_MODE) {
       try {
         const hadData = await BC.pullInto(State);
         if (!hadData) await BC.firstSyncIfEmpty(State);
@@ -12236,6 +12415,7 @@
 
   // -------- DOCUMENT CONTROL --------
   function seedDocumentsData() {
+    if (STARTER_MODE) { State.documents = Array.isArray(State.documents) ? State.documents : []; return; }
     if (State.documents && State.documents.length) { normalizeAIDocumentMetadata(); return; }
     State.documents = [
       { id:'DOC-001', code:'STR-S-201', title:'Slab Plan - Tower B - Level 7-8', type:'Drawing', discipline:'Structural', projectId:'PRJ-017', rev:'R4', status:'Approved for construction', updated:'2026-05-15', issuedBy:'B&P Consultants', owner:'S. Adhikari', dueDate:'', fileName:'STR-S-201_R4.pdf', notes:'Approved with cover-block condition from PMC.', revisions:['R0 issued for review','R2 column grid coordinated','R4 approved for construction'] },
@@ -12809,7 +12989,7 @@ Available Actions:
         <div class="form-grid-2">
           <div class="form-row"><label>Project Name</label><input name="name" placeholder="e.g. Kalanki Underpass"></div>
           <div class="form-row"><label>Project Code</label><input name="code" value="${uid('PRJ')}"></div>
-          <div class="form-row"><label>Client</label><select name="client"><option>Skyline Developers</option><option>DoR · Govt</option><option>Annapurna Hospitality</option><option>NIC Asia Bank</option><option>KMC</option><option>IBN</option></select></div>
+          <div class="form-row"><label>Client</label><input name="client" placeholder="Client / Employer name"></div>
           <div class="form-row"><label>Type</label><select name="type"><option>High-rise Residential</option><option>Commercial</option><option>Infrastructure</option><option>Industrial</option><option>Institutional</option></select></div>
           <div class="form-row"><label>Location</label><input name="loc" placeholder="Lalitpur"></div>
           <div class="form-row"><label>Contract Value (NPR)</label><input name="value" type="number" placeholder="500000000"></div>
@@ -12823,7 +13003,12 @@ Available Actions:
         if (!d.name) { toast('Validation', 'Project name is required', 'bad'); return false; }
         const p = { id:d.code, name:d.name, client:d.client, loc:d.loc, value:+d.value||0, progress:0, margin:0, end:d.end||'TBD', status:'ok', team:0, issues:0 };
         State.projects.unshift(p);
+        State.activeProject = p.id;
+        syncActiveProjectUI();
+        saveState();
         insertNewProjectCard(p);
+        renderPortfolioScreen?.();
+        renderLauncher?.();
         toast('Project Created', d.name + ' added to register · ' + d.code, 'ok');
       }
     });
@@ -13282,9 +13467,38 @@ Available Actions:
 
   // -------- TABLE RENDERERS --------
   function renderProjectsView() {
-    // Non-destructive: tag existing cards with click handlers (idempotent)
     const grid = $('#view-projects .grid.grid-cols-2');
     if (!grid) return;
+    if (STARTER_MODE) {
+      grid.innerHTML = projectPortfolio().map(p => `
+        <div class="card p-5 lift cursor-pointer" data-project-id="${p.id}">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <div class="font-mono text-xs text-stone-500">${p.id} · ${(p.loc||'').toUpperCase()}</div>
+              <div class="font-display font-bold text-xl mt-1">${esc(p.name)}</div>
+              <div class="text-xs text-stone-500 mt-1">${esc(p.client || 'No client assigned')}</div>
+            </div>
+            <span class="badge badge-info">${isSampleProject(p) ? 'PREVIEW ONLY' : 'NEW'}</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2 my-4 pt-3 border-t border-stone-100">
+            <div><div class="font-mono text-[10px] text-stone-400">VALUE</div><div class="font-mono font-bold tabular">${fmtNPR(p.value || 0)}</div></div>
+            <div><div class="font-mono text-[10px] text-stone-400">PROGRESS</div><div class="font-mono font-bold tabular">${p.progress || 0}%</div></div>
+            <div><div class="font-mono text-[10px] text-stone-400">MARGIN</div><div class="font-mono font-bold tabular">${p.margin || 0}%</div></div>
+            <div><div class="font-mono text-[10px] text-stone-400">END</div><div class="font-mono font-bold tabular">${esc(p.end || 'TBD')}</div></div>
+          </div>
+          <div class="pbar"><div style="width:${Math.max(0, Math.min(100, +p.progress || 0))}%"></div></div>
+          <div class="flex items-center justify-between mt-3 text-xs text-stone-500">
+            <span>${isSampleProject(p) ? 'Not linked to live modules · create a real project to start' : 'Project setup ready'}</span>
+          </div>
+        </div>
+      `).join('');
+      grid.querySelectorAll('[data-project-id]').forEach(card => {
+        card.onclick = () => isSampleProject(card.dataset.projectId) ? showSampleProjectPreview() : openProjectDetail(card.dataset.projectId);
+      });
+      if (window.lucide) try { lucide.createIcons(); } catch(e){}
+      return;
+    }
+    // Non-destructive: tag existing cards with click handlers (idempotent)
     grid.querySelectorAll('.card').forEach(card => {
       if (card.dataset.wired) return;
       card.dataset.wired = '1';
@@ -14286,9 +14500,10 @@ Available Actions:
 
   // -------- INITIAL SEED & RENDERS --------
   const _hadStored = loadState();
+  if (STARTER_MODE && !_hadStored) applyStarterWorkspace();
   ensureHydropowerProjects();
   const now = new Date();
-  if (!_hadStored) {
+  if (!_hadStored && !STARTER_MODE) {
     State.activity = [
       { t: new Date(now.getTime() - 12*60000), title: 'R. Tamang submitted DPR · Tower B L7', msg: '142 workers · 3.2 m³ M-25 poured' },
       { t: new Date(now.getTime() - 49*60000), title: 'System auto-generated PO #2401-44', msg: 'Cement 250 bags · Shivam Cement · रू 1,12,500' },
@@ -14386,7 +14601,7 @@ Available Actions:
   if (anProj) anProj.addEventListener('change', () => { destroyAnalyticsCharts(); renderAnalyticsView(); toast('Analytics Filter','Project filter changed','info'); });
 
   // First-load audit entry
-  audit('view','Session','App opened · ' + navigator.userAgent.split(')')[0].split('(')[1] || 'browser');
+  if (!STARTER_MODE) audit('view','Session','App opened · ' + navigator.userAgent.split(')')[0].split('(')[1] || 'browser');
 
   // Welcome toast
   setTimeout(() => toast(_hadStored ? 'Session Restored' : 'BuildCore Ready', _hadStored ? 'Previous data restored from local storage · Cmd/Ctrl+K to navigate' : 'Cmd/Ctrl + K to jump anywhere · click cards & tables for detail', 'info', 4500), 600);
