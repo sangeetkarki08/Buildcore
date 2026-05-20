@@ -92,6 +92,9 @@ declare
     'asset_allocations', 'asset_transfers', 'asset_maintenance',
     'asset_breakdowns', 'asset_fuel_logs', 'asset_inspections',
     'asset_documents', 'asset_disposals', 'asset_notifications',
+    'budget_boq_items', 'budget_resources', 'budget_resource_recipes',
+    'budget_cost_ledger', 'budget_b2b_packages', 'budget_contracts',
+    'budget_overheads', 'budget_milestones', 'budget_approvals',
     'activity', 'audit_log'
   ];
 begin
@@ -388,6 +391,205 @@ create table if not exists public.asset_audit_logs_rel (
   primary key (user_id, id)
 );
 
+-- ---------------------------------------------------------------------
+-- Budget, cost control, back-to-back contract, overhead and milestone
+-- relational schema.
+-- ---------------------------------------------------------------------
+create table if not exists public.budget_boq_items_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  project_id text,
+  location text,
+  work_package text,
+  activity text,
+  boq_code text,
+  description text,
+  unit text,
+  quantity numeric(14,3),
+  client_rate numeric(14,2),
+  client_amount numeric(16,2),
+  execution_mode text,
+  internal_budget_rate numeric(14,2),
+  actual_cost_rate numeric(14,2),
+  executed_quantity numeric(14,3),
+  responsible_party text,
+  approval_status text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+create table if not exists public.budget_resources_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  category text,
+  resource_name text,
+  unit text,
+  budget_rate numeric(14,2),
+  approved_rate numeric(14,2),
+  current_market_rate numeric(14,2),
+  actual_purchase_rate numeric(14,2),
+  subcontract_rate numeric(14,2),
+  revised_rate numeric(14,2),
+  revision_history jsonb default '[]'::jsonb,
+  primary key (user_id, id)
+);
+
+create table if not exists public.budget_resource_recipes_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  boq_item_id text not null,
+  resource_id text,
+  resource_category text,
+  coefficient_per_unit numeric(14,6),
+  resource_rate numeric(14,2),
+  wastage_pct numeric(6,2),
+  productivity text,
+  equipment_hours numeric(12,3),
+  labour_mandays numeric(12,3),
+  material_consumption numeric(14,3),
+  fuel_consumption numeric(14,3),
+  fixed_asset_cost numeric(14,2),
+  overhead_allocation numeric(14,2),
+  profit_margin_pct numeric(6,2),
+  contingency_pct numeric(6,2),
+  cost_per_unit numeric(14,2),
+  primary key (user_id, id),
+  foreign key (user_id, boq_item_id) references public.budget_boq_items_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.budget_cost_ledger_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  project_id text,
+  location text,
+  activity text,
+  boq_item_id text,
+  resource_type text,
+  cost_head text,
+  work_package text,
+  subcontractor text,
+  vendor text,
+  ledger_date date,
+  quantity numeric(14,3),
+  cost_amount numeric(16,2),
+  approval_status text,
+  source_module text,
+  primary key (user_id, id)
+);
+
+create table if not exists public.budget_b2b_packages_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  scenario text,
+  package_name text,
+  linked_boq_items text[],
+  client_contract_value numeric(16,2),
+  subcontract_value numeric(16,2),
+  client_certified_amount numeric(16,2),
+  subcontractor_certified_amount numeric(16,2),
+  retention_pct numeric(6,2),
+  advance_recovery_pct numeric(6,2),
+  vat_pct numeric(6,2),
+  tds_pct numeric(6,2),
+  payment_terms text,
+  performance_guarantee text,
+  insurance text,
+  ld_clause text,
+  variation_clause text,
+  claim_clause text,
+  risk_ownership text,
+  overhead_cost numeric(16,2),
+  finance_cost numeric(16,2),
+  final_projected_margin_pct numeric(8,2),
+  status text,
+  primary key (user_id, id)
+);
+
+create table if not exists public.budget_contracts_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  contract_mode text,
+  title text,
+  supplier_vendor text,
+  contract_amount numeric(16,2),
+  payment_milestones jsonb default '[]'::jsonb,
+  retention_pct numeric(6,2),
+  advance_pct numeric(6,2),
+  deductions numeric(16,2),
+  variation_amount numeric(16,2),
+  claim_amount numeric(16,2),
+  final_payable_amount numeric(16,2),
+  status text,
+  primary key (user_id, id)
+);
+
+create table if not exists public.budget_overheads_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  overhead_type text,
+  overhead_head text,
+  monthly_budget numeric(16,2),
+  actual_monthly_cost numeric(16,2),
+  forecast_months numeric(8,2),
+  delay_months numeric(8,2),
+  allocation_method text,
+  delay_cost_impact numeric(16,2),
+  approval_status text,
+  primary key (user_id, id)
+);
+
+create table if not exists public.budget_milestones_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  milestone_title text,
+  milestone_category text,
+  project_id text,
+  location text,
+  boq_item_id text,
+  work_package text,
+  schedule_activity text,
+  subcontractor_vendor text,
+  planned_start date,
+  planned_finish date,
+  revised_start date,
+  revised_finish date,
+  actual_start date,
+  actual_finish date,
+  planned_progress_pct numeric(6,2),
+  actual_progress_pct numeric(6,2),
+  weightage_pct numeric(6,2),
+  contractual_importance text,
+  payment_linkage text,
+  delay_status text,
+  delay_days numeric(8,2),
+  responsible_party text,
+  required_documents text,
+  approval_status text,
+  remarks text,
+  risk_level text,
+  cost_impact numeric(16,2),
+  overhead_impact numeric(16,2),
+  ld_impact numeric(16,2),
+  client_billing_impact numeric(16,2),
+  subcontractor_payment_impact numeric(16,2),
+  primary key (user_id, id)
+);
+
+create table if not exists public.budget_approvals_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  approval_type text,
+  reference_id text,
+  owner text,
+  approval_status text,
+  history text,
+  old_value jsonb,
+  new_value jsonb,
+  created_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
 do $$
 declare tbl text;
 begin
@@ -395,7 +597,10 @@ begin
     'asset_categories_rel','asset_locations_rel','assets_rel','asset_allocations_rel',
     'asset_transfers_rel','asset_maintenance_rel','asset_breakdowns_rel','asset_fuel_logs_rel',
     'asset_inspections_rel','asset_documents_rel','asset_depreciation_rel','asset_disposals_rel',
-    'asset_notifications_rel','asset_audit_logs_rel'
+    'asset_notifications_rel','asset_audit_logs_rel',
+    'budget_boq_items_rel','budget_resources_rel','budget_resource_recipes_rel',
+    'budget_cost_ledger_rel','budget_b2b_packages_rel','budget_contracts_rel',
+    'budget_overheads_rel','budget_milestones_rel','budget_approvals_rel'
   ] loop
     execute format('alter table public.%I enable row level security', tbl);
     execute format('drop policy if exists "owner all" on public.%I', tbl);

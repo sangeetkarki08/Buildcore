@@ -56,6 +56,15 @@
     assetDocuments:    { table: 'asset_documents',    id: 'id' },
     assetDisposals:    { table: 'asset_disposals',    id: 'id' },
     assetNotifications:{ table: 'asset_notifications',id: 'id' },
+    bccBoq:       { table: 'budget_boq_items',       id: 'id' },
+    bccResources: { table: 'budget_resources',       id: 'id' },
+    bccRecipes:   { table: 'budget_resource_recipes',id: 'id' },
+    bccActuals:   { table: 'budget_cost_ledger',     id: 'id' },
+    bccPackages:  { table: 'budget_b2b_packages',    id: 'id' },
+    bccContracts: { table: 'budget_contracts',       id: 'id' },
+    bccOverheads: { table: 'budget_overheads',       id: 'id' },
+    bccMilestones:{ table: 'budget_milestones',      id: 'id' },
+    bccApprovals: { table: 'budget_approvals',       id: 'id' },
     activity: { table: 'activity',          id: null   },
     audit:    { table: 'audit_log',         id: 'hash' }
   };

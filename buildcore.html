@@ -486,6 +486,9 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="estimation">
         <i data-lucide="calculator" class="nav-icon w-4 h-4 text-white/60"></i>Estimation / BOQ
       </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="budgetcontrol">
+        <i data-lucide="circle-dollar-sign" class="nav-icon w-4 h-4 text-white/60"></i>Budget & Cost Control
+      </a>
 
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">SITE OPERATIONS</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dpr">
@@ -1160,6 +1163,38 @@
             <button class="ims-tab" data-esttab="summary"><i data-lucide="bar-chart-2" class="w-3 h-3"></i>Summary</button>
           </div>
           <div id="estTabContent" class="p-5"></div>
+        </div>
+      </section>
+
+      <section id="view-budgetcontrol" class="view">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <div class="stamp mb-3"><i data-lucide="circle-dollar-sign" class="w-3 h-3"></i>RESOURCE BUDGET & COST CONTROL</div>
+            <h1 class="font-display font-black text-3xl title-mark">Budget, Contracts, Overheads & Milestones</h1>
+            <p class="text-sm text-stone-500 mt-3">Resource-based budgeting · back-to-back contracts · overhead control · major milestones · BOQ profitability · cash flow and risk alerts for hydropower, tunnel, road, bridge, building and infrastructure works.</p>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button class="btn btn-ghost" data-bcc-act="export"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
+            <button class="btn btn-ghost" data-bcc-act="import"><i data-lucide="upload" class="w-3.5 h-3.5"></i>Import BOQ</button>
+            <button class="btn btn-amber" data-bcc-act="new-boq"><i data-lucide="plus" class="w-3.5 h-3.5"></i>BOQ Item</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-6 gap-3 mb-5" id="bccKpis"></div>
+        <div class="card">
+          <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs flex-wrap">
+            <button class="ims-tab active" data-bcctab="dashboards"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>Dashboards</button>
+            <button class="ims-tab" data-bcctab="boq"><i data-lucide="list-tree" class="w-3 h-3"></i>BOQ Modes</button>
+            <button class="ims-tab" data-bcctab="resources"><i data-lucide="boxes" class="w-3 h-3"></i>Resources</button>
+            <button class="ims-tab" data-bcctab="recipes"><i data-lucide="layers" class="w-3 h-3"></i>Resource Recipes</button>
+            <button class="ims-tab" data-bcctab="actuals"><i data-lucide="clipboard-check" class="w-3 h-3"></i>Actual Cost Ledger</button>
+            <button class="ims-tab" data-bcctab="backtoback"><i data-lucide="handshake" class="w-3 h-3"></i>Back-to-Back</button>
+            <button class="ims-tab" data-bcctab="contracts"><i data-lucide="file-signature" class="w-3 h-3"></i>Lump Sum / Supply</button>
+            <button class="ims-tab" data-bcctab="overhead"><i data-lucide="building-2" class="w-3 h-3"></i>Overhead</button>
+            <button class="ims-tab" data-bcctab="milestones"><i data-lucide="flag" class="w-3 h-3"></i>Milestones</button>
+            <button class="ims-tab" data-bcctab="approvals"><i data-lucide="check-check" class="w-3 h-3"></i>Approvals</button>
+            <button class="ims-tab" data-bcctab="workflow"><i data-lucide="route" class="w-3 h-3"></i>Workflow</button>
+          </div>
+          <div id="bccTabContent" class="p-5"></div>
         </div>
       </section>
 
@@ -2992,6 +3027,17 @@
     contracts: [],        // signed contracts per project
     expenses: [],         // expense ledger linked to BOQ items
     revenues: [],         // revenue entries (RA bills, advances, retention release)
+    bccBoq: [],
+    bccResources: [],
+    bccRecipes: [],
+    bccActuals: [],
+    bccPackages: [],
+    bccContracts: [],
+    bccOverheads: [],
+    bccMilestones: [],
+    bccApprovals: [],
+    bccCurrentTab: 'dashboards',
+    bccNextId: { boq:1, res:1, recipe:1, actual:1, pkg:1, contract:1, overhead:1, milestone:1, approval:1 },
     estCurrentTab: 'boq',
     finCurrentTab: 'pl',
     dprCurrentTab: 'log',
@@ -3035,6 +3081,10 @@
           assetDocuments: State.assetDocuments, assetDisposals: State.assetDisposals,
           assetNotifications: State.assetNotifications, assetCurrentTab: State.assetCurrentTab,
           assetSelectedId: State.assetSelectedId, assetNextId: State.assetNextId,
+          bccBoq: State.bccBoq, bccResources: State.bccResources, bccRecipes: State.bccRecipes,
+          bccActuals: State.bccActuals, bccPackages: State.bccPackages, bccContracts: State.bccContracts,
+          bccOverheads: State.bccOverheads, bccMilestones: State.bccMilestones, bccApprovals: State.bccApprovals,
+          bccCurrentTab: State.bccCurrentTab, bccNextId: State.bccNextId,
           vos: State.vos, risks: State.risks, photos: State.photos,
           activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
           audit: State.audit.slice(0,2000)
@@ -3053,7 +3103,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3079,6 +3129,10 @@
         assetDocuments:State.assetDocuments, assetDisposals:State.assetDisposals,
         assetNotifications:State.assetNotifications, assetCurrentTab:State.assetCurrentTab,
         assetSelectedId:State.assetSelectedId, assetNextId:State.assetNextId,
+        bccBoq:State.bccBoq, bccResources:State.bccResources, bccRecipes:State.bccRecipes,
+        bccActuals:State.bccActuals, bccPackages:State.bccPackages, bccContracts:State.bccContracts,
+        bccOverheads:State.bccOverheads, bccMilestones:State.bccMilestones, bccApprovals:State.bccApprovals,
+        bccCurrentTab:State.bccCurrentTab, bccNextId:State.bccNextId,
         vos:State.vos, risks:State.risks, photos:State.photos,
         activity:State.activity, audit:State.audit }
     }, null, 2);
@@ -6414,6 +6468,199 @@
   // =====================================================================
   //       ESTIMATION / BOQ / CONTRACT / EXPENSES — full CRUD
   // =====================================================================
+
+  // =====================================================================
+  //       RESOURCE-BASED BUDGETING / COST CONTROL / MILESTONES
+  // =====================================================================
+
+  const BCC_EXEC_MODES = ['Own Resource Execution Mode','Back-to-Back Subcontract Mode','Lump Sum Subcontract Mode','Milestone-Based Contract Mode','Supply Contract Mode','Service Contract Mode','Hybrid Execution Mode'];
+  const BCC_RES_CATS = ['Materials','Consumables','Labour','Equipment','Tools and tackles','Fixed assets','Subcontractors','Site overhead','Head office overhead','Mobilization and demobilization','Safety and quality','Testing and laboratory','Finance cost','Insurance cost','Bank guarantee cost','Temporary works','Camp and office cost'];
+  const BCC_MILESTONE_CATS = ['Contractual','Physical Progress','Underground Works','Procurement','Design and Approval','Subcontractor','Financial','Commissioning'];
+  const BCC_REPORTS = ['Project Budget Dashboard','Resource Budget Dashboard','BOQ Item Cost Dashboard','Location-Wise Cost Dashboard','Back-to-Back Package Dashboard','Overhead Dashboard','Schedule and Milestone Dashboard','Cash Flow Dashboard','Risk and Alert Dashboard'];
+
+  function seedBCCData() {
+    State.bccNextId = State.bccNextId || { boq:1, res:1, recipe:1, actual:1, pkg:1, contract:1, overhead:1, milestone:1, approval:1 };
+    if (State.bccBoq?.length) return;
+    State.bccBoq = [
+      { id:'BCQ-001', projectId:'PRJ-030', location:'Headrace Tunnel', workPackage:'Tunnel excavation and support', activity:'Drill, blast, mucking, support', boqCode:'HRT-EXC-01', description:'Tunnel excavation in class III/IV rock incl. mucking', unit:'m3', qty:42000, rate:5200, amount:218400000, mode:'Back-to-Back Subcontract Mode', budgetRate:4550, actualRate:4720, executedQty:8400, responsible:'Tunnel subcontractor' },
+      { id:'BCQ-002', projectId:'PRJ-030', location:'Headworks', workPackage:'Civil concrete', activity:'RCC concreting', boqCode:'HW-RCC-02', description:'M25 RCC at intake, weir and desander', unit:'m3', qty:18500, rate:14800, amount:273800000, mode:'Own Resource Execution Mode', budgetRate:12650, actualRate:13280, executedQty:4100, responsible:'Civil team' },
+      { id:'BCQ-003', projectId:'PRJ-030', location:'Access Road', workPackage:'Access road maintenance', activity:'Monthly road upkeep and landslide clearance', boqCode:'AR-MNT-01', description:'Access road maintenance during construction', unit:'month', qty:28, rate:1450000, amount:40600000, mode:'Lump Sum Subcontract Mode', budgetRate:1180000, actualRate:1320000, executedQty:4, responsible:'Local subcontractor' },
+      { id:'BCQ-004', projectId:'PRJ-030', location:'Powerhouse', workPackage:'Hydro-mechanical works', activity:'HM fabrication, delivery, erection, testing', boqCode:'HM-PKG-01', description:'Gates, penstock specials, trash rack and embedded parts', unit:'LS', qty:1, rate:178000000, amount:178000000, mode:'Milestone-Based Contract Mode', budgetRate:151500000, actualRate:156000000, executedQty:.22, responsible:'HM vendor' },
+      { id:'BCQ-005', projectId:'PRJ-021', location:'Pavement', workPackage:'GSB/WMM/DBST', activity:'Road pavement works', boqCode:'RD-PAV-06', description:'WMM and DBST pavement works', unit:'m2', qty:62000, rate:1850, amount:114700000, mode:'Hybrid Execution Mode', budgetRate:1620, actualRate:1905, executedQty:12000, responsible:'Pavement team' }
+    ];
+    State.bccResources = [
+      { id:'RES-001', category:'Materials', name:'OPC Cement', unit:'bag', budgetRate:720, approvedRate:735, marketRate:760, actualRate:752, subcontractRate:0, revisedRate:752, revision:'Rev-03 · supplier increase' },
+      { id:'RES-002', category:'Materials', name:'TMT Steel Fe500', unit:'MT', budgetRate:92000, approvedRate:95000, marketRate:102000, actualRate:101500, subcontractRate:0, revisedRate:101500, revision:'Rev-02 · market escalation' },
+      { id:'RES-003', category:'Equipment', name:'Excavator 20T', unit:'hr', budgetRate:4200, approvedRate:4350, marketRate:4700, actualRate:4580, subcontractRate:0, revisedRate:4580, revision:'Fuel indexed' },
+      { id:'RES-004', category:'Labour', name:'Skilled tunnel worker', unit:'manday', budgetRate:2200, approvedRate:2300, marketRate:2600, actualRate:2550, subcontractRate:0, revisedRate:2550, revision:'Remote site allowance' },
+      { id:'RES-005', category:'Fixed assets', name:'Crusher plant', unit:'ton', budgetRate:280, approvedRate:300, marketRate:340, actualRate:318, subcontractRate:310, revisedRate:318, revision:'Spare parts included' },
+      { id:'RES-006', category:'Site overhead', name:'Project manager salary', unit:'month', budgetRate:280000, approvedRate:280000, marketRate:320000, actualRate:300000, subcontractRate:0, revisedRate:300000, revision:'Delay forecast' }
+    ];
+    State.bccRecipes = [
+      { id:'RCP-001', boqId:'BCQ-002', resource:'OPC Cement', category:'Materials', coefficient:7.2, unit:'bag/m3', rate:752, wastage:3, productivity:'42 m3/day', equipmentHours:0.28, labourMandays:0.42, fuel:2.8, overheadPct:8, marginPct:12, costPerUnit:13280, procurementQty:137196, manpower:7770, equipmentHr:5180 },
+      { id:'RCP-002', boqId:'BCQ-001', resource:'Tunnel crew + jumbo + support', category:'Hybrid', coefficient:1, unit:'m3', rate:4720, wastage:2, productivity:'7.8 m/day', equipmentHours:0.55, labourMandays:0.32, fuel:4.2, overheadPct:6, marginPct:9, costPerUnit:4720, procurementQty:42000, manpower:13440, equipmentHr:23100 }
+    ];
+    State.bccActuals = [
+      { id:'ACL-001', date:'2026-05-20', projectId:'PRJ-030', location:'Headworks', activity:'RCC concreting', boqId:'BCQ-002', resourceType:'Materials', costHead:'Cement', workPackage:'Civil concrete', vendor:'Shivam Cement', qty:920, cost:691840, approval:'Approved' },
+      { id:'ACL-002', date:'2026-05-20', projectId:'PRJ-030', location:'Tunnel', activity:'Mucking', boqId:'BCQ-001', resourceType:'Subcontractor', costHead:'Tunnel subcontract RA', workPackage:'Tunnel excavation and support', subcontractor:'Himal Tunnel JV', qty:145, cost:684400, approval:'Pending' },
+      { id:'ACL-003', date:'2026-05-19', projectId:'PRJ-030', location:'Camp', activity:'Site administration', boqId:'', resourceType:'Overhead', costHead:'Camp and food', workPackage:'Site overhead', vendor:'Camp vendor', qty:1, cost:185000, approval:'Approved' }
+    ];
+    State.bccPackages = [
+      { id:'B2B-001', scenario:'Hydropower Civil Contractor Giving Tunnel Work to Subcontractor', package:'Tunnel excavation, shotcrete, rock bolt, steel rib, mucking', clientValue:218400000, subcontractValue:191100000, clientCertified:43680000, subcontractCertified:39648000, retention:5, advanceRecovery:10, vat:13, tds:1.5, pg:'10%', insurance:'CAR + WC', ld:'0.05% per day capped 10%', risk:'Delay and geology shared', claim:'EOT notice drafted', variation:'Class V rock pending', overhead:8400000, financeCost:2100000, finalMargin:7.4, status:'At Risk' },
+      { id:'B2B-002', scenario:'Crusher or Aggregate Production Back-to-Back', package:'Crusher operation and aggregate production', clientValue:64000000, subcontractValue:48200000, clientCertified:12800000, subcontractCertified:9800000, retention:5, advanceRecovery:0, vat:13, tds:1.5, pg:'5%', insurance:'Plant insurance', ld:'Production shortfall penalty', risk:'Quality rejection', claim:'None', variation:'Extra haulage under review', overhead:1600000, financeCost:450000, finalMargin:16.8, status:'On Track' },
+      { id:'B2B-003', scenario:'Electro-Mechanical Supply and Installation', package:'Design, manufacturing, shipment, customs, installation, dry/wet testing', clientValue:240000000, subcontractValue:211000000, clientCertified:18000000, subcontractCertified:14200000, retention:5, advanceRecovery:15, vat:13, tds:1.5, pg:'10% + warranty bond', insurance:'Marine + erection', ld:'COD linked', risk:'Customs delay', claim:'Procurement EOT possible', variation:'Protection relay upgrade', overhead:3900000, financeCost:5200000, finalMargin:6.2, status:'Watch' }
+    ];
+    State.bccContracts = [
+      { id:'CNT-001', mode:'Lump Sum Subcontract Mode', title:'Access road maintenance monthly LS', supplier:'Local Road Group', amount:33040000, terms:'Monthly road open certificate', completion:18, retention:5, advance:0, deductions:420000, variation:600000, claims:0, finalPayable:6500000, status:'Active' },
+      { id:'CNT-002', mode:'Supply Contract Mode', title:'Explosives supply and delivery', supplier:'Licensed Explosive Supplier', amount:46200000, terms:'PO-EXP-030 · monthly delivery · DoM approval', completion:26, retention:0, advance:15, deductions:0, variation:0, claims:0, finalPayable:12400000, status:'Delayed' },
+      { id:'CNT-003', mode:'Milestone-Based Contract Mode', title:'HM gates and embedded parts', supplier:'HM Specialist Vendor', amount:151500000, terms:'Drawing approval / fabrication / delivery / installation / testing', completion:22, retention:5, advance:10, deductions:0, variation:2500000, claims:0, finalPayable:28600000, status:'Active' }
+    ];
+    State.bccOverheads = [
+      { id:'OH-001', type:'Time-Based Overhead', head:'Project manager salary', monthlyBudget:280000, actualMonth:300000, months:28, delayMonths:6, allocation:'Project level', costImpact:1800000 },
+      { id:'OH-002', type:'Time-Based Overhead', head:'Camp, food and staff lodging', monthlyBudget:1450000, actualMonth:1580000, months:28, delayMonths:6, allocation:'Location-based', costImpact:9480000 },
+      { id:'OH-003', type:'Percentage-Based Overhead', head:'Head office support and finance', monthlyBudget:0, actualMonth:0, months:28, delayMonths:6, allocation:'3.5% of direct cost', costImpact:4200000 },
+      { id:'OH-004', type:'One-Time Overhead', head:'Mobilization and demobilization', monthlyBudget:0, actualMonth:0, months:1, delayMonths:0, allocation:'Manual', costImpact:0 }
+    ];
+    State.bccMilestones = [
+      { id:'MS-001', title:'Tunnel breakthrough', category:'Underground Works', projectId:'PRJ-030', location:'Headrace Tunnel', boqId:'BCQ-001', package:'Tunnel subcontract', plannedFinish:'2026-08-30', revisedFinish:'2026-09-15', actualFinish:'', plannedPct:48, actualPct:36, weight:18, importance:'Contractual', paymentLink:'Client IPC + subcontract RA', delayStatus:'Delayed', delayDays:15, responsible:'Tunnel subcontractor', docs:'Chainage report, survey, photos', approval:'Pending', risk:'High', costImpact:4200000, overheadImpact:3100000, ldImpact:1800000, billingImpact:12500000, subPaymentImpact:9800000 },
+      { id:'MS-002', title:'Headworks road completion', category:'Physical Progress', projectId:'PRJ-030', location:'Headworks', boqId:'BCQ-003', package:'Access road', plannedFinish:'2026-07-30', revisedFinish:'2026-07-30', actualFinish:'', plannedPct:35, actualPct:34, weight:8, importance:'Major work front', paymentLink:'Monthly LS', delayStatus:'On Track', delayDays:0, responsible:'Civil team', docs:'Road open certificate', approval:'Approved', risk:'Medium', costImpact:0, overheadImpact:0, ldImpact:0, billingImpact:0, subPaymentImpact:0 },
+      { id:'MS-003', title:'HM drawing approval', category:'Design and Approval', projectId:'PRJ-030', location:'Powerhouse', boqId:'BCQ-004', package:'HM vendor', plannedFinish:'2026-06-15', revisedFinish:'2026-06-25', actualFinish:'', plannedPct:100, actualPct:72, weight:10, importance:'Payment milestone', paymentLink:'10% vendor payable / client receivable', delayStatus:'At Risk', delayDays:10, responsible:'HM vendor', docs:'Drawing submission, comments reply', approval:'Under Review', risk:'High', costImpact:1250000, overheadImpact:800000, ldImpact:0, billingImpact:17800000, subPaymentImpact:15150000 }
+    ];
+    State.bccApprovals = [
+      { id:'APP-001', type:'Resource budget approval', ref:'BCQ-002', owner:'Project Manager', status:'Approved', history:'Prepared by QS, reviewed by PM, approved by PD' },
+      { id:'APP-002', type:'Subcontractor RA bill approval', ref:'B2B-001 RA-02', owner:'Billing Engineer', status:'Pending', history:'Measured by site, awaiting QS verification' },
+      { id:'APP-003', type:'Milestone revision approval', ref:'MS-001', owner:'Planning Engineer', status:'Under Review', history:'Delay notice attached, EOT claim draft pending' }
+    ];
+    State.bccNextId = { boq:6, res:7, recipe:3, actual:4, pkg:4, contract:4, overhead:5, milestone:4, approval:4 };
+    saveState();
+  }
+
+  function bccStats() {
+    seedBCCData();
+    const boqValue = State.bccBoq.reduce((s,b)=>s+(+b.amount||0),0);
+    const budget = State.bccBoq.reduce((s,b)=>s+(+b.budgetRate||0)*(+b.qty||0),0);
+    const actual = State.bccActuals.reduce((s,a)=>s+(+a.cost||0),0);
+    const overhead = State.bccOverheads.reduce((s,o)=>s+(+o.actualMonth||0)*(+o.months||0)+(+o.costImpact||0),0);
+    return { boqValue, budget, actual, overhead, grossMargin:boqValue-budget, netMargin:boqValue-budget-overhead, projected:budget+overhead+actual*.08 };
+  }
+
+  function renderBCCView() {
+    seedBCCData();
+    renderBCCKPIs();
+    document.querySelectorAll('#view-budgetcontrol .ims-tab').forEach(btn => btn.onclick = () => { State.bccCurrentTab = btn.dataset.bcctab; saveState(); renderBCCView(); });
+    document.querySelectorAll('#view-budgetcontrol [data-bcc-act]').forEach(btn => btn.onclick = () => {
+      if (btn.dataset.bccAct === 'new-boq') return bccEditBOQ();
+      if (btn.dataset.bccAct === 'export') return bccExportCSV();
+      if (btn.dataset.bccAct === 'import') return toast('BOQ Import', 'Excel/CSV import mapped to project, location, package, BOQ code, quantity, rate and execution mode.', 'info');
+    });
+    document.querySelectorAll('#view-budgetcontrol .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.bcctab === (State.bccCurrentTab || 'dashboards')));
+    renderBCCTab(State.bccCurrentTab || 'dashboards');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderBCCKPIs() {
+    const s = bccStats();
+    $('#bccKpis').innerHTML = `
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">BOQ VALUE</div><div class="font-display font-black text-2xl tabular">${fmtINR(s.boqValue)}</div><div class="text-xs text-stone-500 mt-1">${State.bccBoq.length} BOQ lines</div></div>
+      <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">INTERNAL BUDGET</div><div class="font-display font-black text-2xl tabular">${fmtINR(s.budget)}</div><div class="text-xs text-stone-500 mt-1">resource + subcontract</div></div>
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">ACTUAL POSTED</div><div class="font-display font-black text-2xl tabular">${fmtINR(s.actual)}</div><div class="text-xs text-stone-500 mt-1">${State.bccActuals.length} ledger rows</div></div>
+      <div class="kpi ${s.netMargin>=0?'kpi-green':'kpi-red'}"><div class="font-mono text-[10px] text-stone-500">NET MARGIN</div><div class="font-display font-black text-2xl tabular">${fmtINR(s.netMargin)}</div><div class="text-xs text-stone-500 mt-1">after overhead forecast</div></div>
+      <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">DELAYED MILESTONES</div><div class="font-display font-black text-2xl tabular">${State.bccMilestones.filter(m=>m.delayStatus==='Delayed').length}</div><div class="text-xs text-stone-500 mt-1">${State.bccMilestones.length} tracked</div></div>
+      <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">B2B PACKAGES</div><div class="font-display font-black text-2xl tabular">${State.bccPackages.length}</div><div class="text-xs text-stone-500 mt-1">margin + risk monitored</div></div>`;
+  }
+
+  function renderBCCTab(tab) {
+    const c = $('#bccTabContent'); if (!c) return;
+    if (tab === 'dashboards') return renderBCCDashes(c);
+    if (tab === 'boq') return renderBCCBOQ(c);
+    if (tab === 'resources') return renderBCCResources(c);
+    if (tab === 'recipes') return renderBCCRecipes(c);
+    if (tab === 'actuals') return renderBCCActuals(c);
+    if (tab === 'backtoback') return renderBCCBackToBack(c);
+    if (tab === 'contracts') return renderBCCContracts(c);
+    if (tab === 'overhead') return renderBCCOverhead(c);
+    if (tab === 'milestones') return renderBCCMilestones(c);
+    if (tab === 'approvals') return renderBCCApprovals(c);
+    if (tab === 'workflow') return renderBCCWorkflow(c);
+  }
+
+  function renderBCCDashes(c) {
+    const s = bccStats();
+    const resources = ['Cement','Steel','Aggregate','Sand','Diesel','Explosives','Labour','Equipment hours','Crusher production','Batching plant output','Tools and consumables'];
+    c.innerHTML = `<div class="grid grid-cols-3 gap-4">${BCC_REPORTS.map((r,i)=>`<div class="card p-4"><div class="font-display font-bold">${r}</div><div class="text-xs text-stone-500 mt-1">${['BOQ '+fmtINR(s.boqValue)+' · net margin '+fmtINR(s.netMargin),'Budget vs actual consumption for major resources','BOQ rate vs budget rate vs actual cost rate','Headworks · Tunnel · Powerhouse · Access road','Client revenue vs subcontract cost and overhead','Monthly overhead vs available gross margin','Milestones, delay, LD risk and payment link','Client receivable vs payable and cash gap','Negative margin, overrun, delay and claim alerts'][i]}</div></div>`).join('')}</div><div class="grid grid-cols-2 gap-4 mt-4"><div class="card p-4"><div class="font-display font-bold mb-3">Resource Budget vs Actual</div>${resources.map((r,i)=>`<div class="mb-2"><div class="flex justify-between text-xs"><span>${r}</span><b>${80+i*2}%</b></div><div class="pbar mt-1"><div style="width:${Math.min(100,80+i*2)}%;background:${i%3===0?'#C0383B':i%3===1?'#B45309':'#15803D'}"></div></div></div>`).join('')}</div><div class="card p-4"><div class="font-display font-bold mb-3">Risk & Alerts</div>${bccAlerts().map(a=>`<div class="p-2 border border-stone-200 mb-2"><div class="text-xs font-bold">${esc(a.title)}</div><div class="text-[10px] text-stone-500">${esc(a.detail)}</div></div>`).join('')}</div></div>`;
+  }
+
+  function renderBCCBOQ(c) {
+    c.innerHTML = `<div class="flex justify-between mb-4"><div><div class="font-display font-bold text-lg">BOQ Execution Mode Selection</div><div class="text-xs text-stone-500">Client BOQ rate vs internal budget resource rate vs actual cost rate.</div></div><button class="btn btn-amber" data-bcc-boq-new><i data-lucide="plus" class="w-3 h-3"></i>BOQ Item</button></div><div class="overflow-x-auto"><table class="data"><thead><tr><th>BOQ</th><th>Location / Package</th><th>Mode</th><th class="text-right">Qty</th><th class="text-right">Client Rate</th><th class="text-right">Budget Rate</th><th class="text-right">Actual Rate</th><th>Profitability</th></tr></thead><tbody>${State.bccBoq.map(b=>{ const margin=(+b.rate||0)-(+b.actualRate||0); return `<tr><td><b>${esc(b.boqCode)}</b><div class="text-[10px] text-stone-500">${esc(b.description)}</div></td><td class="text-xs">${esc(b.location)}<div class="text-[10px] text-stone-500">${esc(b.workPackage)}</div></td><td><span class="badge badge-info">${esc(b.mode.replace(' Mode',''))}</span></td><td class="text-right font-mono">${fmtNum(b.qty)} ${esc(b.unit)}</td><td class="text-right font-mono">${fmtINR(b.rate)}</td><td class="text-right font-mono">${fmtINR(b.budgetRate)}</td><td class="text-right font-mono ${margin<0?'text-red-700':'text-green-700'}">${fmtINR(b.actualRate)}</td><td>${assetBadge(margin<0?'loss':'profitable')}</td></tr>`}).join('')}</tbody></table></div>`;
+    c.querySelector('[data-bcc-boq-new]').onclick = () => bccEditBOQ();
+  }
+
+  function renderBCCResources(c) {
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Resource Master Database & Rate Revision History</div><div class="grid grid-cols-4 gap-2 mb-4">${BCC_RES_CATS.map(x=>`<div class="p-2 bg-stone-50 border border-stone-200 text-xs">${x}</div>`).join('')}</div><table class="data"><thead><tr><th>Resource</th><th>Category</th><th>Unit</th><th>Budget</th><th>Approved</th><th>Market</th><th>Actual</th><th>Subcontract</th><th>Revised</th><th>Revision</th></tr></thead><tbody>${State.bccResources.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.category)}</td><td class="font-mono">${esc(r.unit)}</td><td class="font-mono">${fmtINR(r.budgetRate)}</td><td class="font-mono">${fmtINR(r.approvedRate)}</td><td class="font-mono">${fmtINR(r.marketRate)}</td><td class="font-mono">${fmtINR(r.actualRate)}</td><td class="font-mono">${r.subcontractRate?fmtINR(r.subcontractRate):'-'}</td><td class="font-mono"><b>${fmtINR(r.revisedRate)}</b></td><td class="text-xs">${esc(r.revision)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  function renderBCCRecipes(c) {
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Own Resource Recipe / Template</div><table class="data"><thead><tr><th>BOQ</th><th>Resource</th><th>Coefficient</th><th>Rate</th><th>Wastage</th><th>Productivity</th><th>Equip Hrs</th><th>Labour MD</th><th>Fuel</th><th>Cost / Unit</th><th>Procurement Qty</th></tr></thead><tbody>${State.bccRecipes.map(r=>`<tr><td>${esc(r.boqId)}</td><td><b>${esc(r.resource)}</b><div class="text-[10px] text-stone-500">${esc(r.category)}</div></td><td class="font-mono">${r.coefficient} ${esc(r.unit)}</td><td class="font-mono">${fmtINR(r.rate)}</td><td class="font-mono">${r.wastage}%</td><td>${esc(r.productivity)}</td><td class="font-mono">${fmtNum(r.equipmentHours)}</td><td class="font-mono">${fmtNum(r.labourMandays)}</td><td class="font-mono">${fmtNum(r.fuel)}</td><td class="font-mono"><b>${fmtINR(r.costPerUnit)}</b></td><td class="font-mono">${fmtNum(r.procurementQty)}</td></tr>`).join('')}</tbody></table><div class="grid grid-cols-5 gap-2 mt-4">${['Materials','Consumables','Labour','Equipment','Tools and tackles','Fixed assets','Mobilization','Demobilization','Site overhead','Head office overhead','Safety cost','Quality testing','Finance cost','Insurance','Bank guarantee','Profit margin','Contingency'].map(x=>`<div class="p-2 bg-stone-50 border border-stone-200 text-xs">${x}</div>`).join('')}</div>`;
+  }
+
+  function renderBCCActuals(c) {
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Daily Resource and Actual Cost Ledger</div><table class="data"><thead><tr><th>Date</th><th>Project</th><th>Location</th><th>Activity</th><th>BOQ</th><th>Resource</th><th>Cost Head</th><th>Vendor/Subcontractor</th><th>Qty</th><th>Cost</th><th>Approval</th></tr></thead><tbody>${State.bccActuals.map(a=>`<tr><td class="font-mono text-xs">${a.date}</td><td class="font-mono text-xs">${a.projectId}</td><td>${esc(a.location)}</td><td>${esc(a.activity)}</td><td class="font-mono text-xs">${esc(a.boqId||'-')}</td><td>${esc(a.resourceType)}</td><td>${esc(a.costHead)}</td><td>${esc(a.vendor || a.subcontractor || '-')}</td><td class="font-mono">${fmtNum(a.qty)}</td><td class="font-mono">${fmtINR(a.cost)}</td><td>${assetBadge(a.approval)}</td></tr>`).join('')}</tbody></table><div class="grid grid-cols-4 gap-2 mt-4">${['Planned quantity','Actual executed quantity','Planned cost','Earned cost','Actual cost','Budget resource quantity','Actual consumption','Resource variance','Cost variance','CPI','SPI','Cost-to-complete','Estimated final cost','BOQ item profitability','Location-wise profitability','Package-wise profitability'].map(x=>`<div class="p-2 bg-stone-50 border border-stone-200 text-xs">${x}</div>`).join('')}</div>`;
+  }
+
+  function renderBCCBackToBack(c) {
+    const scenarios = ['Hydropower tunnel subcontract','EPC hydropower packages','Road sublet earthwork and pavement','Access road monthly lump sum','Crusher aggregate production','Hydro-mechanical specialist vendor','Electro-mechanical supply and installation'];
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Back-to-Back Contract Monitoring</div><div class="grid grid-cols-4 gap-2 mb-4">${scenarios.map(s=>`<div class="p-2 bg-stone-50 border border-stone-200 text-xs">${s}</div>`).join('')}</div><table class="data"><thead><tr><th>Scenario / Package</th><th>Client Value</th><th>Subcontract Value</th><th>Client Certified</th><th>Sub RA</th><th>Overhead</th><th>Finance</th><th>Final Margin</th><th>Risk / Claims</th></tr></thead><tbody>${State.bccPackages.map(p=>`<tr><td><b>${esc(p.package)}</b><div class="text-[10px] text-stone-500">${esc(p.scenario)}</div></td><td class="font-mono">${fmtINR(p.clientValue)}</td><td class="font-mono">${fmtINR(p.subcontractValue)}</td><td class="font-mono">${fmtINR(p.clientCertified)}</td><td class="font-mono">${fmtINR(p.subcontractCertified)}</td><td class="font-mono">${fmtINR(p.overhead)}</td><td class="font-mono">${fmtINR(p.financeCost)}</td><td class="font-mono ${p.finalMargin<8?'text-red-700':'text-green-700'}">${p.finalMargin}%</td><td class="text-xs">${esc(p.risk)} · ${esc(p.claim)} · ${assetBadge(p.status)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  function renderBCCContracts(c) {
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Lump Sum, Milestone, Supply, Service and Hybrid Modes</div><table class="data"><thead><tr><th>Mode</th><th>Contract / Supplier</th><th>Amount</th><th>Milestone / Terms</th><th>Completion</th><th>Retention</th><th>Advance</th><th>Variation / Claim</th><th>Final Payable</th><th>Status</th></tr></thead><tbody>${State.bccContracts.map(x=>`<tr><td>${esc(x.mode)}</td><td><b>${esc(x.title)}</b><div class="text-[10px] text-stone-500">${esc(x.supplier)}</div></td><td class="font-mono">${fmtINR(x.amount)}</td><td class="text-xs">${esc(x.terms)}</td><td class="font-mono">${x.completion || 0}%</td><td class="font-mono">${x.retention || 0}%</td><td class="font-mono">${x.advance || 0}%</td><td class="font-mono">${fmtINR((+x.variation||0)+(+x.claims||0))}</td><td class="font-mono">${fmtINR(x.finalPayable)}</td><td>${assetBadge(x.status)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  function renderBCCOverhead(c) {
+    const gross = bccStats().grossMargin || 1;
+    const monthly = State.bccOverheads.reduce((s,o)=>s+(+o.actualMonth||0),0);
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Overhead Budget and Delay Impact</div><div class="grid grid-cols-4 gap-3 mb-4"><div class="kpi"><div class="font-mono text-[10px] text-stone-500">MONTHLY OVERHEAD</div><div class="font-display font-black text-2xl">${fmtINR(monthly)}</div></div><div class="kpi ${monthly>gross/28?'kpi-red':'kpi-green'}"><div class="font-mono text-[10px] text-stone-500">VS GROSS MARGIN</div><div class="font-display font-black text-2xl">${Math.round(monthly/(gross/28)*100)}%</div></div><div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">DELAY IMPACT</div><div class="font-display font-black text-2xl">${fmtINR(State.bccOverheads.reduce((s,o)=>s+(+o.costImpact||0),0))}</div></div><div class="kpi"><div class="font-mono text-[10px] text-stone-500">FORECAST MONTHS</div><div class="font-display font-black text-2xl">28 + 6</div></div></div><table class="data"><thead><tr><th>Head</th><th>Type</th><th>Monthly Budget</th><th>Actual Month</th><th>Delay Months</th><th>Allocation</th><th>Delay Cost Impact</th></tr></thead><tbody>${State.bccOverheads.map(o=>`<tr><td><b>${esc(o.head)}</b></td><td>${esc(o.type)}</td><td class="font-mono">${fmtINR(o.monthlyBudget)}</td><td class="font-mono">${fmtINR(o.actualMonth)}</td><td class="font-mono">${o.delayMonths}</td><td>${esc(o.allocation)}</td><td class="font-mono text-red-700">${fmtINR(o.costImpact)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  function milestoneColor(s) { return ({Completed:'ok','On Track':'ok','At Risk':'warn',Delayed:'bad',Upcoming:'info','Not Started':'neutral',Revised:'amber'})[s] || 'neutral'; }
+  function renderBCCMilestones(c) {
+    c.innerHTML = `<div class="flex justify-between mb-4"><div><div class="font-display font-bold text-lg">Schedule and Major Milestone Tracking</div><div class="text-xs text-stone-500">Contractual, physical, underground, procurement, approval, subcontractor, financial and commissioning milestones.</div></div><button class="btn btn-amber" onclick="bccMilestoneModal()"><i data-lucide="plus" class="w-3 h-3"></i>Milestone</button></div><div class="grid grid-cols-4 gap-2 mb-4">${BCC_MILESTONE_CATS.map(x=>`<div class="p-2 bg-stone-50 border border-stone-200 text-xs">${x}</div>`).join('')}</div><table class="data"><thead><tr><th>Milestone</th><th>Planned</th><th>Revised</th><th>Actual</th><th>Status</th><th>Delay</th><th>Responsible</th><th>Payment / Impact</th></tr></thead><tbody>${State.bccMilestones.map(m=>`<tr><td><b>${esc(m.title)}</b><div class="text-[10px] text-stone-500">${esc(m.category)} · ${esc(m.location)}</div></td><td class="font-mono text-xs">${m.plannedFinish}</td><td class="font-mono text-xs">${m.revisedFinish}</td><td class="font-mono text-xs">${m.actualFinish || 'Pending'}</td><td><span class="badge badge-${milestoneColor(m.delayStatus)}">${esc(m.delayStatus)}</span></td><td class="font-mono">${m.delayDays}</td><td>${esc(m.responsible)}</td><td class="text-xs">${esc(m.paymentLink)}<div class="text-red-700">OH ${fmtINR(m.overheadImpact)} · LD ${fmtINR(m.ldImpact)}</div></td></tr>`).join('')}</tbody></table>`;
+    window.bccMilestoneModal = bccMilestoneModal;
+  }
+
+  function renderBCCApprovals(c) {
+    const types = ['BOQ import and revision','Resource budget approval','Resource rate revision','Daily progress approval','Material issue approval','Equipment log approval','Labour attendance approval','Subcontractor RA bill approval','Client IPC approval','Overhead expense approval','Milestone creation approval','Milestone revision approval','Milestone completion approval','Variation approval','Claim approval','Final cost report approval'];
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Approval Workflows and Audit Trail</div><div class="grid grid-cols-4 gap-2 mb-4">${types.map(t=>`<div class="p-2 bg-stone-50 border border-stone-200 text-xs">${t}</div>`).join('')}</div><table class="data"><thead><tr><th>Approval</th><th>Reference</th><th>Owner</th><th>Status</th><th>History</th></tr></thead><tbody>${State.bccApprovals.map(a=>`<tr><td><b>${esc(a.type)}</b></td><td class="font-mono text-xs">${esc(a.ref)}</td><td>${esc(a.owner)}</td><td>${assetBadge(a.status)}</td><td class="text-xs">${esc(a.history)}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  function renderBCCWorkflow(c) {
+    const steps = ['BOQ Import','Execution Mode Selection','Resource Breakdown or Subcontract Mapping','Budget Approval','Schedule Creation','Major Milestone Setup','Procurement Planning','Daily Progress','Resource Consumption or Subcontractor Billing','Overhead Booking','Milestone Progress Update','Client IPC','Cost Ledger','Variance Report','Margin Report','Cost-to-Complete Forecast','Milestone Delay Impact','Risk Alert','Management Dashboard'];
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Final System Workflow</div><div class="grid grid-cols-4 gap-3">${steps.map((s,i)=>`<div class="card p-3"><div class="font-mono text-[10px] text-stone-500">STEP ${i+1}</div><div class="font-bold text-sm mt-1">${s}</div></div>`).join('')}</div><div class="card p-4 mt-4"><div class="font-display font-bold mb-2">Main Objective</div><div class="grid grid-cols-3 gap-2 text-xs">${['Self-performing contractors: detailed resource budget and cost control','Main/JV/EPC contractors: B2B overhead, billing, margin, milestone and risk monitoring','Hydropower, tunnel, road, building and infrastructure teams: BOQ, cost, resource, subcontractor, overhead, schedule, cash flow and profit/loss'].map(x=>`<div class="p-3 bg-stone-50 border border-stone-200">${x}</div>`).join('')}</div></div>`;
+  }
+
+  function bccAlerts() {
+    const alerts = [];
+    State.bccBoq.filter(b => (+b.actualRate||0) > (+b.rate||0)).forEach(b => alerts.push({ title:'Negative margin item: ' + b.boqCode, detail:b.description }));
+    State.bccMilestones.filter(m => m.delayStatus === 'Delayed' || m.risk === 'High').forEach(m => alerts.push({ title:'Milestone risk: ' + m.title, detail:`${m.delayDays} days · overhead ${fmtINR(m.overheadImpact)} · LD ${fmtINR(m.ldImpact)}` }));
+    State.bccPackages.filter(p => p.status !== 'On Track').forEach(p => alerts.push({ title:'Back-to-back package risk: ' + p.package, detail:p.risk + ' · projected margin ' + p.finalMargin + '%' }));
+    return alerts.slice(0,8);
+  }
+
+  function bccEditBOQ() {
+    openModal({ title:'BOQ Item with Execution Mode', wide:true, submitLabel:'Save BOQ Item', body:`<div class="form-grid-3"><div class="form-row"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}">${p.id} - ${esc(p.name)}</option>`).join('')}</select></div><div class="form-row"><label>Location</label><input name="location"></div><div class="form-row"><label>Work Package</label><input name="workPackage"></div><div class="form-row"><label>Activity</label><input name="activity"></div><div class="form-row"><label>BOQ Code</label><input name="boqCode"></div><div class="form-row"><label>Unit</label><input name="unit" value="m3"></div><div class="form-row"><label>Quantity</label><input type="number" name="qty"></div><div class="form-row"><label>Client Rate</label><input type="number" name="rate"></div><div class="form-row"><label>Budget Rate</label><input type="number" name="budgetRate"></div><div class="form-row"><label>Actual Cost Rate</label><input type="number" name="actualRate"></div><div class="form-row"><label>Execution Mode</label><select name="mode">${BCC_EXEC_MODES.map(m=>`<option>${m}</option>`).join('')}</select></div><div class="form-row"><label>Responsible Party</label><input name="responsible"></div></div><div class="form-row"><label>Description</label><textarea name="description"></textarea></div>`, onSubmit:(d)=>{ d.id='BCQ-'+String(State.bccNextId.boq++).padStart(3,'0'); ['qty','rate','budgetRate','actualRate'].forEach(k=>d[k]=+d[k]||0); d.amount=d.qty*d.rate; d.executedQty=0; State.bccBoq.unshift(d); saveState(); audit('create','Budget BOQ - '+d.id,d.boqCode); toast('BOQ Item Added',d.boqCode,'ok'); renderBCCView(); }});
+  }
+
+  function bccMilestoneModal() {
+    openModal({ title:'Major Milestone Entry', wide:true, submitLabel:'Save Milestone', body:`<div class="form-grid-3"><div class="form-row"><label>Title</label><input name="title"></div><div class="form-row"><label>Category</label><select name="category">${BCC_MILESTONE_CATS.map(c=>`<option>${c}</option>`).join('')}</select></div><div class="form-row"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}">${p.id}</option>`).join('')}</select></div><div class="form-row"><label>Location</label><input name="location"></div><div class="form-row"><label>Linked BOQ</label><select name="boqId">${State.bccBoq.map(b=>`<option value="${b.id}">${b.boqCode}</option>`).join('')}</select></div><div class="form-row"><label>Work Package</label><input name="package"></div><div class="form-row"><label>Planned Finish</label><input type="date" name="plannedFinish"></div><div class="form-row"><label>Revised Finish</label><input type="date" name="revisedFinish"></div><div class="form-row"><label>Actual Finish</label><input type="date" name="actualFinish"></div><div class="form-row"><label>Weightage %</label><input type="number" name="weight"></div><div class="form-row"><label>Responsible</label><input name="responsible"></div><div class="form-row"><label>Status</label><select name="delayStatus"><option>Not Started</option><option>Upcoming</option><option>On Track</option><option>At Risk</option><option>Delayed</option><option>Completed</option><option>Revised</option></select></div></div><div class="form-row"><label>Documents / Remarks</label><textarea name="docs"></textarea></div>`, onSubmit:(d)=>{ d.id='MS-'+String(State.bccNextId.milestone++).padStart(3,'0'); d.delayDays=d.delayStatus==='Delayed'?7:0; d.costImpact=0; d.overheadImpact=0; d.ldImpact=0; d.paymentLink='Manual milestone'; State.bccMilestones.unshift(d); saveState(); audit('create','Milestone - '+d.id,d.title); toast('Milestone Added',d.title,'ok'); renderBCCView(); }});
+  }
+
+  function bccExportCSV() {
+    seedBCCData();
+    const rows = [['ID','Project','Location','Package','BOQ Code','Description','Mode','Qty','Unit','Client Rate','Budget Rate','Actual Rate','Amount','Executed Qty','Responsible'], ...State.bccBoq.map(b=>[b.id,b.projectId,b.location,b.workPackage,b.boqCode,b.description,b.mode,b.qty,b.unit,b.rate,b.budgetRate,b.actualRate,b.amount,b.executedQty,b.responsible])];
+    const csv = rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='buildcore-budget-control-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),200);
+    audit('export','Budget Control CSV',State.bccBoq.length+' BOQ items'); toast('Budget Control Exported',State.bccBoq.length+' BOQ items','ok');
+  }
 
   function seedEstimationData() {
     if (State.estItems.length > 0) return;
@@ -10313,7 +10560,8 @@
     ]},
     { label:'Pre-Construction', tiles:[
       { view:'tenders',    icon:'gavel',          title:'Tenders & Bids',     sub:'Pipeline · win-loss tracking',color:'#B45309' },
-      { view:'estimation', icon:'calculator',     title:'Estimation / BOQ',   sub:'Quantity surveying · rates',color:'#15803D' }
+      { view:'estimation', icon:'calculator',     title:'Estimation / BOQ',   sub:'Quantity surveying · rates',color:'#15803D' },
+      { view:'budgetcontrol', icon:'circle-dollar-sign', title:'Budget & Cost Control', sub:'Resources · B2B · overhead · milestones', color:'#1E3A4C' }
     ]},
     { label:'Site Operations', tiles:[
       { view:'dpr',        icon:'clipboard-list', title:'Daily Progress',     sub:'DPR · weather · activities',color:'#E8742C' },
@@ -10355,6 +10603,7 @@
     if (view === 'procurement') return State.pos?.length || 0;
     if (view === 'tenders')   return State.tenders?.length || 0;
     if (view === 'billing')   return State.raBills?.length || 0;
+    if (view === 'budgetcontrol') { seedBCCData(); return State.bccBoq?.length || 0; }
     if (view === 'quality')   return State.labReports?.length || State.ncrs?.length || 0;
     if (view === 'clientportal') return (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status)).length;
     return null;
@@ -10419,6 +10668,10 @@
     const pendingClient = (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status));
     if (pendingClient.length) add('warn', pendingClient.length + ' client approvals pending', 'DPRs, lab reports, or packages are waiting for client action.', 'clientportal', 'file-check-2', 'Open portal');
 
+    try { seedBCCData(); } catch(_) {}
+    const bccRisk = bccAlerts ? bccAlerts().length : 0;
+    if (bccRisk) add('bad', bccRisk + ' budget / milestone risks', 'Review negative margin BOQ items, B2B package risks, overhead pressure and delayed milestones.', 'budgetcontrol', 'circle-dollar-sign', 'Open budget');
+
     const overdueBills = (State.raBills || []).filter(b => ['overdue','under-review'].includes(b.status));
     if (overdueBills.length) add('warn', overdueBills.length + ' RA bills pending', 'Billing certification needs follow-up with PMC/client.', 'billing', 'receipt', 'Open bills');
 
@@ -10437,6 +10690,7 @@
 
   function moduleSummaries() {
     try { seedAssetData(); } catch(_) {}
+    try { seedBCCData(); } catch(_) {}
     const activeTasks = (State.todos || []).filter(t => t.status !== 'completed').length;
     const openEvents = (State.events || []).filter(e => e.status !== 'completed').length;
     const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed').length;
@@ -10448,6 +10702,7 @@
       { view:'projects', icon:'folder-kanban', label:'Projects', value:(State.projects || []).length, detail:'portfolio value ' + fmtNPR(contractValue), color:'#1E3A4C' },
       { view:'todos', icon:'check-square', label:'To-Do', value:activeTasks, detail:'open work items', color:activeTasks ? '#B45309' : '#15803D' },
       { view:'events', icon:'calendar-check', label:'Events', value:openEvents, detail:'active contractual records', color:'#7C3AED' },
+      { view:'budgetcontrol', icon:'circle-dollar-sign', label:'Budget Control', value:(State.bccBoq || []).length, detail:'BOQ profitability and milestones', color:'#1E3A4C' },
       { view:'materials', icon:'package', label:'Materials', value:(State.items || []).length, detail:'catalogued inventory items', color:'#15803D' },
       { view:'assets', icon:'qr-code', label:'Assets', value:(State.assets || []).length, detail:'asset lifecycle and QR tracking', color:'#1E3A4C' },
       { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs, detail:'POs not yet delivered', color:'#7C3AED' },
@@ -10583,6 +10838,7 @@
           { view:'projectsites', icon:'map-pin', title:'Work Sites / Zones', value:projectSites.length, sub:'Project locations and work fronts', color:'#15803D' },
           { view:'schedule', icon:'calendar-range', title:'Schedule', value:project.spi.toFixed(2), sub:'SPI and baseline tracking', color:project.spi < 0.9 ? '#C0383B' : '#15803D' },
           { view:'dpr', icon:'clipboard-list', title:'Daily Progress', value:project.pctComplete + '%', sub:'DPR, manpower, weather, output', color:'#E8742C' },
+          { view:'budgetcontrol', icon:'circle-dollar-sign', title:'Budget Control', value:(State.bccBoq || []).filter(b => b.projectId === project.id).length, sub:'Resources, B2B, overhead, milestones', color:'#1E3A4C' },
           { view:'materials', icon:'package', title:'Inventory Flow', value:fmtINR(projectStockValue), sub:'Project stock, issues, GRN, transfers', color:'#15803D' },
           { view:'equipment', icon:'truck', title:'Equipment', value:project.equipment, sub:'Plant allocation and logsheets', color:'#B45309' },
           { view:'assets', icon:'qr-code', title:'Assets', value:(State.assets || []).filter(a => !a.projectId || a.projectId === project.id).length, sub:'Asset register, QR, transfers', color:'#1E3A4C' },
@@ -10974,12 +11230,12 @@
   // =====================================================================
   const ROLE_PERMS = {
     ceo:      { name:'Mr. Rajesh Tamang',     role:'CEO · Full Access',           avatar:'RT', projects:'ALL', modules:'ALL' },
-    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO · Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','finance','billing','procurement','analytics','audit','reports'] },
+    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO · Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','analytics','audit','reports'] },
     pm:       { name:'R. Tamang (PM)',        role:'Project Manager · Projects',  avatar:'RT', projects:['PRJ-017','PRJ-030'], modules:'ALL' },
-    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','dpr','workforce','materials','equipment','assets','quality','safety','events','todos'] },
+    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','safety','events','todos'] },
     qc:       { name:'M. Khatri (QC)',        role:'QC Officer · Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019','PRJ-030'], modules:['dashboard','projects','quality','safety','dpr','documents','events','todos'] },
     store:    { name:'Store Manager',          role:'Store · Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','assets','events','todos'] },
-    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','finance','documents','events','todos'] },
+    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','budgetcontrol','finance','documents','events','todos'] },
     client:   { name:'Client Reviewer',        role:'Client · Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','reports'] }
   };
 
@@ -12040,6 +12296,7 @@
     if (view === 'audit') { renderAuditTable(); }
     if (view === 'schedule') { renderScheduleTable(); }
     if (view === 'materials') { if (State.session?.inProjectMode) State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
+    if (view === 'budgetcontrol') { setTimeout(renderBCCView, 30); }
     if (view === 'equipment') { setTimeout(renderEquipmentView, 30); }
     if (view === 'assets')    { setTimeout(renderAssetView, 30); }
     if (view === 'events')    { setTimeout(renderEventsView, 30); }
@@ -12067,7 +12324,7 @@
 
   // -------- COMMAND PALETTE (Cmd+K) --------
   const palItems = [
-    ...['dashboard','projects','schedule','tenders','estimation','dpr','workforce','materials','equipment','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
+    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
     ...State.projects.map(p => ({ label: p.name, sub: p.id + ' · ' + p.client, kind:'Project', action: () => { navTo('projects'); setTimeout(() => openProjectDetail(p.id), 100); }})),
     { label:'New Project', kind:'Action', action: () => actNewProject() },
     { label:'New Tender', kind:'Action', action: () => actNewTender() },
