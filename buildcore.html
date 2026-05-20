@@ -459,95 +459,54 @@
 
     <!-- Nav -->
     <nav class="flex-1 overflow-y-auto py-2">
-      <div class="px-4 pt-3 pb-1 font-mono text-[10px] text-white/30 tracking-wider">OVERVIEW</div>
+      <div class="px-4 pt-3 pb-1 font-mono text-[10px] text-white/30 tracking-wider">WORKSPACE</div>
       <a class="nav-item active flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dashboard">
-        <i data-lucide="layout-dashboard" class="nav-icon w-4 h-4 text-white/60"></i>Dashboard
+        <i data-lucide="layout-dashboard" class="nav-icon w-4 h-4 text-white/60"></i>Command Center
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="projects">
         <i data-lucide="folder-kanban" class="nav-icon w-4 h-4 text-white/60"></i>Projects
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="schedule">
-        <i data-lucide="calendar-range" class="nav-icon w-4 h-4 text-white/60"></i>Schedule / Gantt
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="events">
-        <i data-lucide="calendar-check" class="nav-icon w-4 h-4 text-white/60"></i>Events Register
+        <i data-lucide="calendar-range" class="nav-icon w-4 h-4 text-white/60"></i>Schedule
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="todos">
-        <i data-lucide="check-square" class="nav-icon w-4 h-4 text-white/60"></i>To-Do List
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="projectsites">
-        <i data-lucide="map-pin" class="nav-icon w-4 h-4 text-white/60"></i>Project Sites
+        <i data-lucide="check-square" class="nav-icon w-4 h-4 text-white/60"></i>Action List
       </a>
 
-      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">PRE-CONSTRUCTION</div>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="tenders">
-        <i data-lucide="gavel" class="nav-icon w-4 h-4 text-white/60"></i>Tenders & Bids
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="estimation">
-        <i data-lucide="calculator" class="nav-icon w-4 h-4 text-white/60"></i>Estimation / BOQ
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="budgetcontrol">
-        <i data-lucide="circle-dollar-sign" class="nav-icon w-4 h-4 text-white/60"></i>Budget & Cost Control
-      </a>
-
-      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">SITE OPERATIONS</div>
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">FIELD</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dpr">
-        <i data-lucide="clipboard-list" class="nav-icon w-4 h-4 text-white/60"></i>Daily Progress (DPR)
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="workforce">
-        <i data-lucide="users" class="nav-icon w-4 h-4 text-white/60"></i>Workforce
+        <i data-lucide="clipboard-list" class="nav-icon w-4 h-4 text-white/60"></i>DPR
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="materials">
-        <i data-lucide="package" class="nav-icon w-4 h-4 text-white/60"></i>Materials & Inventory
+        <i data-lucide="package" class="nav-icon w-4 h-4 text-white/60"></i>Materials
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="equipment">
-        <i data-lucide="truck" class="nav-icon w-4 h-4 text-white/60"></i>Plant & Equipment
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="assets">
-        <i data-lucide="qr-code" class="nav-icon w-4 h-4 text-white/60"></i>Asset Management
+        <i data-lucide="truck" class="nav-icon w-4 h-4 text-white/60"></i>Equipment
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="quality">
-        <i data-lucide="badge-check" class="nav-icon w-4 h-4 text-white/60"></i>Quality (QA/QC)
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="clientportal">
-        <i data-lucide="file-check-2" class="nav-icon w-4 h-4 text-white/60"></i>Client Portal
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="safety">
-        <i data-lucide="hard-hat" class="nav-icon w-4 h-4 text-white/60"></i>Safety / HSE
+        <i data-lucide="badge-check" class="nav-icon w-4 h-4 text-white/60"></i>Quality & HSE
       </a>
 
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">COMMERCIAL</div>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="estimation">
+        <i data-lucide="calculator" class="nav-icon w-4 h-4 text-white/60"></i>BOQ & Estimate
+      </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="budgetcontrol">
+        <i data-lucide="circle-dollar-sign" class="nav-icon w-4 h-4 text-white/60"></i>Cost Control
+      </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="procurement">
         <i data-lucide="shopping-cart" class="nav-icon w-4 h-4 text-white/60"></i>Procurement
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="subcontractors">
-        <i data-lucide="handshake" class="nav-icon w-4 h-4 text-white/60"></i>Subcontractors
-      </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="billing">
-        <i data-lucide="receipt" class="nav-icon w-4 h-4 text-white/60"></i>Billing / RA Bills
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="finance">
-        <i data-lucide="trending-up" class="nav-icon w-4 h-4 text-white/60"></i>Finance & Cost Control
+        <i data-lucide="receipt" class="nav-icon w-4 h-4 text-white/60"></i>Billing
       </a>
 
-      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">ADMIN</div>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="analytics">
-        <i data-lucide="bar-chart-3" class="nav-icon w-4 h-4 text-white/60"></i>Analytics Workbench
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="audit">
-        <i data-lucide="history" class="nav-icon w-4 h-4 text-white/60"></i>Audit Log
-      </a>
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">KNOWLEDGE</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="documents">
-        <i data-lucide="file-stack" class="nav-icon w-4 h-4 text-white/60"></i>Documents / Drawings
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="aidocs">
-        <i data-lucide="brain-circuit" class="nav-icon w-4 h-4 text-white/60"></i>AI Document Intelligence
+        <i data-lucide="file-stack" class="nav-icon w-4 h-4 text-white/60"></i>Documents
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="reports">
-        <i data-lucide="file-output" class="nav-icon w-4 h-4 text-white/60"></i>Reports & Analytics
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="clients">
-        <i data-lucide="building-2" class="nav-icon w-4 h-4 text-white/60"></i>Clients (CRM)
+        <i data-lucide="file-output" class="nav-icon w-4 h-4 text-white/60"></i>Reports
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="settings">
         <i data-lucide="settings-2" class="nav-icon w-4 h-4 text-white/60"></i>Settings
@@ -619,10 +578,10 @@
           <div>
             <div class="stamp mb-3" id="launcherStamp"><i data-lucide="layout-grid" class="w-3 h-3"></i>BUILDCORE · CONTRACTOR OS</div>
             <h1 class="font-display font-black text-4xl title-mark" id="launcherGreeting">Good day, R. Tamang</h1>
-            <p class="text-sm text-stone-500 mt-3" id="launcherSubtext">All modules at a glance · click any tile to enter · Ctrl+K for fast jump · <span id="launcherToday"></span></p>
+            <p class="text-sm text-stone-500 mt-3" id="launcherSubtext">Focused workspace · click a tile to continue · Ctrl+K for advanced search · <span id="launcherToday"></span></p>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-ghost" onclick="document.querySelector('aside.sidebar').classList.toggle('sidebar-open')"><i data-lucide="menu" class="w-3.5 h-3.5"></i>Sidebar</button>
+            <button class="btn btn-ghost" onclick="document.querySelector('aside.sidebar').classList.toggle('sidebar-open')"><i data-lucide="menu" class="w-3.5 h-3.5"></i>Menu</button>
             <button class="btn btn-amber" onclick="navTo('events')"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Log Event</button>
           </div>
         </div>
@@ -2977,6 +2936,7 @@
       { id:'PO-2449', vendor:'Apex Aluminium', items:'UPVC frames · 84 units', value:1428000, status:'delivered' },
       { id:'PO-2448', vendor:'Sigma MEP', items:'Cable trays 200mm · 480m', value:384000, status:'overdue' }
     ],
+    vendors: [],
     automations: {
       'material-reorder': true, 'ra-bill-auto': true, 'dpr-distribution': true, 'schedule-slip': true,
       'overdue-invoice': true, 'cube-fail': true, 'permit-expiry': true, 'cashflow-gap': true
@@ -3099,7 +3059,9 @@
           v: 1,
           savedAt: new Date().toISOString(),
           projects: State.projects, tenders: State.tenders, materials: State.materials,
-          ncrs: State.ncrs, raBills: State.raBills, pos: State.pos, automations: State.automations,
+          items: State.items, stockMovements: State.stockMovements, toolIssues: State.toolIssues,
+          sites: State.sites, imsCurrentTab: State.imsCurrentTab, imsNextId: State.imsNextId,
+          ncrs: State.ncrs, raBills: State.raBills, pos: State.pos, vendors: State.vendors, automations: State.automations,
           dprs: State.dprs, dprTemplates: State.dprTemplates, dprNextTemplateId: State.dprNextTemplateId,
           labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
           labNextId: State.labNextId, labTestNextId: State.labTestNextId, clientSubmissionNextId: State.clientSubmissionNextId,
@@ -3137,7 +3099,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['projects','tenders','materials','items','stockMovements','toolIssues','sites','imsCurrentTab','imsNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3151,7 +3113,9 @@
     const data = JSON.stringify({
       meta: { app:'BuildCore', exportedAt: new Date().toISOString(), version:1 },
       state: { projects:State.projects, tenders:State.tenders, materials:State.materials,
-        ncrs:State.ncrs, raBills:State.raBills, pos:State.pos, automations:State.automations,
+        items:State.items, stockMovements:State.stockMovements, toolIssues:State.toolIssues,
+        sites:State.sites, imsCurrentTab:State.imsCurrentTab, imsNextId:State.imsNextId,
+        ncrs:State.ncrs, raBills:State.raBills, pos:State.pos, vendors:State.vendors, automations:State.automations,
         dprs:State.dprs, dprTemplates:State.dprTemplates, dprNextTemplateId:State.dprNextTemplateId,
         labReports:State.labReports, labTestTypes:State.labTestTypes, clientSubmissions:State.clientSubmissions,
         labNextId:State.labNextId, labTestNextId:State.labTestNextId, clientSubmissionNextId:State.clientSubmissionNextId,
@@ -3205,7 +3169,7 @@
 
   // ----- Seed data (only on first load) -----
   function seedIMSData() {
-    if (State.items.length > 0) { normalizeStockMovements(); return; }
+    if (State.items.length > 0) { seedVendorData(); normalizeStockMovements(); return; }
     State.items = [
       { id:1,  sku:'CEM-001', name:'OPC 53 Grade Cement', category:'Cement', unit:'bag', reorderLevel:200, costPrice:712, supplier:'Shivam Cement', notes:'50kg bags, mfg within 30d' },
       { id:2,  sku:'CEM-002', name:'OPC 43 Grade Cement', category:'Cement', unit:'bag', reorderLevel:100, costPrice:680, supplier:'Hetauda Cement', notes:'Backup grade · PCC use only' },
@@ -3241,6 +3205,7 @@
       { id:32, sku:'TOL-005', name:'Angle Grinder 4"', category:'Tools', unit:'nos', reorderLevel:4, costPrice:6800, supplier:'Local hardware', notes:'Tracked' }
     ];
     State.imsNextId.items = 33;
+    seedVendorData();
 
     // Seed stock movements — both IN and OUT, with realistic refs
     const today = Date.now();
@@ -3361,6 +3326,97 @@
   // ----- Formatters -----
   const fmtINR = (n) => 'रू ' + Math.round(n).toLocaleString('en-IN');
   const fmtDateShort = (ts) => { if (!ts) return '—'; const d = new Date(typeof ts === 'string' ? ts : ts); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}); };
+
+  function seedVendorData() {
+    State.vendors = Array.isArray(State.vendors) ? State.vendors : [];
+    const base = [
+      { id:'VND-018', name:'Shivam Cement', legalName:'Shivam Cement Industries', category:'Cement', contact:'Bikash Adhikari', phone:'9851000001', email:'sales@shivamcement.com', address:'Hetauda Industrial Area, Makwanpur', location:'Hetauda / Kathmandu depot', pan:'301234567', terms:'30 days post-delivery', score:92 },
+      { id:'VND-022', name:'Panchakanya Steel', legalName:'Panchakanya Steel Ltd', category:'Steel', contact:'Rajesh Kumar', phone:'9841000002', email:'sales@panchakanya.com', address:'Koteshwor, Kathmandu', location:'Kathmandu', pan:'302345678', terms:'45 days', score:88 },
+      { id:'VND-031', name:'Apex Aluminium', legalName:'Apex Aluminium Pvt Ltd', category:'Facade', contact:'Nabin Shrestha', phone:'9801000003', email:'orders@apexaluminium.com', address:'Balaju Industrial Estate', location:'Balaju', pan:'303456789', terms:'30 days', score:84 },
+      { id:'VND-044', name:'Bhaktapur Bricks', legalName:'Bhaktapur Brick Supplier', category:'Bricks', contact:'Suman Prajapati', phone:'9851000004', email:'dispatch@bhaktapurbricks.com', address:'Changunarayan, Bhaktapur', location:'Bhaktapur', pan:'304567890', terms:'COD', score:81 },
+      { id:'VND-052', name:'Sigma MEP', legalName:'Sigma MEP Services', category:'MEP', contact:'Anil Karki', phone:'9811000005', email:'procure@sigmamep.com', address:'New Baneshwor, Kathmandu', location:'Kathmandu', pan:'305678901', terms:'Milestone-based', score:86 },
+      { id:'VND-061', name:'Komatsu Nepal', legalName:'Komatsu Nepal Equipment', category:'Equipment', contact:'Plant Desk', phone:'9801000006', email:'parts@komatsunepal.com', address:'Satdobato, Lalitpur', location:'Lalitpur', pan:'306789012', terms:'50% advance, balance on delivery', score:90 },
+      { id:'VND-062', name:'Himalayan Lifting', legalName:'Himalayan Lifting and Ropeway', category:'Equipment Rental', contact:'Nima Sherpa', phone:'9801000007', email:'rentals@himalayanlifting.com', address:'Boudha, Kathmandu', location:'Kathmandu', pan:'307890123', terms:'Weekly rental billing', score:87 }
+    ];
+    base.forEach(v => {
+      const found = State.vendors.find(x => (x.name || '').toLowerCase() === v.name.toLowerCase() || x.id === v.id);
+      if (found) Object.assign(found, { ...v, ...found });
+      else State.vendors.push(v);
+    });
+    let next = State.vendors.length + 1;
+    (State.items || []).forEach(it => {
+      const names = [it.supplier, ...(it.vendorNames || []), ...(it.vendors || [])].filter(Boolean);
+      names.forEach(name => {
+        if (!State.vendors.some(v => (v.name || '').toLowerCase() === String(name).toLowerCase())) {
+          State.vendors.push({ id:'VND-' + String(80 + next++).padStart(3,'0'), name:String(name), legalName:String(name), category:it.category || 'General', contact:'', phone:'', email:'', address:'', location:'', pan:'', terms:'30 days', score:75 });
+        }
+      });
+      it.vendorNames = [...new Set(names)];
+    });
+  }
+  function vendorByName(name) {
+    seedVendorData();
+    return (State.vendors || []).find(v => (v.name || '').toLowerCase() === String(name || '').toLowerCase() || (v.legalName || '').toLowerCase() === String(name || '').toLowerCase());
+  }
+  function poNo(p) { return p.poNo || p.id || 'PO-DRAFT'; }
+  function poVendor(p) { return p.supplier || p.vendor || p.vendorName || 'Unassigned vendor'; }
+  function poLines(p) { return Array.isArray(p.items) ? p.items : [{ name:p.items || 'Items not detailed', qty:'', rate:0, total:p.value || p.total || 0 }]; }
+  function poValue(p) { return Number(p.total ?? p.value ?? poLines(p).reduce((s,l) => s + Number(l.total || (Number(l.qty)||0) * (Number(l.rate)||0)), 0)); }
+  function poProject(p) { return p.projectId || p.project || p.proj || State.activeProject || 'PRJ-017'; }
+  function poStatusKey(p) {
+    const s = String(p.status || '').toLowerCase();
+    if (['draft','pending-approval'].includes(s)) return 'DRAFT';
+    if (['sent','approved','released','in-transit','in transit'].includes(s)) return 'SENT';
+    if (['partial','partially-received','partially received'].includes(s)) return 'PARTIAL';
+    if (['received','delivered','closed'].includes(s)) return 'RECEIVED';
+    if (s === 'overdue') return 'OVERDUE';
+    return (p.status || 'DRAFT').toUpperCase();
+  }
+  function poBadge(p) {
+    const s = poStatusKey(p);
+    const cls = s === 'RECEIVED' ? 'ok' : s === 'SENT' ? 'info' : s === 'PARTIAL' ? 'warn' : s === 'OVERDUE' ? 'bad' : 'warn';
+    const label = s === 'SENT' ? 'APPROVED / IN TRANSIT' : s;
+    return `<span class="badge badge-${cls}">${label}</span>`;
+  }
+  function poLineSummary(p) {
+    return poLines(p).map(l => `${esc(l.name || 'Item')} ${l.qty ? '· ' + esc(l.qty) : ''}${l.unit ? ' ' + esc(l.unit) : ''}`).join('<br>');
+  }
+  function poMissingSummary(p) {
+    const miss = poLines(p).map(l => ({...l, missing: Math.max(0, Number(l.qty || 0) - Number(l.receivedQty || 0)) })).filter(l => l.missing > 0);
+    return miss.length ? miss.map(l => `${esc(l.name || 'Item')}: ${l.missing} pending`).join('<br>') : 'All ordered lines received';
+  }
+  function renderProcurementView() {
+    seedIMSData();
+    const view = $('#view-procurement');
+    if (!view) return;
+    const pos = [...(State.pos || [])].sort((a,b) => (b.date || 0) - (a.date || 0));
+    const open = pos.filter(p => poStatusKey(p) !== 'RECEIVED');
+    const pending = pos.filter(p => poStatusKey(p) === 'DRAFT');
+    const overdue = pos.filter(p => poStatusKey(p) === 'OVERDUE');
+    const openValue = open.reduce((s,p) => s + poValue(p), 0);
+    const kpis = view.querySelectorAll('.grid.grid-cols-4 .kpi');
+    if (kpis[0]) kpis[0].innerHTML = `<div class="font-mono text-[10px] text-stone-500">OPEN POs</div><div class="font-display font-black text-2xl tabular">${open.length}</div><div class="text-xs text-stone-500 mt-1">${fmtINR(openValue)} value</div>`;
+    if (kpis[1]) kpis[1].innerHTML = `<div class="font-mono text-[10px] text-stone-500">PENDING APPROVAL</div><div class="font-display font-black text-2xl tabular">${pending.length}</div><div class="text-xs text-stone-500 mt-1">from inventory/site PO generator</div>`;
+    if (kpis[2]) kpis[2].innerHTML = `<div class="font-mono text-[10px] text-stone-500">VENDORS</div><div class="font-display font-black text-2xl tabular">${(State.vendors || []).length}</div><div class="text-xs text-stone-500 mt-1">address, location, phone tracked</div>`;
+    if (kpis[3]) kpis[3].innerHTML = `<div class="font-mono text-[10px] text-stone-500">OVERDUE / MISSING</div><div class="font-display font-black text-2xl tabular">${overdue.length + pos.filter(p => poStatusKey(p)==='PARTIAL').length}</div><div class="text-xs text-stone-500 mt-1">short receipts visible in PO Track</div>`;
+    const tbody = view.querySelector('table.data tbody');
+    if (!tbody) return;
+    tbody.innerHTML = pos.map(p => {
+      const vendor = p.vendorDetail || vendorByName(poVendor(p)) || {};
+      const actions = `${poStatusKey(p)==='DRAFT'?`<button class="btn btn-amber" data-po-approve="${p.id}" style="padding:2px 8px;font-size:10px">Approve</button>`:''}${['SENT','PARTIAL','OVERDUE'].includes(poStatusKey(p))?`<button class="btn btn-ghost" data-po-receive="${p.id}" style="padding:2px 8px;font-size:10px;margin-left:4px">Receive</button>`:''}`;
+      return `<tr data-po-id="${p.id}">
+        <td class="font-mono text-xs"><b>${esc(poNo(p))}</b></td>
+        <td><b>${esc(poVendor(p))}</b><div class="text-[10px] text-stone-500">${esc(vendor.address || vendor.location || '')}${vendor.phone ? ' · ' + esc(vendor.phone) : ''}</div></td>
+        <td class="text-xs">${poLineSummary(p)}<div class="text-[10px] text-stone-500">${poMissingSummary(p)}</div></td>
+        <td class="font-mono">${fmtINR(poValue(p))}</td>
+        <td class="text-xs">${esc(poProject(p))}</td>
+        <td class="text-xs">${fmtDateShort(p.approvedAt || p.date)}</td>
+        <td class="text-xs">${p.expectedDelivery ? esc(p.expectedDelivery) : '—'}</td>
+        <td>${poBadge(p)}<div class="mt-1">${actions}</div></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" class="text-center text-stone-400 py-4">No purchase orders yet.</td></tr>';
+    if (window.lucide) lucide.createIcons();
+  }
 
   // ============== IMS · MAIN RENDERER ==============
   function renderIMS() {
@@ -3488,7 +3544,7 @@
     c.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-ims-act]');
       if (!btn) return;
-      const id = +btn.dataset.id;
+      const id = btn.dataset.id;
       if (btn.dataset.imsAct === 'edit') imsEditItem(id);
       if (btn.dataset.imsAct === 'view') imsViewMovements(id);
     });
@@ -3509,7 +3565,7 @@
         </div>
       </div>
       <table class="data" id="imsItemsTable">
-        <thead><tr><th class="sortable">SKU</th><th class="sortable">Name</th><th class="sortable">Category</th><th>Unit</th><th class="text-right">Stock</th><th class="text-right">Reorder</th><th class="text-right">Cost</th><th>Default Supplier</th><th></th></tr></thead>
+        <thead><tr><th class="sortable">SKU</th><th class="sortable">Name</th><th class="sortable">Category</th><th>Unit</th><th class="text-right">Stock</th><th class="text-right">Reorder</th><th class="text-right">Cost</th><th>Vendors</th><th>Equipment Info</th><th></th></tr></thead>
         <tbody id="imsItemsBody">
           ${State.items.map(it => {
             const s = m.get(it.id) || 0;
@@ -3522,7 +3578,8 @@
               <td class="text-right font-mono" style="${low?'color:#B45309;font-weight:700':''}">${s.toLocaleString()}</td>
               <td class="text-right font-mono text-xs">${(it.reorderLevel||0).toLocaleString()}</td>
               <td class="text-right font-mono text-xs">${fmtINR(it.costPrice||0)}</td>
-              <td class="text-xs">${it.supplier || '—'}</td>
+              <td class="text-xs">${[it.supplier, ...(it.vendorNames || [])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join('<br>') || '—'}</td>
+              <td class="text-xs">${it.dimensions || it.machineDetails ? `${esc(it.dimensions || '')}${it.dimensions && it.machineDetails ? '<br>' : ''}${esc(it.machineDetails || '')}` : '—'}</td>
               <td><div class="ims-row-action">
                 <button class="ims-icon-btn" data-ims-act="edit-item" data-id="${it.id}" title="Edit">✎</button>
                 <button class="ims-icon-btn danger" data-ims-act="del-item" data-id="${it.id}" title="Delete">🗑</button>
@@ -3638,7 +3695,8 @@
   }
 
   function imsEditItem(id) {
-    const it = id ? State.items.find(x => x.id === id) : { sku:'', name:'', category:'', unit:'pcs', reorderLevel:0, costPrice:0, supplier:'', notes:'' };
+    seedVendorData();
+    const it = id ? State.items.find(x => String(x.id) === String(id)) : { sku:'', name:'', category:'', unit:'pcs', reorderLevel:0, costPrice:0, supplier:'', vendorNames:[], dimensions:'', machineDetails:'', notes:'' };
     if (!it) return;
     openModal({
       title: id ? `Edit Item · ${it.name}` : 'New Item',
@@ -3661,7 +3719,15 @@
           <div class="ims-form-row-3">
             <div class="ims-field"><label>Reorder Level</label><input type="number" name="reorderLevel" min="0" step="1" value="${it.reorderLevel||0}"></div>
             <div class="ims-field"><label>Cost Price (NPR)</label><input type="number" name="costPrice" min="0" step="0.01" value="${it.costPrice||0}"></div>
-            <div class="ims-field"><label>Default Supplier</label><input name="supplier" value="${it.supplier||''}"></div>
+            <div class="ims-field"><label>Default Supplier</label><input name="supplier" list="imsVendors" value="${it.supplier||''}"><datalist id="imsVendors">${(State.vendors||[]).map(v=>`<option>${esc(v.name)}</option>`).join('')}</datalist></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Other Approved Vendors</label><input name="vendorNames" value="${(it.vendorNames||[]).filter(v=>v!==it.supplier).join(', ')}" placeholder="Comma separated vendor names"></div>
+            <div class="ims-field"><label>Vendor Contact Quick Add</label><input name="vendorQuick" placeholder="Name | address | location | phone"></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Dimensions / Size</label><input name="dimensions" value="${it.dimensions||''}" placeholder="L x W x H, dia, capacity, etc."></div>
+            <div class="ims-field"><label>Machine / Equipment Detail</label><input name="machineDetails" value="${it.machineDetails||''}" placeholder="Model, serial, HP/kVA, attachment, warranty"></div>
           </div>
           <div class="ims-field"><label>Notes</label><textarea name="notes" rows="2">${it.notes||''}</textarea></div>
         </form>
@@ -3673,6 +3739,15 @@
         fd.forEach((v,k) => obj[k] = v);
         obj.reorderLevel = Number(obj.reorderLevel||0);
         obj.costPrice = Number(obj.costPrice||0);
+        obj.vendorNames = [obj.supplier, ...String(obj.vendorNames || '').split(',').map(v => v.trim()).filter(Boolean)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+        if (obj.vendorQuick) {
+          const [name, address, location, phone] = String(obj.vendorQuick).split('|').map(x => (x || '').trim());
+          if (name && !State.vendors.some(v => (v.name || '').toLowerCase() === name.toLowerCase())) {
+            State.vendors.push({ id:'VND-' + String(80 + State.vendors.length + 1).padStart(3,'0'), name, legalName:name, category:obj.category || 'General', contact:'', phone:phone || '', email:'', address:address || '', location:location || '', pan:'', terms:'30 days', score:75 });
+          }
+          if (name && !obj.vendorNames.includes(name)) obj.vendorNames.push(name);
+          delete obj.vendorQuick;
+        }
         if (id) {
           Object.assign(it, obj);
           audit('update', 'Item · ' + obj.sku, obj.name);
@@ -3688,7 +3763,7 @@
     });
   }
   function imsDeleteItem(id) {
-    const it = State.items.find(x => x.id === id);
+    const it = State.items.find(x => String(x.id) === String(id));
     if (!it) return;
     openModal({
       title: 'Delete Item',
@@ -3696,7 +3771,7 @@
       submitClass: 'btn-danger',
       body: `<div class="text-sm">Delete <b>${it.name}</b> (${it.sku})?<br><br>Existing stock movements will remain in history but reference a missing item.</div>`,
       onSubmit: () => {
-        State.items = State.items.filter(x => x.id !== id);
+        State.items = State.items.filter(x => String(x.id) !== String(id));
         audit('delete', 'Item · ' + it.sku, it.name);
         saveState();
         toast('Item Deleted', it.name, 'warn');
@@ -3706,9 +3781,9 @@
   }
 
   function imsViewMovements(itemId) {
-    const it = State.items.find(x => x.id === itemId);
+    const it = State.items.find(x => String(x.id) === String(itemId));
     if (!it) return;
-    const movs = State.stockMovements.filter(m => m.itemId === itemId).sort((a,b) => (b.date||0) - (a.date||0));
+    const movs = State.stockMovements.filter(m => String(m.itemId) === String(itemId)).sort((a,b) => (b.date||0) - (a.date||0));
     let bal = 0;
     const reversed = [...movs].reverse(); // oldest first for balance computation
     reversed.forEach(m => { m._bal = bal += (m.type==='IN' ? m.qty : -m.qty); });
@@ -4137,7 +4212,7 @@
       if (btn.dataset.imsAct === 'gen-po') {
         const supplier = Object.keys(c._imsPOGenGroups)[Number(btn.dataset.supplierIdx)];
         const rows = c._imsPOGenGroups[supplier];
-        const lines = rows.map(r => ({ itemId:r.it.id, name:r.it.name, qty:r.deficit, rate:r.it.costPrice||0, total:r.deficit*(r.it.costPrice||0) }));
+        const lines = rows.map(r => ({ itemId:r.it.id, name:r.it.name, unit:r.it.unit||'', qty:r.deficit, rate:r.it.costPrice||0, total:r.deficit*(r.it.costPrice||0), dimensions:r.it.dimensions||'', machineDetails:r.it.machineDetails||'', receivedQty:0 }));
         imsCreatePO(supplier, lines);
       }
       if (btn.dataset.imsAct === 'gen-all-po') imsGenerateAllPOs(c._imsPOGenGroups);
@@ -4145,9 +4220,11 @@
     if (window.lucide) lucide.createIcons();
   }
   function imsCreatePO(supplier, lines) {
+    seedVendorData();
     const total = lines.reduce((s,l) => s + l.total, 0);
     const poNo = 'PO-' + String(2451 + (State.pos?.length || 0)).padStart(4,'0');
-    const po = { id: State.imsNextId.po++, poNo, supplier, date:Date.now(), items:lines, total, status:'DRAFT', notes:'Auto-generated from low stock' };
+    const vendor = vendorByName(supplier);
+    const po = { id: State.imsNextId.po++, poNo, supplier, vendor:supplier, vendorDetail:vendor || null, projectId:imsActiveProjectId() || State.activeProject || 'PRJ-017', date:Date.now(), expectedDelivery:'', items:lines, total, status:'DRAFT', notes:'Auto-generated from low stock', source:'inventory' };
     if (!State.pos) State.pos = [];
     State.pos.unshift(po);
     audit('create','PO · ' + poNo, supplier + ' · ' + fmtINR(total));
@@ -4162,10 +4239,11 @@
   function imsGenerateAllPOs(groups) {
     let count = 0;
     Object.entries(groups).forEach(([supplier, rows]) => {
-      const lines = rows.map(r => ({ itemId:r.it.id, name:r.it.name, qty:r.deficit, rate:r.it.costPrice||0, total:r.deficit*(r.it.costPrice||0) }));
+      const lines = rows.map(r => ({ itemId:r.it.id, name:r.it.name, unit:r.it.unit||'', qty:r.deficit, rate:r.it.costPrice||0, total:r.deficit*(r.it.costPrice||0), dimensions:r.it.dimensions||'', machineDetails:r.it.machineDetails||'', receivedQty:0 }));
       const total = lines.reduce((s,l) => s + l.total, 0);
       const poNo = 'PO-' + String(2451 + (State.pos?.length || 0) + count).padStart(4,'0');
-      State.pos.unshift({ id: State.imsNextId.po++, poNo, supplier, date:Date.now(), items:lines, total, status:'DRAFT', notes:'Auto-generated from low stock' });
+      const vendor = vendorByName(supplier);
+      State.pos.unshift({ id: State.imsNextId.po++, poNo, supplier, vendor:supplier, vendorDetail:vendor || null, projectId:imsActiveProjectId() || State.activeProject || 'PRJ-017', date:Date.now(), expectedDelivery:'', items:lines, total, status:'DRAFT', notes:'Auto-generated from low stock', source:'inventory' });
       count++;
     });
     audit('create','POs (batch)', count + ' draft POs generated');
@@ -4179,6 +4257,7 @@
 
   // ----- TAB 7: PURCHASE ORDERS LIST -----
   function renderIMSPOList(c) {
+    seedVendorData();
     const pos = [...(State.pos || [])].sort((a,b) => (b.date||0) - (a.date||0));
     c.innerHTML = `
       <div class="flex justify-between items-center mb-4">
@@ -4191,17 +4270,17 @@
       <table class="data">
         <thead><tr><th class="sortable">PO #</th><th>Date</th><th>Supplier</th><th>Lines</th><th class="text-right">Total</th><th>Status</th><th>Notes</th><th></th></tr></thead>
         <tbody>${pos.map(p => `<tr>
-          <td class="font-mono"><b>${p.poNo}</b></td>
+          <td class="font-mono"><b>${poNo(p)}</b></td>
           <td class="font-mono text-xs">${fmtDateShort(p.date)}</td>
-          <td>${p.supplier || '—'}</td>
-          <td class="text-xs">${(p.items||[]).length} line${(p.items||[]).length!==1?'s':''}</td>
-          <td class="text-right font-mono"><b>${fmtINR(p.total || 0)}</b></td>
-          <td><span class="badge badge-${p.status==='DRAFT'?'warn':p.status==='SENT'?'info':p.status==='RECEIVED'?'ok':'bad'}">${p.status}</span></td>
-          <td class="text-xs text-stone-600">${p.notes || ''}</td>
+          <td>${esc(poVendor(p))}<div class="text-[10px] text-stone-500">${esc((p.vendorDetail || vendorByName(poVendor(p)) || {}).phone || '')}</div></td>
+          <td class="text-xs">${poLines(p).length} line${poLines(p).length!==1?'s':''}<div class="text-[10px] text-stone-500">${poMissingSummary(p)}</div></td>
+          <td class="text-right font-mono"><b>${fmtINR(poValue(p))}</b></td>
+          <td>${poBadge(p)}</td>
+          <td class="text-xs text-stone-600">${esc(p.notes || '')}</td>
           <td><div class="ims-row-action">
             <button class="ims-icon-btn" data-ims-act="view-po" data-id="${p.id}" title="View">👁</button>
-            ${p.status==='DRAFT'?`<button class="ims-icon-btn" style="border-color:#1E3A4C;color:#1E3A4C" data-ims-act="send-po" data-id="${p.id}" title="Mark sent">→</button>`:''}
-            ${p.status==='SENT'?`<button class="ims-icon-btn" style="border-color:#15803D;color:#15803D" data-ims-act="receive-po" data-id="${p.id}" title="Mark received">📥</button>`:''}
+            ${poStatusKey(p)==='DRAFT'?`<button class="ims-icon-btn" style="border-color:#1E3A4C;color:#1E3A4C" data-ims-act="send-po" data-id="${p.id}" title="Approve / release">→</button>`:''}
+            ${['SENT','PARTIAL','OVERDUE'].includes(poStatusKey(p))?`<button class="ims-icon-btn" style="border-color:#15803D;color:#15803D" data-ims-act="receive-po" data-id="${p.id}" title="Receive material">📥</button>`:''}
             <button class="ims-icon-btn danger" data-ims-act="del-po" data-id="${p.id}" title="Delete">🗑</button>
           </div></td>
         </tr>`).join('') || '<tr><td colspan="8" class="text-center text-stone-400 py-4">No POs · use PO Generator or create manually</td></tr>'}</tbody>
@@ -4220,73 +4299,103 @@
     });
   }
   function imsViewPO(id) {
-    const p = State.pos.find(x => x.id === id);
+    const p = State.pos.find(x => String(x.id) === String(id));
     if (!p) return;
+    const vendor = p.vendorDetail || vendorByName(poVendor(p)) || {};
     openDrawer({
-      title: `Purchase Order · ${p.poNo}`,
+      title: `Purchase Order · ${poNo(p)}`,
       body: `
         <div class="flex justify-between items-start mb-4">
-          <div><div class="font-display font-bold text-base">${p.supplier||'—'}</div><div class="text-xs text-stone-500">Issued: ${fmtDateShort(p.date)}</div></div>
-          <div><span class="badge badge-${p.status==='DRAFT'?'warn':p.status==='SENT'?'info':p.status==='RECEIVED'?'ok':'bad'}">${p.status}</span></div>
+          <div><div class="font-display font-bold text-base">${esc(poVendor(p))}</div><div class="text-xs text-stone-500">Issued: ${fmtDateShort(p.date)} · Project: ${esc(poProject(p))}</div></div>
+          <div>${poBadge(p)}</div>
+        </div>
+        <div class="card p-3 mb-3 text-xs">
+          <b>Vendor detail</b><br>
+          ${esc(vendor.legalName || poVendor(p))} · ${esc(vendor.phone || 'Phone not set')}<br>
+          ${esc(vendor.address || 'Address not set')} ${vendor.location ? '· ' + esc(vendor.location) : ''}
         </div>
         <table class="data">
-          <thead><tr><th>#</th><th>Item</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Total</th></tr></thead>
+          <thead><tr><th>#</th><th>Item</th><th>Additional Info</th><th class="text-right">Ordered</th><th class="text-right">Received</th><th class="text-right">Missing</th><th class="text-right">Rate</th><th class="text-right">Total</th></tr></thead>
           <tbody>
-            ${(p.items||[]).map((l,i) => `<tr><td class="font-mono text-xs">${i+1}</td><td>${l.name}</td><td class="text-right font-mono">${l.qty}</td><td class="text-right font-mono text-xs">${fmtINR(l.rate||0)}</td><td class="text-right font-mono"><b>${fmtINR(l.total||0)}</b></td></tr>`).join('')}
-            <tr style="background:#fafaf6;font-weight:700"><td colspan="4" class="text-right">Grand Total</td><td class="text-right font-mono">${fmtINR(p.total||0)}</td></tr>
+            ${poLines(p).map((l,i) => { const miss = Math.max(0, Number(l.qty||0) - Number(l.receivedQty||0)); return `<tr><td class="font-mono text-xs">${i+1}</td><td>${esc(l.name)}</td><td class="text-xs">${esc(l.dimensions || '')}${l.dimensions && l.machineDetails ? '<br>' : ''}${esc(l.machineDetails || '')}</td><td class="text-right font-mono">${l.qty} ${esc(l.unit||'')}</td><td class="text-right font-mono">${l.receivedQty || 0}</td><td class="text-right font-mono" style="${miss?'color:#B45309;font-weight:700':''}">${miss}</td><td class="text-right font-mono text-xs">${fmtINR(l.rate||0)}</td><td class="text-right font-mono"><b>${fmtINR(l.total||0)}</b></td></tr>`; }).join('')}
+            <tr style="background:#fafaf6;font-weight:700"><td colspan="7" class="text-right">Grand Total</td><td class="text-right font-mono">${fmtINR(poValue(p))}</td></tr>
           </tbody>
         </table>
-        ${p.notes ? `<div class="mt-3 text-xs"><b>Notes:</b> ${p.notes}</div>` : ''}
+        <div class="mt-3 text-xs"><b>PO Track:</b> ${poStatusKey(p)==='DRAFT'?'Generated, awaiting approval':poStatusKey(p)==='SENT'?'Approved and released to vendor':poStatusKey(p)==='PARTIAL'?'Part received at site; missing quantities highlighted':'Material received and reflected in stock'}</div>
+        ${p.notes ? `<div class="mt-3 text-xs"><b>Notes:</b> ${esc(p.notes)}</div>` : ''}
         <div class="flex gap-2 mt-4 pt-3 border-t border-stone-200">
-          ${p.status==='DRAFT'?`<button class="btn btn-amber" data-ims-act="send-po" data-id="${p.id}"><i data-lucide="send" class="w-3.5 h-3.5"></i>Mark as Sent</button>`:''}
-          ${p.status==='SENT'?`<button class="btn btn-amber" data-ims-act="receive-po" data-id="${p.id}"><i data-lucide="package-check" class="w-3.5 h-3.5"></i>Mark as Received</button>`:''}
+          ${poStatusKey(p)==='DRAFT'?`<button class="btn btn-amber" data-ims-act="send-po" data-id="${p.id}"><i data-lucide="send" class="w-3.5 h-3.5"></i>Approve / Release</button>`:''}
+          ${['SENT','PARTIAL','OVERDUE'].includes(poStatusKey(p))?`<button class="btn btn-amber" data-ims-act="receive-po" data-id="${p.id}"><i data-lucide="package-check" class="w-3.5 h-3.5"></i>Receive at Site</button>`:''}
           <button class="btn btn-ghost" onclick="window.print()"><i data-lucide="printer" class="w-3.5 h-3.5"></i>Print</button>
         </div>
       `
     });
   }
   function imsSendPO(id) {
-    const p = State.pos.find(x => x.id === id); if (!p) return;
+    const p = State.pos.find(x => String(x.id) === String(id)); if (!p) return;
     p.status = 'SENT';
-    audit('update','PO · ' + p.poNo,'Status → SENT');
+    p.approvedAt = Date.now();
+    audit('update','PO · ' + poNo(p),'Status → approved / released');
     saveState();
     closeDrawer && closeDrawer();
-    toast('PO Sent', p.poNo,'ok');
+    toast('PO Approved', poNo(p) + ' · released to vendor','ok');
     renderIMS();
+    renderProcurementView?.();
   }
   function imsReceivePO(id) {
-    const p = State.pos.find(x => x.id === id); if (!p) return;
+    const p = State.pos.find(x => String(x.id) === String(id)); if (!p) return;
     const siteId = State.sites[0].id;
+    const lines = poLines(p);
     openModal({
       title: 'Receive PO',
-      submitLabel: `Create ${(p.items||[]).length} Stock IN entries`,
-      body: `<div class="text-sm">Mark <b>${p.poNo}</b> as received? This will:<br><br>· Auto-create <b>${(p.items||[]).length} Stock IN entries</b> for each line item<br>· Update stock balances<br>· Mark PO as RECEIVED<br><br>Receive into: <b>${State.sites[0].name}</b></div>`,
+      wide: true,
+      submitLabel: `Receive Material at Site`,
+      body: `
+        <form id="imsReceivePOForm" class="ims-form">
+          <div class="text-sm mb-3">Receive <b>${poNo(p)}</b> into <b>${State.sites[0].name}</b>. Enter actual received quantity; any short quantity stays visible in PO Track.</div>
+          <table class="data"><thead><tr><th>Item</th><th class="text-right">Ordered</th><th class="text-right">Already Received</th><th class="text-right">Receive Now</th></tr></thead><tbody>
+            ${lines.map((l,i) => { const bal = Math.max(0, Number(l.qty || 0) - Number(l.receivedQty || 0)); return `<tr><td><b>${esc(l.name || 'Item')}</b><div class="text-[10px] text-stone-500">${esc(l.dimensions || l.machineDetails || '')}</div></td><td class="text-right font-mono">${l.qty || ''} ${esc(l.unit||'')}</td><td class="text-right font-mono">${l.receivedQty || 0}</td><td class="text-right"><input name="recv_${i}" type="number" min="0" step="0.01" value="${bal}" class="border border-stone-200 px-2 py-1 text-xs text-right" style="width:110px"></td></tr>`; }).join('')}
+          </tbody></table>
+          <div class="ims-field mt-3"><label>GRN / receiving note</label><textarea name="receiveNote" rows="2" placeholder="Gate entry, challan, damage / shortage remarks"></textarea></div>
+        </form>`,
       onSubmit: () => {
-        (p.items||[]).forEach(line => {
+        const fd = new FormData($('#imsReceivePOForm'));
+        let receivedLines = 0;
+        lines.forEach((line, i) => {
+          const recv = Number(fd.get('recv_' + i) || 0);
+          if (!recv || !line.itemId) return;
+          line.receivedQty = Number(line.receivedQty || 0) + recv;
           State.stockMovements.push({
             id: State.imsNextId.mov++,
-            type:'IN', itemId: line.itemId, siteId, qty: line.qty,
-            date: Date.now(), refNo: p.poNo, supplier: p.supplier,
-            notes: 'Auto-received from PO ' + p.poNo, poId: p.id
+            type:'IN', itemId: line.itemId, siteId, qty: recv,
+            date: Date.now(), refNo: poNo(p), supplier: poVendor(p),
+            notes: (fd.get('receiveNote') || 'Auto-received from PO ' + poNo(p)), poId: p.id,
+            projectId: poProject(p), chargeProject: poProject(p), flowStage:'received'
           });
+          receivedLines++;
         });
-        p.status = 'RECEIVED';
-        audit('update', 'PO · ' + p.poNo, 'Status → RECEIVED · ' + (p.items||[]).length + ' stock IN entries auto-created');
+        const allDone = lines.every(line => Number(line.qty || 0) <= Number(line.receivedQty || 0));
+        p.status = allDone ? 'RECEIVED' : 'PARTIAL';
+        p.receivedAt = allDone ? Date.now() : p.receivedAt;
+        p.receiveNote = fd.get('receiveNote') || p.receiveNote || '';
+        audit('update', 'PO · ' + poNo(p), 'Status → ' + p.status + ' · ' + receivedLines + ' stock IN entries created');
         saveState();
         closeDrawer && closeDrawer();
-        toast('PO Received', p.poNo + ' · ' + (p.items||[]).length + ' lines added to stock','ok');
+        toast(allDone ? 'PO Received' : 'PO Partially Received', poNo(p) + ' · stock updated · missing items remain trackable','ok');
         renderIMS();
+        renderProcurementView?.();
       }
     });
   }
   function imsDeletePO(id) {
-    const p = State.pos.find(x => x.id === id); if (!p) return;
+    const p = State.pos.find(x => String(x.id) === String(id)); if (!p) return;
     openModal({ title:'Delete PO', submitLabel:'Delete', submitClass:'btn-danger',
-      body:`<div class="text-sm">Delete <b>${p.poNo}</b>?</div>`,
-      onSubmit: () => { State.pos = State.pos.filter(x => x.id !== id); audit('delete','PO · ' + p.poNo,p.supplier||''); saveState(); toast('PO Deleted',p.poNo,'warn'); renderIMS(); }
+      body:`<div class="text-sm">Delete <b>${poNo(p)}</b>?</div>`,
+      onSubmit: () => { State.pos = State.pos.filter(x => String(x.id) !== String(id)); audit('delete','PO · ' + poNo(p),poVendor(p)); saveState(); toast('PO Deleted',poNo(p),'warn'); renderIMS(); renderProcurementView?.(); }
     });
   }
   function imsEditPO() {
+    seedVendorData();
     const poNo = 'PO-' + String(2451 + (State.pos?.length || 0)).padStart(4,'0');
     openModal({
       title: 'New Purchase Order',
@@ -4298,9 +4407,11 @@
             <div class="ims-field"><label>PO No</label><input name="poNo" value="${poNo}" readonly></div>
             <div class="ims-field"><label>Date *</label><input type="date" name="date" value="${new Date().toISOString().slice(0,10)}" required></div>
           </div>
-          <div class="ims-field"><label>Supplier *</label><input name="supplier" required placeholder="Vendor name"></div>
+          <div class="ims-field"><label>Supplier *</label><input name="supplier" list="imsPOVendors" required placeholder="Vendor name"><datalist id="imsPOVendors">${(State.vendors||[]).map(v=>`<option>${esc(v.name)}</option>`).join('')}</datalist></div>
           <div class="ims-field"><label>Item *</label><select name="itemId" required>${State.items.map(i => `<option value="${i.id}">${i.sku ? i.sku+' · ':''}${i.name} (${i.unit||''})</option>`).join('')}</select></div>
           <div class="ims-form-row"><div class="ims-field"><label>Qty *</label><input type="number" name="qty" min="0.01" step="0.01" value="1" required></div><div class="ims-field"><label>Rate (NPR)</label><input type="number" name="rate" min="0" step="0.01" value="0"></div></div>
+          <div class="ims-form-row"><div class="ims-field"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${p.id===(imsActiveProjectId() || State.activeProject)?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></div><div class="ims-field"><label>Expected Delivery</label><input type="date" name="expectedDelivery"></div></div>
+          <div class="ims-form-row"><div class="ims-field"><label>Dimensions / Size</label><input name="dimensions" placeholder="L x W x H, dia, capacity"></div><div class="ims-field"><label>Machine / Equipment Detail</label><input name="machineDetails" placeholder="Model, serial, HP/kVA, attachment"></div></div>
           <div class="ims-field"><label>Notes</label><textarea name="notes" rows="2"></textarea></div>
           <div class="text-xs text-stone-500">Single-line quick PO. Use PO Generator for multi-line auto-replenishment.</div>
         </form>
@@ -4310,7 +4421,8 @@
         const obj = {}; fd.forEach((v,k) => obj[k] = v);
         const item = State.items.find(i => i.id === Number(obj.itemId));
         const qty = Number(obj.qty), rate = Number(obj.rate);
-        const po = { id: State.imsNextId.po++, poNo: obj.poNo, supplier: obj.supplier, date: new Date(obj.date).getTime(), items: [{ itemId: item.id, name: item.name, qty, rate, total: qty*rate }], total: qty*rate, status:'DRAFT', notes: obj.notes||'' };
+        const vendor = vendorByName(obj.supplier);
+        const po = { id: State.imsNextId.po++, poNo: obj.poNo, supplier: obj.supplier, vendor: obj.supplier, vendorDetail:vendor || null, projectId:obj.projectId, expectedDelivery:obj.expectedDelivery || '', date: new Date(obj.date).getTime(), items: [{ itemId: item.id, name: item.name, unit:item.unit||'', qty, rate, total: qty*rate, dimensions:obj.dimensions || item.dimensions || '', machineDetails:obj.machineDetails || item.machineDetails || '', receivedQty:0 }], total: qty*rate, status:'DRAFT', notes: obj.notes||'' };
         if (!State.pos) State.pos = [];
         State.pos.unshift(po);
         audit('create','PO · ' + po.poNo, po.supplier + ' · ' + fmtINR(po.total));
@@ -4389,10 +4501,10 @@
   }
   function imsRPOSummary() {
     const pos = State.pos || [];
-    const byStatus = pos.reduce((acc,p) => { acc[p.status] = (acc[p.status]||0) + 1; return acc; }, {});
-    const valByStatus = pos.reduce((acc,p) => { acc[p.status] = (acc[p.status]||0) + (p.total||0); return acc; }, {});
+    const byStatus = pos.reduce((acc,p) => { const s = poStatusKey(p); acc[s] = (acc[s]||0) + 1; return acc; }, {});
+    const valByStatus = pos.reduce((acc,p) => { const s = poStatusKey(p); acc[s] = (acc[s]||0) + poValue(p); return acc; }, {});
     const received = valByStatus['RECEIVED']||0;
-    const pending = (valByStatus['DRAFT']||0) + (valByStatus['SENT']||0);
+    const pending = (valByStatus['DRAFT']||0) + (valByStatus['SENT']||0) + (valByStatus['PARTIAL']||0) + (valByStatus['OVERDUE']||0);
     $('#imsReportBody').innerHTML = `
       <div class="flex justify-between items-center mb-3"><div class="font-display font-bold">PO Summary</div><div class="text-xs text-stone-500">${pos.length} total POs</div></div>
       <div class="grid grid-cols-3 gap-3 mb-4">
@@ -4401,7 +4513,7 @@
         <div class="ims-stat" style="border-color:#B45309"><div class="lbl">Pending Value</div><div class="val">${fmtINR(pending)}</div></div>
       </div>
       <table class="data"><thead><tr><th>Status</th><th class="text-right">Count</th><th class="text-right">Value</th></tr></thead><tbody>
-        ${['DRAFT','SENT','RECEIVED','CANCELLED'].map(s => `<tr><td><span class="badge badge-${s==='DRAFT'?'warn':s==='SENT'?'info':s==='RECEIVED'?'ok':'bad'}">${s}</span></td><td class="text-right font-mono">${byStatus[s]||0}</td><td class="text-right font-mono">${fmtINR(valByStatus[s]||0)}</td></tr>`).join('')}
+        ${['DRAFT','SENT','PARTIAL','RECEIVED','OVERDUE','CANCELLED'].map(s => `<tr><td><span class="badge badge-${s==='DRAFT'?'warn':s==='SENT'?'info':s==='RECEIVED'?'ok':s==='PARTIAL'?'warn':'bad'}">${s}</span></td><td class="text-right font-mono">${byStatus[s]||0}</td><td class="text-right font-mono">${fmtINR(valByStatus[s]||0)}</td></tr>`).join('')}
       </tbody></table>`;
   }
 
@@ -10589,42 +10701,30 @@
   }
 
   const LAUNCHER_GROUPS = [
-    { label:'Overview', tiles:[
-      { view:'projects',   icon:'folder-kanban',  title:'Projects',           sub:'Active project portfolio',  color:'#1E3A4C' },
-      { view:'projectsites',icon:'map-pin',       title:'Project Sites',      sub:'Block A · Headworks · zones',color:'#15803D' },
-      { view:'schedule',   icon:'calendar-range', title:'Schedule / Gantt',   sub:'Baseline · revised · actual',color:'#E8742C' },
-      { view:'events',     icon:'calendar-check', title:'Events Register',    sub:'Contractual · claims',color:'#7C3AED' },
-      { view:'todos',      icon:'check-square',   title:'To-Do List',         sub:'Kanban · personal · overdue',color:'#0EA5E9' }
+    { label:'Plan', tiles:[
+      { view:'projects',    icon:'folder-kanban',  title:'Projects',      sub:'Portfolio, contracts, teams', color:'#1E3A4C' },
+      { view:'projectsites',icon:'map-pin',        title:'Work Sites',    sub:'Locations, zones, fronts', color:'#15803D' },
+      { view:'schedule',    icon:'calendar-range', title:'Schedule',      sub:'Baseline, revised, actual', color:'#E8742C' },
+      { view:'todos',       icon:'check-square',   title:'Action List',   sub:'Owners, due dates, blockers', color:'#0EA5E9' }
     ]},
-    { label:'Pre-Construction', tiles:[
-      { view:'tenders',    icon:'gavel',          title:'Tenders & Bids',     sub:'Pipeline · win-loss tracking',color:'#B45309' },
-      { view:'estimation', icon:'calculator',     title:'Estimation / BOQ',   sub:'Quantity surveying · rates',color:'#15803D' },
-      { view:'budgetcontrol', icon:'circle-dollar-sign', title:'Budget & Cost Control', sub:'Resources · B2B · overhead · milestones', color:'#1E3A4C' }
-    ]},
-    { label:'Site Operations', tiles:[
-      { view:'dpr',        icon:'clipboard-list', title:'Daily Progress',     sub:'DPR · weather · activities',color:'#E8742C' },
-      { view:'workforce',  icon:'users',          title:'Workforce',          sub:'Labour register · payroll',color:'#1E3A4C' },
-      { view:'materials',  icon:'package',        title:'Materials & Inventory',sub:'IMS · GRN · Issue · POs', color:'#15803D' },
-      { view:'equipment',  icon:'truck',          title:'Plant & Equipment',  sub:'Logsheets · operators · maint',color:'#B45309' },
-      { view:'assets',     icon:'qr-code',        title:'Asset Management',   sub:'QR · allocation · lifecycle', color:'#1E3A4C' },
-      { view:'quality',    icon:'badge-check',    title:'Quality (QA/QC)',    sub:'NCRs · tests · checklists', color:'#0EA5E9' },
-      { view:'clientportal',icon:'file-check-2',  title:'Client Portal',      sub:'DPR · lab approvals', color:'#7C3AED' },
-      { view:'safety',     icon:'hard-hat',       title:'Safety / HSE',       sub:'Incidents · TBT · permits', color:'#C0383B' }
+    { label:'Build', tiles:[
+      { view:'dpr',       icon:'clipboard-list', title:'DPR',           sub:'Progress, weather, activity', color:'#E8742C' },
+      { view:'materials', icon:'package',        title:'Materials',     sub:'Stock, GRN, issue, POs', color:'#15803D' },
+      { view:'equipment', icon:'truck',          title:'Equipment',     sub:'Plant, logsheets, maintenance', color:'#B45309' },
+      { view:'quality',   icon:'badge-check',    title:'Quality & HSE', sub:'NCRs, tests, permits, safety', color:'#0EA5E9' }
     ]},
     { label:'Commercial', tiles:[
-      { view:'procurement',    icon:'shopping-cart',title:'Procurement',     sub:'POs · vendors · payables', color:'#7C3AED' },
-      { view:'subcontractors', icon:'handshake',    title:'Subcontractors',  sub:'Scope · billing · perf',   color:'#1E3A4C' },
-      { view:'billing',        icon:'receipt',      title:'Billing / RA Bills',sub:'Running account bills',  color:'#15803D' },
-      { view:'finance',        icon:'trending-up',  title:'Finance & Cost',  sub:'Estimated vs actual · CPI',color:'#E8742C' }
+      { view:'tenders',       icon:'gavel',              title:'Tenders',       sub:'Pipeline and bid control', color:'#B45309' },
+      { view:'estimation',    icon:'calculator',         title:'BOQ & Estimate',sub:'Rates and quantities', color:'#15803D' },
+      { view:'budgetcontrol', icon:'circle-dollar-sign', title:'Cost Control',  sub:'Budget, EAC, milestones', color:'#1E3A4C' },
+      { view:'procurement',   icon:'shopping-cart',      title:'Procurement',   sub:'Vendors, POs, receipts', color:'#7C3AED' },
+      { view:'billing',       icon:'receipt',            title:'Billing',       sub:'RA bills and certification', color:'#15803D' }
     ]},
-    { label:'Admin & Reports', tiles:[
-      { view:'analytics',  icon:'bar-chart-3',    title:'Analytics Workbench',sub:'KPIs · trends · forecasts',color:'#0EA5E9' },
-      { view:'audit',      icon:'history',        title:'Audit Log',          sub:'Hash-chained · tamper-evident',color:'#1E3A4C' },
-      { view:'documents',  icon:'file-stack',     title:'Documents',          sub:'Drawings · letters · MOMs',color:'#7C3AED' },
-      { view:'aidocs',     icon:'brain-circuit',  title:'AI Document Intelligence',sub:'Ask docs with source proof',color:'#1E3A4C' },
-      { view:'reports',    icon:'file-output',    title:'Reports',            sub:'Auto-PDF · client digests',color:'#B45309' },
-      { view:'clients',    icon:'building-2',     title:'Clients (CRM)',      sub:'Client master · contracts',color:'#15803D' },
-      { view:'settings',   icon:'settings-2',     title:'Settings',           sub:'Roles · automations · data',color:'#6B7280' }
+    { label:'Review', tiles:[
+      { view:'documents', icon:'file-stack',    title:'Documents', sub:'Drawings, letters, MOMs', color:'#7C3AED' },
+      { view:'aidocs',    icon:'brain-circuit', title:'AI Docs',   sub:'Source-backed document answers', color:'#1E3A4C' },
+      { view:'reports',   icon:'file-output',   title:'Reports',   sub:'PDF packs and client digests', color:'#B45309' },
+      { view:'analytics', icon:'bar-chart-3',   title:'Analytics', sub:'Trends and forecasts', color:'#0EA5E9' }
     ]}
   ];
 
@@ -10699,8 +10799,8 @@
       if (low.length) add('bad', low.length + ' low-stock items', 'Generate RFQs or purchase orders before work fronts stall.', 'materials', 'package', 'Open IMS');
     } catch(_) {}
 
-    const pendingPOs = (State.pos || []).filter(p => ['pending-approval','overdue'].includes(p.status));
-    if (pendingPOs.length) add('warn', pendingPOs.length + ' purchase orders need action', 'Approve pending POs and follow up overdue supply commitments.', 'procurement', 'shopping-cart', 'Open POs');
+    const pendingPOs = (State.pos || []).filter(p => ['DRAFT','PARTIAL','OVERDUE'].includes(poStatusKey(p)));
+    if (pendingPOs.length) add('warn', pendingPOs.length + ' purchase orders need action', 'Approve generated POs, receive site material, and review missing quantities.', 'procurement', 'shopping-cart', 'Open PO Track');
 
     const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed');
     if (openNcrs.length) add('warn', openNcrs.length + ' open NCRs', 'Close corrective actions and keep QA/QC evidence current.', 'quality', 'badge-check', 'Open QA');
@@ -10746,7 +10846,7 @@
       { view:'materials', icon:'package', label:'Materials', value:(State.items || []).length, detail:'catalogued inventory items', color:'#15803D' },
       { view:'assets', icon:'qr-code', label:'Assets', value:(State.assets || []).length, detail:'asset lifecycle and QR tracking', color:'#1E3A4C' },
       { view:'aidocs', icon:'brain-circuit', label:'AI Docs', value:(State.aiDocAnswerHistory || []).length, detail:'answers with source references', color:'#1E3A4C' },
-      { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs, detail:'POs not yet delivered', color:'#7C3AED' },
+      { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs.length, detail:'PO approval, receipt, vendor detail', color:'#7C3AED' },
       { view:'quality', icon:'badge-check', label:'QA/QC', value:(State.labReports || []).length || openNcrs, detail:'lab reports and NCRs', color:openNcrs ? '#C0383B' : '#15803D' },
       { view:'clientportal', icon:'file-check-2', label:'Client Portal', value:pendingClient, detail:'pending approvals', color:pendingClient ? '#B45309' : '#15803D' },
       { view:'billing', icon:'receipt', label:'Billing', value:(State.raBills || []).length, detail:'net billed ' + fmtNPR(billed), color:'#E8742C' },
@@ -10876,17 +10976,15 @@
         const overdueTasks = projectTodos.filter(t => t.status !== 'completed' && t.dueDate && new Date(t.dueDate) < todayDate).length;
         const openNcrs = projectNcrs.filter(n => n.status !== 'closed').length;
         const projectModules = [
-          { view:'projectsites', icon:'map-pin', title:'Work Sites / Zones', value:projectSites.length, sub:'Project locations and work fronts', color:'#15803D' },
+          { view:'projectsites', icon:'map-pin', title:'Work Sites', value:projectSites.length, sub:'Locations and active fronts', color:'#15803D' },
           { view:'schedule', icon:'calendar-range', title:'Schedule', value:project.spi.toFixed(2), sub:'SPI and baseline tracking', color:project.spi < 0.9 ? '#C0383B' : '#15803D' },
-          { view:'dpr', icon:'clipboard-list', title:'Daily Progress', value:project.pctComplete + '%', sub:'DPR, manpower, weather, output', color:'#E8742C' },
-          { view:'budgetcontrol', icon:'circle-dollar-sign', title:'Budget Control', value:(State.bccBoq || []).filter(b => b.projectId === project.id).length, sub:'Resources, B2B, overhead, milestones', color:'#1E3A4C' },
-          { view:'materials', icon:'package', title:'Inventory Flow', value:fmtINR(projectStockValue), sub:'Project stock, issues, GRN, transfers', color:'#15803D' },
+          { view:'dpr', icon:'clipboard-list', title:'DPR', value:project.pctComplete + '%', sub:'Progress, weather, output', color:'#E8742C' },
+          { view:'materials', icon:'package', title:'Materials', value:fmtINR(projectStockValue), sub:'Stock, GRN, issue, transfer', color:'#15803D' },
           { view:'equipment', icon:'truck', title:'Equipment', value:project.equipment, sub:'Plant allocation and logsheets', color:'#B45309' },
-          { view:'assets', icon:'qr-code', title:'Assets', value:(State.assets || []).filter(a => !a.projectId || a.projectId === project.id).length, sub:'Asset register, QR, transfers', color:'#1E3A4C' },
-          { view:'quality', icon:'badge-check', title:'QA / QC', value:openNcrs, sub:'NCRs, inspections, tests', color:openNcrs ? '#C0383B' : '#15803D' },
-          { view:'clientportal', icon:'file-check-2', title:'Client Portal', value:(State.clientSubmissions || []).filter(s => s.projectId === project.id && !['approved','rejected'].includes(s.approval || s.status)).length, sub:'DPR and lab approvals', color:'#7C3AED' },
-          { view:'events', icon:'calendar-check', title:'Events & Claims', value:projectEvents.length, sub:'Notices, delay, EOT, VO records', color:'#7C3AED' },
-          { view:'finance', icon:'trending-up', title:'Cost & Billing', value:project.margin.toFixed(1) + '%', sub:'Margin, RA bills, EAC, cashflow', color:project.margin < 3 ? '#C0383B' : '#1E3A4C' }
+          { view:'quality', icon:'badge-check', title:'Quality & HSE', value:openNcrs, sub:'NCRs, inspections, permits', color:openNcrs ? '#C0383B' : '#15803D' },
+          { view:'budgetcontrol', icon:'circle-dollar-sign', title:'Cost Control', value:project.margin.toFixed(1) + '%', sub:'Budget, EAC, milestones', color:project.margin < 3 ? '#C0383B' : '#1E3A4C' },
+          { view:'billing', icon:'receipt', title:'Billing', value:projectBills.length, sub:'RA bills and certification', color:'#15803D' },
+          { view:'documents', icon:'file-stack', title:'Documents', value:(State.documents || []).filter(d => d.projectId === project.id).length, sub:'Drawings, letters, MOMs', color:'#7C3AED' }
         ];
         const visibleProjectModules = projectModules.filter(m => canAccessModule(m.view));
 
@@ -10939,8 +11037,8 @@
             <div class="dash-panel">
               <div class="dash-panel-head">
                 <div>
-                  <div class="dash-panel-title">Project Modules</div>
-                  <div class="text-[10px] text-stone-500 mt-1">Open project-specific records for ${project.id}</div>
+                  <div class="dash-panel-title">Project Workspace</div>
+                  <div class="text-[10px] text-stone-500 mt-1">Focused records for ${project.id}</div>
                 </div>
                 <button class="btn btn-ghost text-xs" onclick="exitToPortfolio()"><i data-lucide="arrow-left" class="w-3 h-3"></i>Change Project</button>
               </div>
@@ -10982,7 +11080,7 @@
     }
 
     if (stampEl) stampEl.innerHTML = `<i data-lucide="layout-grid" class="w-3 h-3"></i>BUILDCORE · CONTRACTOR OS`;
-    if (subtextEl) subtextEl.innerHTML = `All modules at a glance · click any tile to enter · Ctrl+K for fast jump · ${new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'short', year:'numeric' })}`;
+    if (subtextEl) subtextEl.innerHTML = `Focused workspace · click a tile to continue · Ctrl+K for advanced search · ${new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'short', year:'numeric' })}`;
 
     // ============== COMPANY HEADER & PORTFOLIO METRICS ==============
     const metrics = $('#launcherMetrics');
@@ -11082,7 +11180,7 @@
       <div class="grid grid-cols-12 gap-4 mb-6">
         <div class="col-span-8">
           <div class="flex items-center justify-between mb-3 pb-2 border-b border-stone-200">
-            <div class="text-xs font-mono font-bold" style="color:#1E3A4C;letter-spacing:1px">MODULE SUMMARY · COMPANY COMMAND CENTER</div>
+            <div class="text-xs font-mono font-bold" style="color:#1E3A4C;letter-spacing:1px">COMMAND CENTER · KEY WORK AREAS</div>
             <button class="btn btn-ghost text-xs" onclick="openPalette()"><i data-lucide="search" class="w-3 h-3"></i>Fast Jump</button>
           </div>
           <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
@@ -11122,7 +11220,7 @@
 
     // ============== MODULE TILE LAUNCHER ==============
     const moduleTilesHtml = `
-      <div class="mb-3 mt-6 text-xs font-mono font-bold pb-2 border-b border-stone-200" style="color:#1E3A4C;letter-spacing:1px">QUICK ACCESS · ALL MODULES</div>
+      <div class="mb-3 mt-6 text-xs font-mono font-bold pb-2 border-b border-stone-200" style="color:#1E3A4C;letter-spacing:1px">QUICK ACCESS · FOCUSED MODULES</div>
     ` + LAUNCHER_GROUPS.map(group => `
       <div class="mb-5">
         <div class="text-[10px] font-mono font-bold mb-2 text-stone-500" style="letter-spacing:1px">${group.label.toUpperCase()}</div>
@@ -11484,36 +11582,52 @@
 
     const allProjects = projectPortfolio();
     const accessibleProjects = perm.projects === 'ALL' ? allProjects : allProjects.filter(p => perm.projects.includes(p.id));
+    const accessContractTotal = accessibleProjects.reduce((s,p) => s + p.contract, 0);
+    const accessBilledTotal = accessibleProjects.reduce((s,p) => s + p.billed, 0);
+    const accessEACTotal = accessibleProjects.reduce((s,p) => s + p.eac, 0);
+    const accessRiskCount = accessibleProjects.filter(p => p.status === 'At Risk' || p.status === 'Delayed').length;
+    const accessAlertTotal = accessibleProjects.reduce((s,p) => s + p.alerts, 0);
+    const accessMargin = accessContractTotal ? ((accessContractTotal - accessEACTotal) / accessContractTotal * 100) : 0;
 
     document.getElementById('portfolioContent').innerHTML = `
       <div class="project-select-hero mb-5">
         <div class="p-6 grid grid-cols-12 gap-5 items-center">
           <div class="col-span-8">
             <div class="stamp mb-3" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><i data-lucide="folder-kanban" class="w-3 h-3"></i>PROJECT ACCESS</div>
-            <h1 class="font-display font-black text-4xl leading-tight">Select Project</h1>
-            <p class="text-sm mt-3" style="color:rgba(255,255,255,.72)">Choose a project first. BuildCore will ask for your job role and passcode before showing modules, records, finance, DPR, inventory, QA/QC, and reports.</p>
+            <h1 class="font-display font-black text-4xl leading-tight">Project Command Access</h1>
+            <p class="text-sm mt-3" style="color:rgba(255,255,255,.72)">Choose a project to open a focused workspace. Your role controls the modules you see, so the app stays clean after entry.</p>
           </div>
           <div class="col-span-4 grid grid-cols-2 gap-3">
             <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff;padding:14px">
-              <div class="font-mono text-[10px] opacity-60">ROLE ACCESS</div>
+              <div class="font-mono text-[10px] opacity-60">PROJECTS</div>
               <div class="font-display font-black text-3xl">${accessibleProjects.length}</div>
-              <div class="text-[10px] opacity-60">assigned projects</div>
+              <div class="text-[10px] opacity-60">available to your account</div>
             </div>
             <div class="card" style="background:rgba(232,116,44,.18);border-color:rgba(232,116,44,.34);color:#fff;padding:14px">
-              <div class="font-mono text-[10px] opacity-70">ACCESS MODE</div>
-              <div class="font-display font-black text-xl">Secure</div>
-              <div class="text-[10px] opacity-70">role passcode</div>
+              <div class="font-mono text-[10px] opacity-70">ALERTS</div>
+              <div class="font-display font-black text-3xl">${accessAlertTotal}</div>
+              <div class="text-[10px] opacity-70">${accessRiskCount} project${accessRiskCount === 1 ? '' : 's'} at risk</div>
             </div>
           </div>
         </div>
       </div>
 
+      <div class="grid grid-cols-4 gap-3 mb-5">
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">CONTRACT VALUE</div><div class="font-display font-black text-2xl tabular">NPR ${accessContractTotal.toFixed(1)}<span class="text-base text-stone-400"> Cr</span></div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">BILLED</div><div class="font-display font-black text-2xl tabular">NPR ${accessBilledTotal.toFixed(1)}<span class="text-base text-stone-400"> Cr</span></div><div class="text-xs text-stone-500 mt-1">${accessContractTotal ? (accessBilledTotal/accessContractTotal*100).toFixed(0) : 0}% certified</div></div>
+        <div class="kpi ${accessMargin >= 8 ? 'kpi-green' : accessMargin >= 3 ? '' : 'kpi-red'}"><div class="font-mono text-[10px] text-stone-500">FORECAST MARGIN</div><div class="font-display font-black text-2xl tabular" style="color:${accessMargin >= 8 ? '#15803D' : accessMargin >= 3 ? '#B45309' : '#C0383B'}">${accessMargin.toFixed(1)}%</div></div>
+        <div class="kpi ${accessRiskCount ? 'kpi-red' : 'kpi-green'}"><div class="font-mono text-[10px] text-stone-500">RISK WATCH</div><div class="font-display font-black text-2xl tabular" style="color:${accessRiskCount ? '#C0383B' : '#15803D'}">${accessRiskCount}</div><div class="text-xs text-stone-500 mt-1">projects needing attention</div></div>
+      </div>
+
       <div class="flex items-end justify-between mb-4">
         <div>
-          <div class="font-display font-black text-2xl title-mark">Accessible Projects</div>
-          <div class="text-xs text-stone-500 mt-3">This list shows only projects assigned to your role. Full navigation opens after successful project entry.</div>
+          <div class="font-display font-black text-2xl title-mark">Open A Project Workspace</div>
+          <div class="text-xs text-stone-500 mt-3">Each project opens with a simplified module set for the selected role.</div>
         </div>
-        <button class="btn btn-ghost" onclick="signOut()"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Sign Out</button>
+        <div class="flex gap-2">
+          <button class="btn btn-ghost" onclick="enterAdminMode('analytics')"><i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>Portfolio Analytics</button>
+          <button class="btn btn-ghost" onclick="signOut()"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Sign Out</button>
+        </div>
       </div>
 
       <div class="project-name-grid">
@@ -12563,6 +12677,7 @@ Available Actions:
     if (view === 'audit') { renderAuditTable(); }
     if (view === 'schedule') { renderScheduleTable(); }
     if (view === 'materials') { if (State.session?.inProjectMode) State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
+    if (view === 'procurement') { setTimeout(renderProcurementView, 30); }
     if (view === 'budgetcontrol') { setTimeout(renderBCCView, 30); }
     if (view === 'equipment') { setTimeout(renderEquipmentView, 30); }
     if (view === 'assets')    { setTimeout(renderAssetView, 30); }
@@ -12811,24 +12926,29 @@ Available Actions:
     });
   }
   function actNewPO() {
+    seedIMSData();
+    const nextPoNo = 'PO-' + String(2451 + (State.pos?.length || 0)).padStart(4,'0');
     openModal({
       title: 'Purchase Order · New',
       body: `
         <div class="form-grid-2">
-          <div class="form-row"><label>PO Number</label><input name="id" value="${'PO-' + (parseInt(State.pos[0].id.slice(3))+1)}"></div>
-          <div class="form-row"><label>Vendor</label><select name="vendor"><option>Shivam Cement</option><option>Panchakanya Steel</option><option>Apex Aluminium</option><option>Krishna Tiles</option><option>BJ Painting</option><option>Sigma MEP</option><option>Nepal Lift</option></select></div>
+          <div class="form-row"><label>PO Number</label><input name="id" value="${nextPoNo}"></div>
+          <div class="form-row"><label>Vendor</label><select name="vendor">${State.vendors.map(v=>`<option>${esc(v.name)}</option>`).join('')}</select></div>
           <div class="form-row"><label>Project</label><select name="proj">${State.projects.map(p=>`<option value="${p.id}">${p.id}</option>`).join('')}</select></div>
           <div class="form-row"><label>Expected Delivery</label><input name="delivery" type="date"></div>
         </div>
         <div class="form-row"><label>Items</label><textarea name="items" placeholder="OPC 53 · 1500 bags @ रू 710/bag"></textarea></div>
+        <div class="form-row"><label>Dimensions / Machine Detail</label><textarea name="equipmentInfo" placeholder="For equipment: dimensions, model, serial no, capacity, attachment, warranty"></textarea></div>
         <div class="form-row"><label>Total Value (NPR)</label><input name="value" type="number" placeholder="1065000"></div>
         <div class="form-row"><label>Payment Terms</label><select name="terms"><option>30 days post-delivery</option><option>50% advance · 50% on delivery</option><option>15 days post-delivery</option><option>Cash on delivery</option></select></div>
       `,
       submitLabel: 'Create PO',
       onSubmit: (d) => {
-        const po = { id:d.id, vendor:d.vendor, items:d.items, value:+d.value||0, status:'pending-approval' };
+        const vendor = vendorByName(d.vendor);
+        const po = { id:State.imsNextId.po++, poNo:d.id, vendor:d.vendor, supplier:d.vendor, vendorDetail:vendor || null, proj:d.proj, projectId:d.proj, expectedDelivery:d.delivery || '', date:Date.now(), items:[{ name:d.items || 'Items not detailed', qty:0, rate:0, total:+d.value||0, machineDetails:d.equipmentInfo || '', receivedQty:0 }], value:+d.value||0, total:+d.value||0, status:'DRAFT', terms:d.terms || '', notes:'Created from procurement' };
         State.pos.unshift(po);
-        insertNewPO(po);
+        saveState();
+        renderProcurementView();
         toast('PO Created', d.id + ' · ' + d.vendor + ' · ' + fmtNPR(+d.value||0), 'ok');
       }
     });
@@ -13004,6 +13124,7 @@ Available Actions:
   function actBoardPack() { toast('Board Pack', 'Q4 board pack compiled · 32 pages · ready for review', 'ok'); }
   function actStatement() { toast('Statement Sent', 'Client statement emailed · attached invoices INV-014 to INV-018', 'ok'); }
   function actOnboard() {
+    seedVendorData();
     openModal({
       title: 'Onboard Vendor',
       body: `
@@ -13012,12 +13133,24 @@ Available Actions:
           <div class="form-row"><label>Trade Category</label><select name="cat"><option>Cement</option><option>Steel</option><option>Aggregates</option><option>MEP</option><option>Finishes</option><option>Equipment Rental</option><option>Specialty Sub</option></select></div>
           <div class="form-row"><label>PAN / VAT</label><input name="pan"></div>
           <div class="form-row"><label>Credit Limit (NPR)</label><input name="credit" type="number"></div>
+          <div class="form-row"><label>Address</label><input name="address" placeholder="Street, ward, municipality"></div>
+          <div class="form-row"><label>Location</label><input name="location" placeholder="Kathmandu / Hetauda / project area"></div>
+          <div class="form-row"><label>Contact Person</label><input name="contact"></div>
+          <div class="form-row"><label>Phone Number</label><input name="phone"></div>
         </div>
         <div class="form-row"><label>Bank Account · NMB / NIC / Nabil</label><input name="bank"></div>
         <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
       `,
       submitLabel: 'Send Onboarding Pack',
-      onSubmit: (d) => toast('Vendor Onboarded', (d.name||'New vendor') + ' · KYC pack sent · activate after PAN verification', 'ok')
+      onSubmit: (d) => {
+        const name = d.name || 'New vendor';
+        const existing = State.vendors.find(v => (v.name || '').toLowerCase() === name.toLowerCase());
+        const vendor = { id: existing?.id || 'VND-' + String(80 + State.vendors.length + 1).padStart(3,'0'), name, legalName:name, category:d.cat || 'General', contact:d.contact || '', phone:d.phone || '', email:'', address:d.address || '', location:d.location || '', pan:d.pan || '', credit:+d.credit||0, bank:d.bank || '', notes:d.notes || '', terms:'30 days', score:75 };
+        if (existing) Object.assign(existing, vendor); else State.vendors.push(vendor);
+        saveState();
+        renderProcurementView();
+        toast('Vendor Onboarded', name + ' · address and phone saved · ready for RFQ / PO', 'ok');
+      }
     });
   }
   function actMB() { openDrawer({ title: 'Measurement Book · PRJ-017', body: `
@@ -13992,9 +14125,9 @@ Available Actions:
     if (ncrClose) { const n = State.ncrs.find(x => x.id === ncrClose.dataset.ncrClose); if (n) { n.status='closed'; renderNCRTable(); toast('NCR Closed', n.id + ' verified & closed', 'ok'); } return; }
     // PO approve / receive
     const poApp = e.target.closest('[data-po-approve]');
-    if (poApp) { const p = State.pos.find(x => x.id === poApp.dataset.poApprove); if (p) { p.status='in-transit'; renderPOTable(); toast('PO Approved', p.id + ' · released to vendor', 'ok'); } return; }
+    if (poApp) { const p = State.pos.find(x => String(x.id) === String(poApp.dataset.poApprove)); if (p) { p.status='SENT'; p.approvedAt = Date.now(); saveState(); renderProcurementView(); toast('PO Approved', poNo(p) + ' · released to vendor', 'ok'); } return; }
     const poRec = e.target.closest('[data-po-receive]');
-    if (poRec) { const p = State.pos.find(x => x.id === poRec.dataset.poReceive); if (p) { p.status='delivered'; renderPOTable(); toast('PO Received', p.id + ' · GRN auto-created', 'ok'); } return; }
+    if (poRec) { imsReceivePO(poRec.dataset.poReceive); return; }
     // Automation toggle
     const tog = e.target.closest('[data-toggle]');
     if (tog) { const k = tog.dataset.toggle; State.automations[k] = !State.automations[k]; tog.classList.toggle('on', State.automations[k]); toast(State.automations[k]?'Rule ON':'Rule OFF', k.replace(/-/g,' '), State.automations[k]?'ok':'warn'); return; }
