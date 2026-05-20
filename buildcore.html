@@ -540,6 +540,9 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="documents">
         <i data-lucide="file-stack" class="nav-icon w-4 h-4 text-white/60"></i>Documents / Drawings
       </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="aidocs">
+        <i data-lucide="brain-circuit" class="nav-icon w-4 h-4 text-white/60"></i>AI Document Intelligence
+      </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="reports">
         <i data-lucide="file-output" class="nav-icon w-4 h-4 text-white/60"></i>Reports & Analytics
       </a>
@@ -2359,6 +2362,18 @@
         </div>
       </section>
 
+      <section id="view-aidocs" class="view">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <div class="stamp mb-3"><i data-lucide="brain-circuit" class="w-3 h-3"></i>AI DOCUMENT INTELLIGENCE</div>
+            <h1 class="font-display font-black text-3xl title-mark">AI Document Intelligence</h1>
+            <p class="text-sm text-stone-500 mt-3">Ask project documents with source proof, revision control, access permissions, and verification workflow.</p>
+          </div>
+          <button class="btn btn-amber" onclick="navTo('documents')"><i data-lucide="file-stack" class="w-3.5 h-3.5"></i>Document Library</button>
+        </div>
+        <div class="card p-6 text-sm text-stone-500">Loading AI document workspace...</div>
+      </section>
+
       <!-- ============================================= -->
       <!-- ============  ANALYTICS WORKBENCH =========== -->
       <!-- ============================================= -->
@@ -2969,6 +2984,14 @@
     vos: [],       // variation orders
     risks: [],     // risk register
     photos: [],    // photo metadata
+    aiDocSourceMode: '',
+    aiDocSelectedProject: '',
+    aiDocSelectedDocs: [],
+    aiDocCategoryFilter: '',
+    aiDocStatusFilter: '',
+    aiDocQuestion: '',
+    aiDocCurrentAnswer: null,
+    aiDocAnswerHistory: [],
     // ============== IMS DATA STORES ==============
     items: [],        // item master catalog
     stockMovements: [], // every IN/OUT
@@ -3074,6 +3097,10 @@
           labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
           labNextId: State.labNextId, labTestNextId: State.labTestNextId, clientSubmissionNextId: State.clientSubmissionNextId,
           documents: State.documents, docCurrentTab: State.docCurrentTab,
+          aiDocSourceMode: State.aiDocSourceMode, aiDocSelectedProject: State.aiDocSelectedProject,
+          aiDocSelectedDocs: State.aiDocSelectedDocs, aiDocCategoryFilter: State.aiDocCategoryFilter,
+          aiDocStatusFilter: State.aiDocStatusFilter, aiDocQuestion: State.aiDocQuestion,
+          aiDocCurrentAnswer: State.aiDocCurrentAnswer, aiDocAnswerHistory: State.aiDocAnswerHistory,
           assets: State.assets, assetCategories: State.assetCategories, assetLocations: State.assetLocations,
           assetAllocations: State.assetAllocations, assetTransfers: State.assetTransfers,
           assetMaintenance: State.assetMaintenance, assetBreakdowns: State.assetBreakdowns,
@@ -3103,7 +3130,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3122,6 +3149,10 @@
         labReports:State.labReports, labTestTypes:State.labTestTypes, clientSubmissions:State.clientSubmissions,
         labNextId:State.labNextId, labTestNextId:State.labTestNextId, clientSubmissionNextId:State.clientSubmissionNextId,
         documents:State.documents, docCurrentTab:State.docCurrentTab,
+        aiDocSourceMode:State.aiDocSourceMode, aiDocSelectedProject:State.aiDocSelectedProject,
+        aiDocSelectedDocs:State.aiDocSelectedDocs, aiDocCategoryFilter:State.aiDocCategoryFilter,
+        aiDocStatusFilter:State.aiDocStatusFilter, aiDocQuestion:State.aiDocQuestion,
+        aiDocCurrentAnswer:State.aiDocCurrentAnswer, aiDocAnswerHistory:State.aiDocAnswerHistory,
         assets:State.assets, assetCategories:State.assetCategories, assetLocations:State.assetLocations,
         assetAllocations:State.assetAllocations, assetTransfers:State.assetTransfers,
         assetMaintenance:State.assetMaintenance, assetBreakdowns:State.assetBreakdowns,
@@ -10583,6 +10614,7 @@
       { view:'analytics',  icon:'bar-chart-3',    title:'Analytics Workbench',sub:'KPIs · trends · forecasts',color:'#0EA5E9' },
       { view:'audit',      icon:'history',        title:'Audit Log',          sub:'Hash-chained · tamper-evident',color:'#1E3A4C' },
       { view:'documents',  icon:'file-stack',     title:'Documents',          sub:'Drawings · letters · MOMs',color:'#7C3AED' },
+      { view:'aidocs',     icon:'brain-circuit',  title:'AI Document Intelligence',sub:'Ask docs with source proof',color:'#1E3A4C' },
       { view:'reports',    icon:'file-output',    title:'Reports',            sub:'Auto-PDF · client digests',color:'#B45309' },
       { view:'clients',    icon:'building-2',     title:'Clients (CRM)',      sub:'Client master · contracts',color:'#15803D' },
       { view:'settings',   icon:'settings-2',     title:'Settings',           sub:'Roles · automations · data',color:'#6B7280' }
@@ -10599,6 +10631,7 @@
     if (view === 'projectsites') { const pid = State.session?.projectId || State.activeProject; return pid && pid !== 'ALL' ? projectSitesFor(pid).length : State.projectSites?.length || 0; }
     if (view === 'audit')     return State.audit?.length || 0;
     if (view === 'documents') { seedDocumentsData(); return State.documents?.length || 0; }
+    if (view === 'aidocs')    { seedDocumentsData(); return State.documents?.filter(d => aiDocIsApproved(d)).length || 0; }
     if (view === 'workforce') return 142;
     if (view === 'procurement') return State.pos?.length || 0;
     if (view === 'tenders')   return State.tenders?.length || 0;
@@ -10705,6 +10738,7 @@
       { view:'budgetcontrol', icon:'circle-dollar-sign', label:'Budget Control', value:(State.bccBoq || []).length, detail:'BOQ profitability and milestones', color:'#1E3A4C' },
       { view:'materials', icon:'package', label:'Materials', value:(State.items || []).length, detail:'catalogued inventory items', color:'#15803D' },
       { view:'assets', icon:'qr-code', label:'Assets', value:(State.assets || []).length, detail:'asset lifecycle and QR tracking', color:'#1E3A4C' },
+      { view:'aidocs', icon:'brain-circuit', label:'AI Docs', value:(State.aiDocAnswerHistory || []).length, detail:'answers with source references', color:'#1E3A4C' },
       { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs, detail:'POs not yet delivered', color:'#7C3AED' },
       { view:'quality', icon:'badge-check', label:'QA/QC', value:(State.labReports || []).length || openNcrs, detail:'lab reports and NCRs', color:openNcrs ? '#C0383B' : '#15803D' },
       { view:'clientportal', icon:'file-check-2', label:'Client Portal', value:pendingClient, detail:'pending approvals', color:pendingClient ? '#B45309' : '#15803D' },
@@ -11230,13 +11264,13 @@
   // =====================================================================
   const ROLE_PERMS = {
     ceo:      { name:'Mr. Rajesh Tamang',     role:'CEO · Full Access',           avatar:'RT', projects:'ALL', modules:'ALL' },
-    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO · Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','analytics','audit','reports'] },
+    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO · Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','analytics','audit','documents','aidocs','reports'] },
     pm:       { name:'R. Tamang (PM)',        role:'Project Manager · Projects',  avatar:'RT', projects:['PRJ-017','PRJ-030'], modules:'ALL' },
-    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','safety','events','todos'] },
-    qc:       { name:'M. Khatri (QC)',        role:'QC Officer · Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019','PRJ-030'], modules:['dashboard','projects','quality','safety','dpr','documents','events','todos'] },
+    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','safety','documents','aidocs','events','todos'] },
+    qc:       { name:'M. Khatri (QC)',        role:'QC Officer · Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019','PRJ-030'], modules:['dashboard','projects','quality','safety','dpr','documents','aidocs','events','todos'] },
     store:    { name:'Store Manager',          role:'Store · Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','assets','events','todos'] },
-    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','budgetcontrol','finance','documents','events','todos'] },
-    client:   { name:'Client Reviewer',        role:'Client · Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','reports'] }
+    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','budgetcontrol','finance','documents','aidocs','events','todos'] },
+    client:   { name:'Client Reviewer',        role:'Client · Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','aidocs','reports'] }
   };
 
   // Stage-1 (company) identity — used on the portfolio screen before a
@@ -12041,7 +12075,7 @@
 
   // -------- DOCUMENT CONTROL --------
   function seedDocumentsData() {
-    if (State.documents && State.documents.length) return;
+    if (State.documents && State.documents.length) { normalizeAIDocumentMetadata(); return; }
     State.documents = [
       { id:'DOC-001', code:'STR-S-201', title:'Slab Plan - Tower B - Level 7-8', type:'Drawing', discipline:'Structural', projectId:'PRJ-017', rev:'R4', status:'Approved for construction', updated:'2026-05-15', issuedBy:'B&P Consultants', owner:'S. Adhikari', dueDate:'', fileName:'STR-S-201_R4.pdf', notes:'Approved with cover-block condition from PMC.', revisions:['R0 issued for review','R2 column grid coordinated','R4 approved for construction'] },
       { id:'DOC-002', code:'ARC-A-104', title:'Facade Detail - East elevation', type:'Drawing', discipline:'Architecture', projectId:'PRJ-017', rev:'R7', status:'Under review', updated:'2026-05-17', issuedBy:'Studio Wai', owner:'PM', dueDate:'2026-05-20', fileName:'ARC-A-104_R7.pdf', notes:'Architect response pending on aluminium profile.', revisions:['R5 material changed','R6 client comments','R7 under review'] },
@@ -12054,6 +12088,39 @@
       { id:'DOC-009', code:'MOM-017-052', title:'Weekly site review minutes', type:'Minutes', discipline:'Meeting', projectId:'PRJ-017', rev:'Final', status:'Open actions', updated:'2026-05-12', issuedBy:'PMC', owner:'PM', dueDate:'2026-05-19', fileName:'MOM_017_052.pdf', notes:'8 action items remain open.', revisions:['Draft circulated','Final issued'] },
       { id:'DOC-010', code:'APP-STR-201', title:'Approval note for STR-S-201 R4', type:'Approval', discipline:'Structural', projectId:'PRJ-017', rev:'A', status:'Closed', updated:'2026-05-12', issuedBy:'Client / PMC', owner:'QC', dueDate:'', fileName:'APP_STR_201.pdf', notes:'Conditional approval logged and linked to drawing.', revisions:['Submitted','Approved with condition'] }
     ];
+    normalizeAIDocumentMetadata();
+  }
+  function normalizeAIDocumentMetadata() {
+    const defaults = [
+      { id:'DOC-011', code:'GCC-017', title:'Conditions of Contract - Skyline Towers', type:'Contract', discipline:'Commercial', projectId:'PRJ-017', rev:'Rev-01', status:'Approved', updated:'2024-08-15', issuedBy:'NIC Asia / NCC', owner:'Contract Manager', dueDate:'', fileName:'GCC_017_rev01.pdf', notes:'Approved contract conditions including defects notification and notices.', revisions:['Rev-01 approved baseline'] },
+      { id:'DOC-012', code:'TS-CONC-025', title:'Technical Specification - Concrete Works', type:'Specification', discipline:'QA/QC', projectId:'PRJ-017', rev:'Rev-03', status:'Approved', updated:'2026-04-30', issuedBy:'B&P Consultants', owner:'QA/QC Engineer', dueDate:'', fileName:'technical_spec_concrete_rev03.pdf', notes:'Concrete grade, batching, testing and placing requirements for RCC works.', revisions:['Rev-03 latest approved concrete section'] },
+      { id:'DOC-013', code:'BOQ-017-AFC', title:'Approved BOQ and Price Schedule', type:'BOQ', discipline:'Commercial', projectId:'PRJ-017', rev:'Rev-02', status:'Approved', updated:'2026-05-02', issuedBy:'Billing Engineer', owner:'Contracts', dueDate:'', fileName:'approved_boq_price_schedule_rev02.xlsx', notes:'Approved BOQ quantities, rates and billing item references.', revisions:['Rev-02 client approved'] },
+      { id:'DOC-014', code:'MOM-UMP-ROAD-03', title:'Minutes of Meeting - Union Mewa Hydro Project', type:'Minutes', discipline:'Meeting', projectId:'PRJ-030', rev:'Rev-01', status:'Approved', updated:'2026-05-04', issuedBy:'Employer / Consultant', owner:'Project Manager', dueDate:'', fileName:'MOM_UMP_road_03.pdf', notes:'Access road responsibility, negotiation and action points.', revisions:['Final approved MOM'] },
+      { id:'DOC-015', code:'DWG-HRT-204', title:'Approved Drawing - Headrace Tunnel Chainage 0+500 to 1+000', type:'Drawing', discipline:'Tunnel', projectId:'PRJ-030', rev:'AFC-02', status:'Approved for construction', updated:'2026-05-06', issuedBy:'Design Consultant', owner:'Tunnel Engineer', dueDate:'', fileName:'DWG_HRT_204_AFC02.pdf', notes:'Tunnel excavation, support and chainage references.', revisions:['AFC-02 approved for construction'] },
+      { id:'DOC-016', code:'CLM-EOT-05', title:'EOT Claim Document - Monsoon Delay', type:'Claim', discipline:'Contracts', projectId:'PRJ-030', rev:'Rev-00', status:'Draft', updated:'2026-05-18', issuedBy:'Contract Manager', owner:'Contracts', dueDate:'2026-05-25', fileName:'EOT_claim_monsoon_draft.pdf', notes:'Draft claim narrative and supporting delay records.', revisions:['Draft for internal review'] },
+      { id:'DOC-017', code:'IPC-017-14', title:'IPC / RA Bill 14 Measurement Sheet', type:'IPC / RA Bills', discipline:'Billing', projectId:'PRJ-017', rev:'Submitted', status:'Under review', updated:'2026-05-16', issuedBy:'Billing Engineer', owner:'Billing', dueDate:'2026-05-23', fileName:'IPC_017_14_measurement.xlsx', notes:'Submitted IPC quantities and deductions.', revisions:['Submitted to PMC'] }
+    ];
+    defaults.forEach(d => { if (!State.documents.some(x => x.id === d.id || x.code === d.code)) State.documents.push(d); });
+    State.documents.forEach(d => {
+      const cat = aiDocInferCategory(d);
+      d.docCategory = d.docCategory || cat;
+      d.contractPackage = d.contractPackage || (d.projectId === 'PRJ-030' ? 'Hydropower civil package' : 'Main works package');
+      d.docNo = d.docNo || d.code;
+      d.revisionNumber = d.revisionNumber || d.rev || 'R0';
+      d.documentStatus = d.documentStatus || aiDocApprovalStatus(d.status);
+      d.uploadDate = d.uploadDate || d.updated || new Date().toISOString().slice(0,10);
+      d.uploadedBy = d.uploadedBy || d.issuedBy || 'Document Controller';
+      d.verifiedBy = d.verifiedBy || (aiDocIsApproved(d) ? 'Document Controller' : '');
+      d.effectiveDate = d.effectiveDate || d.updated || '';
+      d.relatedBOQ = d.relatedBOQ || (d.type === 'BOQ' ? 'BOQ-2.2.1 / BOQ-3.1.1' : '');
+      d.relatedDrawing = d.relatedDrawing || (d.type === 'Drawing' ? d.code : '');
+      d.relatedClause = d.relatedClause || (d.type === 'Contract' ? 'Defects Liability / Notices' : '');
+      d.accessPermission = d.accessPermission || aiDocDefaultAccess(d.docCategory);
+      d.fileSource = d.fileSource || 'Document Management';
+      d.ocrStatus = d.ocrStatus || 'Clear';
+      d.indexingStatus = d.indexingStatus || 'Indexed';
+      d.aiExtracts = d.aiExtracts && d.aiExtracts.length ? d.aiExtracts : aiDocDefaultExtracts(d);
+    });
   }
   function docVisibleRows() {
     seedDocumentsData();
@@ -12074,7 +12141,7 @@
     return `<span class="badge badge-${cls}">${esc(status || 'Draft')}</span>`;
   }
   function docTypeIcon(type) {
-    return ({ Drawing:'layout-template', Contract:'file-signature', Certificate:'award', RFI:'help-circle', Letter:'mail', Approval:'badge-check', Minutes:'users' })[type] || 'file-text';
+    return ({ Drawing:'layout-template', Contract:'file-signature', Specification:'drafting-compass', BOQ:'receipt-text', Certificate:'award', RFI:'help-circle', Letter:'mail', Approval:'badge-check', Minutes:'users', Claim:'file-warning', 'IPC / RA Bills':'receipt' })[type] || 'file-text';
   }
   function docDateLabel(v) {
     if (!v) return '—';
@@ -12152,7 +12219,7 @@
         <td>${docStatusBadge(d.status)}</td>
         <td class="text-xs">${docDateLabel(d.updated)}</td>
         <td class="text-xs">${esc(d.issuedBy || 'Internal')}</td>
-        <td><div class="ims-row-action"><button class="ims-icon-btn" data-doc-act="view" data-id="${esc(d.id)}" title="View">View</button><button class="ims-icon-btn" data-doc-act="edit" data-id="${esc(d.id)}" title="Edit">Edit</button><button class="ims-icon-btn danger" data-doc-act="delete" data-id="${esc(d.id)}" title="Delete">Del</button></div></td>
+        <td><div class="ims-row-action"><button class="ims-icon-btn" data-doc-act="view" data-id="${esc(d.id)}" title="View">View</button><button class="ims-icon-btn" data-doc-act="ask-ai" data-id="${esc(d.id)}" title="Ask AI">Ask AI</button><button class="ims-icon-btn" data-doc-act="edit" data-id="${esc(d.id)}" title="Edit">Edit</button><button class="ims-icon-btn danger" data-doc-act="delete" data-id="${esc(d.id)}" title="Delete">Del</button></div></td>
       </tr>`;
     }).join('') || '<tr><td colspan="9" class="text-center text-stone-400 py-5">No records match this view.</td></tr>';
   }
@@ -12188,6 +12255,7 @@
       if (act === 'export') docExportCSV();
       if (act === 'history') docRevisionHistory();
       if (act === 'view') docView(btn.dataset.id);
+      if (act === 'ask-ai') openAIDocForDocument(btn.dataset.id);
       if (act === 'edit') docEdit(btn.dataset.id);
       if (act === 'delete') docDelete(btn.dataset.id);
     };
@@ -12209,6 +12277,7 @@
       <div class="text-xs text-stone-500 mb-2">Revision trail</div>
       <div class="space-y-2">${(d.revisions || []).map((r,i) => `<div class="card p-3 text-xs"><b>${esc(d.rev || 'R')}.${i+1}</b><div class="text-stone-500 mt-1">${esc(r)}</div></div>`).join('') || '<div class="text-xs text-stone-400">No revisions logged.</div>'}</div>
       <div class="flex gap-2 flex-wrap mt-4">
+        <button class="btn btn-ghost" onclick="openAIDocForDocument('${esc(d.id)}'); closeDrawer();"><i data-lucide="brain-circuit" class="w-3 h-3"></i>Ask AI</button>
         <button class="btn btn-ghost" onclick="docEdit('${esc(d.id)}'); closeDrawer();"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button>
         <button class="btn btn-amber" onclick="toast('Download Ready','${esc(d.fileName || d.code)}','ok')"><i data-lucide="download" class="w-3 h-3"></i>Download</button>
       </div>` });
@@ -12220,7 +12289,7 @@
     openModal({ title: id ? 'Edit Document' : 'Upload Document', wide:true, submitLabel: id ? 'Save Changes' : 'Add Document', body: `
       <div class="form-grid-2">
         <div class="form-row"><label>Reference / Drawing No.</label><input name="code" value="${esc(d.code)}" required></div>
-        <div class="form-row"><label>Type</label><select name="type">${['Drawing','Contract','Certificate','RFI','Letter','Approval','Minutes'].map(t => `<option ${d.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+        <div class="form-row"><label>Type</label><select name="type">${['Drawing','Contract','Specification','BOQ','Certificate','RFI','Letter','Approval','Minutes','Claim','IPC / RA Bills'].map(t => `<option ${d.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
         <div class="form-row"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${d.projectId===p.id?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div>
         <div class="form-row"><label>Discipline</label><input name="discipline" value="${esc(d.discipline||'')}" placeholder="Structural / MEP / Commercial"></div>
         <div class="form-row"><label>Revision</label><input name="rev" value="${esc(d.rev||'R0')}"></div>
@@ -12273,7 +12342,198 @@
     setTimeout(() => URL.revokeObjectURL(url), 200);
     audit('export','Documents','CSV · ' + State.documents.length + ' records');
   }
+  function aiDocInferCategory(d) {
+    const t = String(d.type || '').toLowerCase(), title = String(d.title || '').toLowerCase();
+    if (t.includes('contract')) return title.includes('condition') ? 'General Conditions of Contract' : 'Contract Agreement';
+    if (t.includes('spec')) return 'Technical Specification';
+    if (t.includes('boq')) return 'BOQ / Price Schedule';
+    if (t.includes('drawing')) return title.includes('as-built') ? 'As-built Drawings' : 'Approved Drawings';
+    if (t.includes('rfi')) return 'RFI';
+    if (t.includes('minutes')) return 'MOM';
+    if (t.includes('letter')) return 'Correspondence Letters';
+    if (t.includes('claim')) return 'Claim Documents';
+    if (t.includes('ipc')) return 'IPC / RA Bills';
+    if (t.includes('certificate')) return title.includes('test') ? 'Lab Test Reports' : 'Material Approval Documents';
+    if (t.includes('approval')) return 'Material Approval Documents';
+    return 'Project Documents';
+  }
+  function aiDocApprovalStatus(status='') {
+    const s = String(status).toLowerCase();
+    if (s.includes('superseded')) return 'Superseded';
+    if (s.includes('draft') || s.includes('review') || s.includes('pending') || s.includes('awaiting') || s.includes('open')) return 'Draft';
+    if (s.includes('approved') || s.includes('accepted') || s.includes('active') || s.includes('closed')) return 'Approved';
+    return status || 'Draft';
+  }
+  function aiDocIsApproved(d) { return aiDocApprovalStatus(d?.documentStatus || d?.status) === 'Approved'; }
+  function aiDocDefaultAccess(category) {
+    if (/contract|claim|variation|eot|ipc|boq|bill/i.test(category || '')) return ['ceo','cfo','pm','estimator','client'];
+    if (/qa|test|spec|drawing|rfi|mom|correspondence/i.test(category || '')) return ['ceo','pm','se','qc','estimator','client'];
+    return ['ceo','pm','se','qc','estimator','client'];
+  }
+  function aiDocCanUse(d) {
+    const role = State.session?.role || 'ceo';
+    const allowed = d.accessPermission || [];
+    if (State.session?.user?.modules === 'ALL') return true;
+    return !allowed.length || allowed.includes(role);
+  }
+  function aiDocDefaultExtracts(d) {
+    const base = { clause:'General Reference', section:d.discipline || d.type || 'Document', page:1, boq:'', drawing:d.relatedDrawing || '', confidence:'Medium' };
+    const code = d.code || '';
+    if (code === 'GCC-017' || /main contract|condition/i.test(d.title || '')) return [
+      { ...base, clause:'Defects Liability / Defects Notification Period', page:42, quote:'The Defects Notification Period shall be 365 days from the date of completion certified by the Engineer.', answer:'The defect liability period is 12 months from certified completion or taking over.', tags:'defect liability defects notification period completion taking over warranty' },
+      { ...base, clause:'Clause 8.4 Extension of Time', page:66, quote:'The Contractor shall notify delay events with supporting records within the required notice period.', answer:'Delay events need a formal notice with supporting records before EOT entitlement can be assessed.', tags:'eot extension time delay notice rain claim' }
+    ];
+    if (code === 'TS-CONC-025') return [{ ...base, clause:'Concrete Works - M25', section:'Concrete Works', page:28, boq:'BOQ-2.2.1', quote:'M25 concrete shall be batched, mixed, placed and tested as per approved mix design and ITP.', answer:'M25 concrete must follow the approved mix design, ITP, batching, placing and cube testing controls.', tags:'m25 concrete specification rcc mix design cube test placing batching' }];
+    if (code === 'BOQ-017-AFC') return [{ ...base, clause:'BOQ Item 2.2.1', section:'RCC Works', page:12, boq:'2.2.1', quote:'RCC M-25 in raft footing shall be measured in cubic meter as per approved drawings.', answer:'BOQ item 2.2.1 is for RCC M-25 in raft footing, measured in cubic meter.', tags:'boq rate m25 raft footing measurement billing item 2.2.1' }];
+    if (code === 'MOM-UMP-ROAD-03') return [{ ...base, clause:'Meeting Decision Point', section:'Access Road Maintenance', page:2, quote:'Maintenance of road between Temba to Powerhouse shall be done by 3HC.', answer:'Road maintenance between Temba and Powerhouse is assigned to 3HC, with cost to be finalized by mutual negotiation.', tags:'access road maintenance temba powerhouse 3hc negotiation responsibility' }];
+    if (code === 'DWG-HRT-204') return [{ ...base, clause:'Drawing Note 4', section:'Headrace Tunnel Support', page:3, drawing:code, quote:'Support class shall be confirmed at face by geological mapping before installation.', answer:'Tunnel support class must be confirmed at the face from geological mapping before installation.', tags:'tunnel support rock bolt shotcrete steel rib drawing chainage geological mapping' }];
+    if (code === 'CLM-EOT-05') return [{ ...base, clause:'Draft Claim Narrative', section:'Delay Event', page:4, quote:'Monsoon access restriction affected mucking and concrete supply routes during the recorded period.', answer:'The draft EOT claim links monsoon access restriction to mucking and concrete supply delay.', tags:'claim eot monsoon delay mucking concrete supply route' }];
+    if (code === 'IPC-017-14') return [{ ...base, clause:'IPC Summary', section:'Measurement Sheet', page:1, quote:'Submitted quantities are subject to PMC verification and deduction adjustment.', answer:'IPC 14 is submitted but still under review, so certified quantities may change.', tags:'ipc ra bill measurement submitted pmc verification deduction billing' }];
+    return [{ ...base, quote:d.notes || d.title || 'Document text indexed from document management.', answer:d.notes || 'Relevant document metadata is indexed.', tags:[d.title,d.notes,d.type,d.discipline,d.code].join(' ') }];
+  }
+  function aiDocCategories() {
+    seedDocumentsData();
+    const required = ['Contract Agreement','General Conditions of Contract','Special Conditions of Contract','Particular Conditions of Contract','Letter of Acceptance','Letter of Bid','Employer’s Requirement','Technical Specification','BOQ / Price Schedule','Approved Drawings','Shop Drawings','As-built Drawings','Method Statements','Inspection and Test Plans','QA/QC Documents','Material Approval Documents','Lab Test Reports','Site Instructions','RFI','MOM','Correspondence Letters','Variation Orders','Claim Documents','EOT Documents','IPC / RA Bills','Measurement Sheets','Progress Reports','Daily Reports','Photographs and Supporting Documents'];
+    return [...new Set(required.concat((State.documents || []).map(d => d.docCategory || aiDocInferCategory(d))))];
+  }
+  function aiDocProjectId() { return State.aiDocSelectedProject || State.session?.projectId || State.activeProject || 'PRJ-017'; }
+  function aiDocModeLabel(mode) {
+    return ({ allApproved:'All approved project documents', selectedFile:'Selected file from Document Management', category:'Selected folder/category', latestApproved:'Latest approved revision only', contract:'Contract documents only', technical:'Technical specifications and drawings only', boq:'BOQ and billing documents only', upload:'Uploaded/imported document' })[mode || State.aiDocSourceMode] || 'No source selected';
+  }
+  function aiDocAvailableDocs() {
+    seedDocumentsData();
+    const pid = aiDocProjectId(), mode = State.aiDocSourceMode || '', selected = State.aiDocSelectedDocs || [], cat = State.aiDocCategoryFilter || '', status = State.aiDocStatusFilter || '';
+    return (State.documents || []).filter(d => !pid || pid === 'ALL' || d.projectId === pid).filter(d => aiDocCanUse(d)).filter(d => {
+      if (mode === 'selectedFile') return selected.includes(d.id);
+      if (mode === 'allApproved' || mode === 'latestApproved') return aiDocIsApproved(d);
+      if (mode === 'contract') return /contract|conditions|letter of acceptance|letter of bid|employer/i.test(d.docCategory || d.type || d.title || '');
+      if (mode === 'technical') return /technical|drawing|qa|qc|test|method|inspection/i.test(d.docCategory || d.type || d.discipline || '');
+      if (mode === 'boq') return /boq|billing|ipc|measurement|price/i.test(d.docCategory || d.type || d.title || '');
+      if (mode === 'category') return !cat || d.docCategory === cat;
+      return true;
+    }).filter(d => !cat || d.docCategory === cat || mode !== 'category').filter(d => !status || aiDocApprovalStatus(d.documentStatus || d.status) === status).sort((a,b) => String(b.updated || '').localeCompare(String(a.updated || '')));
+  }
+  function aiDocSearchDocs(question, docs) {
+    const q = String(question || '').toLowerCase(), words = q.split(/[^a-z0-9.]+/).filter(w => w.length > 2), hits = [];
+    docs.forEach(d => (d.aiExtracts || []).forEach(ex => {
+      const hay = [ex.tags, ex.quote, ex.answer, ex.clause, ex.section, d.title, d.code, d.docCategory].join(' ').toLowerCase();
+      let score = words.reduce((s,w) => s + (hay.includes(w) ? 2 : 0), 0);
+      if (/defect|liability|notification/.test(q) && /defect|notification/.test(hay)) score += 8;
+      if (/access road|maintenance|temba|powerhouse/.test(q) && /access road|temba|powerhouse/.test(hay)) score += 8;
+      if (/m25|concrete|specification/.test(q) && /m25|concrete/.test(hay)) score += 8;
+      if (/ipc|ra bill|measurement/.test(q) && /ipc|measurement/.test(hay)) score += 8;
+      if (score > 0) hits.push({ doc:d, extract:ex, score });
+    }));
+    return hits.sort((a,b) => b.score - a.score);
+  }
+  function aiDocBuildAnswer(question) {
+    const docs = aiDocAvailableDocs();
+    if (!State.aiDocSourceMode) return { kind:'need-source', text:'Please select a document source before asking: all approved project documents, a file/folder from Document Management, or upload/import a missing file.' };
+    if (!docs.length) return { kind:'missing', text:'I could not find accessible documents for the selected source. Select another file/folder/category or request access from Project Admin.' };
+    const hits = aiDocSearchDocs(question, docs);
+    if (!hits.length) return { kind:'missing', text:'I could not find the required information in the selected documents. The answer may be available in Contract Agreement, Special Conditions, Technical Specification, Approved BOQ, Approved Drawing, MOM or Correspondence.' };
+    const top = hits[0], conflicts = hits.slice(1).filter(h => h.doc.id !== top.doc.id && h.score >= Math.max(4, top.score - 2)).slice(0,2), d = top.doc, ex = top.extract;
+    const warning = [aiDocApprovalStatus(d.documentStatus || d.status) === 'Draft' ? 'Selected document is draft or under review.' : '', aiDocApprovalStatus(d.documentStatus || d.status) === 'Superseded' ? 'Selected document is superseded; prefer latest approved revision.' : '', /unclear/i.test(d.ocrStatus || '') ? 'OCR/text extraction is unclear.' : '', conflicts.length ? 'There is a possible conflict between documents.' : 'No conflict found in selected documents.'].filter(Boolean).join(' ');
+    const confidence = warning.includes('Draft') || warning.includes('Superseded') || conflicts.length ? 'Medium' : (ex.confidence || 'High');
+    return { kind: conflicts.length ? 'conflict' : 'answer', docId:d.id, evidence:{ doc:d, extract:ex, conflicts, warning, confidence }, text:`Answer:
+${ex.answer}
+
+Source Reference:
+Document Name: ${d.title}
+Document Category: ${d.docCategory}
+Revision Number: ${d.revisionNumber || d.rev}
+Document Status: ${aiDocApprovalStatus(d.documentStatus || d.status)}
+Clause / Section: ${ex.clause || ex.section || 'Referenced paragraph'}
+Page Number: ${ex.page || 'Page reference indexed'}
+BOQ Item Number / Drawing Number if applicable: ${ex.boq || ex.drawing || d.relatedBOQ || d.relatedDrawing || 'Not applicable'}
+
+Quoted Extract:
+"${ex.quote}"
+
+Explanation:
+${ex.answer} Use this as document-backed assistance for site execution, contract administration, billing, QA/QC or correspondence. Final contractual or legal decisions should be verified by the authorized Engineer, Contract Manager or Consultant.
+
+Document Warning:
+${warning}
+
+Confidence:
+${confidence}
+
+Available Actions:
+- Open source document
+- Open exact page
+- Save answer as project note
+- Generate RFI
+- Generate letter
+- Generate claim notice
+- Mark as verified
+- Send for review` };
+  }
+  function renderAIDocsView() {
+    seedDocumentsData();
+    const section = $('#view-aidocs'); if (!section) return;
+    if (!State.aiDocSelectedProject) State.aiDocSelectedProject = State.session?.projectId || State.activeProject || 'PRJ-017';
+    const docs = aiDocAvailableDocs(), answer = State.aiDocCurrentAnswer, evidence = answer?.evidence;
+    const modes = [['allApproved','All approved project documents','shield-check'], ['selectedFile','Specific file','file-search'], ['category','Folder / category','folder-open'], ['latestApproved','Latest approved revision','badge-check'], ['contract','Contract documents','file-signature'], ['technical','Specs and drawings','drafting-compass'], ['boq','BOQ and billing','receipt-text'], ['upload','Upload / import new','upload']];
+    section.innerHTML = `
+      <div class="flex items-end justify-between mb-6"><div><div class="stamp mb-3"><i data-lucide="brain-circuit" class="w-3 h-3"></i>AI DOCUMENT INTELLIGENCE</div><h1 class="font-display font-black text-3xl title-mark">AI Document Intelligence</h1><p class="text-sm text-stone-500 mt-3">Answers are restricted to selected, accessible BuildCore Document Management records and must cite exact source proof.</p></div><div class="flex gap-2"><button class="btn btn-ghost" data-ai-doc-act="history"><i data-lucide="history" class="w-3.5 h-3.5"></i>Answer History</button><button class="btn btn-amber" data-ai-doc-act="library"><i data-lucide="file-stack" class="w-3.5 h-3.5"></i>Document Library</button></div></div>
+      <div class="grid gap-4" style="grid-template-columns:minmax(260px,0.95fr) minmax(360px,1.35fr) minmax(280px,1fr)">
+        <div class="card p-4"><div class="font-display font-bold mb-3">Document Source</div><label class="text-[10px] font-mono text-stone-500">PROJECT</label><select id="aiDocProject" class="w-full border border-stone-200 rounded px-2 py-1 text-xs mb-3">${[{id:'ALL',name:'All projects'}].concat(State.projects || []).map(p => `<option value="${p.id}" ${aiDocProjectId()===p.id?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select><div class="grid grid-cols-2 gap-2 mb-3">${modes.map(([key,label,icon]) => `<button class="btn ${State.aiDocSourceMode===key?'btn-amber':'btn-ghost'} text-xs justify-start" data-ai-mode="${key}"><i data-lucide="${icon}" class="w-3.5 h-3.5"></i>${label}</button>`).join('')}</div><input id="aiDocSearch" class="w-full border border-stone-200 rounded px-2 py-1 text-xs mb-2" placeholder="Search document, clause, BOQ, drawing..."><div class="grid grid-cols-2 gap-2 mb-3"><select id="aiDocCategory" class="border border-stone-200 rounded px-2 py-1 text-xs"><option value="">All categories</option>${aiDocCategories().map(c => `<option ${State.aiDocCategoryFilter===c?'selected':''}>${esc(c)}</option>`).join('')}</select><select id="aiDocStatus" class="border border-stone-200 rounded px-2 py-1 text-xs"><option value="">All status</option>${['Approved','Draft','Superseded'].map(s => `<option ${State.aiDocStatusFilter===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="text-[10px] font-mono text-stone-500 mb-2">${docs.length} accessible documents · ${aiDocModeLabel()}</div><div class="space-y-2 max-h-[520px] overflow-auto" id="aiDocList">${docs.map(d => `<label class="card p-3 block cursor-pointer" data-ai-doc-card="${esc(d.id)}"><div class="flex gap-2 items-start"><input type="checkbox" class="mt-1" data-ai-doc-check="${esc(d.id)}" ${(State.aiDocSelectedDocs || []).includes(d.id)?'checked':''}><div class="min-w-0"><div class="font-semibold text-xs truncate">${esc(d.title)}</div><div class="text-[10px] text-stone-500">${esc(d.docCategory)} · ${esc(d.revisionNumber || d.rev)} · ${esc(aiDocApprovalStatus(d.documentStatus || d.status))}</div><div class="font-mono text-[10px] text-stone-400">${esc(d.code)} · ${esc(d.fileName || '')}</div></div></div></label>`).join('') || `<div class="card p-4 text-xs text-stone-500">The required document is not available in the selected project document library.<br><br>Choose upload/import, request from Project Admin, or continue with available documents only.</div>`}</div></div>
+        <div class="card p-4"><div class="flex items-center justify-between mb-3"><div><div class="font-display font-bold">AI Chat</div><div class="text-[10px] text-stone-500">${State.aiDocSourceMode ? 'Source: ' + aiDocModeLabel() : 'Select a source before asking'}</div></div><span class="badge ${State.aiDocSourceMode?'badge-ok':'badge-warn'}">${State.aiDocSourceMode?'Source selected':'Source required'}</span></div><div class="border border-stone-200 rounded p-4 min-h-[360px] bg-stone-50 text-sm whitespace-pre-wrap" id="aiDocAnswer">${answer ? esc(answer.text) : esc('You are connected to BuildCore Document Management. Select a project document source, then ask from contracts, specifications, BOQ, drawings, MOM, correspondence, claims or IPC records.')}</div><div class="mt-3 flex gap-2"><input id="aiDocQuestion" class="flex-1 border border-stone-200 rounded px-3 py-2 text-sm" placeholder="Ask: What is the defect liability period?" value="${esc(State.aiDocQuestion || '')}"><button class="btn btn-amber" data-ai-doc-act="ask"><i data-lucide="send" class="w-3.5 h-3.5"></i>Ask</button></div><div class="grid grid-cols-5 gap-2 mt-3">${[['open','Open source'],['page','Open page'],['copy','Copy'],['save','Save note'],['rfi','Generate RFI'],['letter','Generate letter'],['claim','Claim notice'],['verify','Mark verified'],['review','Send review'],['clear','Clear']].map(([a,l]) => `<button class="btn btn-ghost text-xs" data-ai-doc-act="${a}">${l}</button>`).join('')}</div></div>
+        <div class="card p-4"><div class="font-display font-bold mb-3">Source Evidence</div>${evidence ? `<div class="space-y-3"><div class="card p-3"><div class="text-[10px] text-stone-500">DOCUMENT</div><div class="font-semibold text-sm">${esc(evidence.doc.title)}</div><div class="font-mono text-[10px] text-stone-500">${esc(evidence.doc.code)} · ${esc(evidence.doc.fileName || '')}</div></div><div class="grid grid-cols-2 gap-2 text-xs"><div class="card p-3"><b>Revision</b><br>${esc(evidence.doc.revisionNumber || evidence.doc.rev)}</div><div class="card p-3"><b>Status</b><br>${docStatusBadge(aiDocApprovalStatus(evidence.doc.documentStatus || evidence.doc.status))}</div><div class="card p-3"><b>Page</b><br>${esc(evidence.extract.page || 'Indexed')}</div><div class="card p-3"><b>Confidence</b><br>${esc(evidence.confidence)}</div></div><div class="card p-3 text-xs"><b>Highlighted clause</b><div class="mt-1 text-stone-600">${esc(evidence.extract.clause || evidence.extract.section || '')}</div><div class="mt-2 p-2 bg-amber-50 border border-amber-100">"${esc(evidence.extract.quote || '')}"</div></div><div class="card p-3 text-xs"><b>Related references</b><div class="mt-1 text-stone-500">BOQ: ${esc(evidence.extract.boq || evidence.doc.relatedBOQ || 'N/A')}<br>Drawing: ${esc(evidence.extract.drawing || evidence.doc.relatedDrawing || 'N/A')}<br>OCR: ${esc(evidence.doc.ocrStatus)} · Indexing: ${esc(evidence.doc.indexingStatus)}</div></div><div class="card p-3 text-xs ${evidence.warning?.includes('conflict') ? 'border-red-200 bg-red-50' : 'bg-stone-50'}"><b>Warning</b><div class="mt-1">${esc(evidence.warning || '')}</div></div>${evidence.conflicts?.length ? evidence.conflicts.map((h,i) => `<div class="card p-3 text-xs border-red-100"><b>Conflict Reference ${i+1}</b><div>${esc(h.doc.title)} · Page ${esc(h.extract.page)}</div><div class="mt-1 text-stone-500">"${esc(h.extract.quote)}"</div></div>`).join('') : ''}</div>` : `<div class="text-sm text-stone-500">Source preview, highlighted clause, page reference, BOQ/drawing link, document status warning and conflicts will appear after an answer.</div>`}</div>
+      </div>`;
+    bindAIDocsView(); if (window.lucide) lucide.createIcons();
+  }
+  function bindAIDocsView() {
+    const section = $('#view-aidocs');
+    section.querySelectorAll('[data-ai-mode]').forEach(btn => btn.onclick = () => { State.aiDocSourceMode = btn.dataset.aiMode; if (State.aiDocSourceMode !== 'selectedFile') State.aiDocSelectedDocs = []; if (State.aiDocSourceMode === 'upload') aiDocMissingOptions(); saveState(); renderAIDocsView(); });
+    $('#aiDocProject')?.addEventListener('change', e => { State.aiDocSelectedProject = e.target.value; State.aiDocSelectedDocs = []; saveState(); renderAIDocsView(); });
+    $('#aiDocCategory')?.addEventListener('change', e => { State.aiDocCategoryFilter = e.target.value; if (e.target.value) State.aiDocSourceMode = 'category'; saveState(); renderAIDocsView(); });
+    $('#aiDocStatus')?.addEventListener('change', e => { State.aiDocStatusFilter = e.target.value; saveState(); renderAIDocsView(); });
+    $('#aiDocSearch')?.addEventListener('input', e => { const q = e.target.value.toLowerCase(); section.querySelectorAll('[data-ai-doc-card]').forEach(card => card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none'); });
+    section.querySelectorAll('[data-ai-doc-check]').forEach(chk => chk.onchange = () => { const id = chk.dataset.aiDocCheck; State.aiDocSourceMode = 'selectedFile'; State.aiDocSelectedDocs = chk.checked ? [...new Set([...(State.aiDocSelectedDocs || []), id])] : (State.aiDocSelectedDocs || []).filter(x => x !== id); saveState(); renderAIDocsView(); });
+    section.onclick = (e) => { const btn = e.target.closest('[data-ai-doc-act]'); if (!btn) return; const act = btn.dataset.aiDocAct; if (act === 'ask') aiDocAsk(); if (act === 'library') navTo('documents'); if (act === 'history') aiDocHistory(); if (act === 'clear') { State.aiDocQuestion = ''; State.aiDocCurrentAnswer = null; saveState(); renderAIDocsView(); } if (['open','page','copy','save','rfi','letter','claim','verify','review'].includes(act)) aiDocAction(act); };
+    $('#aiDocQuestion')?.addEventListener('keydown', e => { if (e.key === 'Enter') aiDocAsk(); });
+  }
+  function aiDocAsk() {
+    const q = $('#aiDocQuestion')?.value || State.aiDocQuestion || '';
+    if (!q.trim()) { toast('Question Required','Type a question for the selected source','warn'); return; }
+    State.aiDocQuestion = q;
+    const answer = aiDocBuildAnswer(q);
+    State.aiDocCurrentAnswer = answer;
+    State.aiDocAnswerHistory.unshift({ id:'AIDOC-' + Date.now(), projectId:aiDocProjectId(), question:q, answer:answer.text, sourceMode:State.aiDocSourceMode, sourceDocs:State.aiDocSelectedDocs || [], docId:answer.docId || '', status:'AI Draft', askedBy:State.session?.user?.name || 'User', askedAt:new Date().toISOString() });
+    audit('create','AI Document answer', q); saveState(); renderAIDocsView();
+  }
+  function aiDocAction(act) {
+    const cur = State.aiDocCurrentAnswer;
+    if (!cur) { toast('No Answer','Ask a document question first','warn'); return; }
+    if (act === 'open') { const id = cur.docId || cur.evidence?.doc?.id; if (id) docView(id); else toast('No Source','No source document is attached','warn'); return; }
+    if (act === 'page') { const ev = cur.evidence; if (ev?.doc) toast('Source Page', (ev.doc.fileName || ev.doc.title) + ' · page ' + (ev.extract?.page || 'indexed'), 'ok'); return; }
+    if (act === 'copy') navigator.clipboard?.writeText(cur.text).then(() => toast('Copied','AI answer copied','ok')).catch(() => toast('Copy Ready','Select and copy the answer text','info'));
+    if (act === 'save') toast('Saved','Answer saved as project note','ok');
+    if (act === 'rfi') toast('RFI Drafted','RFI generated from answer and source reference','ok');
+    if (act === 'letter') toast('Letter Drafted','Formal correspondence draft prepared','ok');
+    if (act === 'claim') toast('Claim Notice Drafted','Claim notice generated for review','warn');
+    if (act === 'verify') { const h = State.aiDocAnswerHistory[0]; if (h) h.status = 'Engineer Verified'; toast('Marked Verified','Saved in project knowledge base','ok'); }
+    if (act === 'review') toast('Sent for Review','Contract Manager / Engineer review requested','ok');
+    audit('update','AI Document action', act); saveState();
+  }
+  function aiDocMissingOptions() {
+    openModal({ title:'Document Not Available', submitLabel:'Continue', body:`<div class="text-sm mb-3">The required document is not available in the selected project document library. Please choose one option:</div><div class="space-y-2 text-sm"><label class="card p-3 block"><input type="radio" name="missing" value="upload" checked> Upload new document</label><label class="card p-3 block"><input type="radio" name="missing" value="computer"> Import from computer</label><label class="card p-3 block"><input type="radio" name="missing" value="cloud"> Import from Google Drive / OneDrive</label><label class="card p-3 block"><input type="radio" name="missing" value="request"> Request document from Project Admin</label><label class="card p-3 block"><input type="radio" name="missing" value="available"> Continue with available documents only</label></div><div class="text-xs text-stone-500 mt-3">After import, BuildCore asks whether to save the file in Document Management with project, category, revision, status, permissions, OCR and indexing metadata.</div>`, onSubmit: data => { toast('Document Workflow', data.missing === 'request' ? 'Request sent to Project Admin' : 'Document source option recorded', 'ok'); return true; } });
+  }
+  function aiDocHistory() {
+    const rows = (State.aiDocAnswerHistory || []).slice(0,20);
+    openDrawer({ title:'AI Answer History', body:`<div class="space-y-3">${rows.map(h => `<div class="card p-3 text-xs"><div class="font-mono text-stone-500">${esc(h.id)} · ${esc(h.projectId)} · ${new Date(h.askedAt).toLocaleString()}</div><div class="font-semibold mt-1">${esc(h.question)}</div><div class="mt-2">${docStatusBadge(h.status || 'AI Draft')}</div></div>`).join('') || '<div class="text-sm text-stone-500">No AI document answers yet.</div>'}</div>` });
+  }
+  function openAIDocForDocument(id) {
+    seedDocumentsData();
+    const d = State.documents.find(x => x.id === id); if (!d) return;
+    State.aiDocSourceMode = 'selectedFile'; State.aiDocSelectedProject = d.projectId || State.activeProject || 'ALL'; State.aiDocSelectedDocs = [d.id]; State.aiDocQuestion = '';
+    State.aiDocCurrentAnswer = { kind:'starter', text:'You are asking from ' + d.title + '. What do you want to know from this document?', evidence:{ doc:d, extract:(d.aiExtracts || [])[0] || {}, conflicts:[], warning:aiDocApprovalStatus(d.documentStatus || d.status) === 'Approved' ? 'Document selected from Document Management.' : 'Selected document is not approved.', confidence:'Medium' } };
+    saveState(); navTo('aidocs');
+  }
   window.docEdit = docEdit;
+  window.openAIDocForDocument = openAIDocForDocument;
 
   // -------- NAVIGATION --------
   function navTo(view) {
@@ -12307,6 +12567,7 @@
     if (view === 'clientportal') { setTimeout(renderClientPortalView, 30); }
     if (view === 'finance')   { setTimeout(renderFinanceView, 30); }
     if (view === 'documents') { setTimeout(renderDocumentsView, 30); }
+    if (view === 'aidocs')    { setTimeout(renderAIDocsView, 30); }
     if (view === 'projectsites') { setTimeout(renderProjectSitesView, 30); }
     if (view === 'dashboard') { setTimeout(renderLauncher, 30); }
     audit('view', 'Module', view);
@@ -12324,7 +12585,7 @@
 
   // -------- COMMAND PALETTE (Cmd+K) --------
   const palItems = [
-    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
+    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
     ...State.projects.map(p => ({ label: p.name, sub: p.id + ' · ' + p.client, kind:'Project', action: () => { navTo('projects'); setTimeout(() => openProjectDetail(p.id), 100); }})),
     { label:'New Project', kind:'Action', action: () => actNewProject() },
     { label:'New Tender', kind:'Action', action: () => actNewTender() },

@@ -95,7 +95,7 @@ declare
     'budget_boq_items', 'budget_resources', 'budget_resource_recipes',
     'budget_cost_ledger', 'budget_b2b_packages', 'budget_contracts',
     'budget_overheads', 'budget_milestones', 'budget_approvals',
-    'activity', 'audit_log'
+    'ai_doc_answer_history', 'activity', 'audit_log'
   ];
 begin
   foreach tbl in array collection_tables loop
@@ -590,6 +590,25 @@ create table if not exists public.budget_approvals_rel (
   primary key (user_id, id)
 );
 
+create table if not exists public.ai_doc_answer_history_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  project_id text,
+  question text,
+  answer text,
+  source_mode text,
+  source_docs jsonb,
+  document_id text,
+  answer_status text,
+  asked_by text,
+  asked_at timestamptz,
+  verified_by text,
+  verified_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
 do $$
 declare tbl text;
 begin
@@ -600,7 +619,8 @@ begin
     'asset_notifications_rel','asset_audit_logs_rel',
     'budget_boq_items_rel','budget_resources_rel','budget_resource_recipes_rel',
     'budget_cost_ledger_rel','budget_b2b_packages_rel','budget_contracts_rel',
-    'budget_overheads_rel','budget_milestones_rel','budget_approvals_rel'
+    'budget_overheads_rel','budget_milestones_rel','budget_approvals_rel',
+    'ai_doc_answer_history_rel'
   ] loop
     execute format('alter table public.%I enable row level security', tbl);
     execute format('drop policy if exists "owner all" on public.%I', tbl);

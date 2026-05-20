@@ -65,6 +65,7 @@
     bccOverheads: { table: 'budget_overheads',       id: 'id' },
     bccMilestones:{ table: 'budget_milestones',      id: 'id' },
     bccApprovals: { table: 'budget_approvals',       id: 'id' },
+    aiDocAnswerHistory:{ table: 'ai_doc_answer_history', id: 'id' },
     activity: { table: 'activity',          id: null   },
     audit:    { table: 'audit_log',         id: 'hash' }
   };
