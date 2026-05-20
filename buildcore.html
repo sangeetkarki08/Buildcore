@@ -11618,6 +11618,7 @@
   function enterProject(projectId) {
     if (!State.session?.loggedIn) return signOut();
     if (isSampleProject(projectId)) return showSampleProjectPreview();
+    if (STARTER_MODE) return doEnterProject(projectId);
     openProjectLogin(projectId);
   }
   window.enterProject = enterProject;
@@ -11711,6 +11712,10 @@
       showSampleProjectPreview();
       return false;
     }
+    if (STARTER_MODE && State.session?.role === 'company') {
+      State.session.role = 'starter';
+      State.session.user = { name:'Starter User', role:'Project Admin · Starter', avatar:'SU', projects:'ALL', modules:'ALL' };
+    }
     const perm = State.session?.user;
     if (!perm) { signOut(); return false; }
     if (!STARTER_MODE && perm.projects !== 'ALL' && !perm.projects.includes(projectId)) {
@@ -11734,9 +11739,14 @@
   function exitToPortfolio() {
     State.session.inProjectMode = false;
     State.session.projectId = null;
-    // Drop the project job-role — re-authenticated on next project entry.
-    State.session.role = 'company';
-    State.session.user = Object.assign({}, COMPANY_PROFILE);
+    if (STARTER_MODE) {
+      State.session.role = 'company';
+      State.session.user = Object.assign({}, COMPANY_PROFILE);
+    } else {
+      // Drop the project job-role — re-authenticated on next project entry.
+      State.session.role = 'company';
+      State.session.user = Object.assign({}, COMPANY_PROFILE);
+    }
     saveState();
     audit('view','Exited project','Returned to portfolio');
     document.getElementById('appShell').style.display = 'none';
@@ -13010,6 +13020,7 @@ Available Actions:
         renderPortfolioScreen?.();
         renderLauncher?.();
         toast('Project Created', d.name + ' added to register · ' + d.code, 'ok');
+        setTimeout(() => enterProject(p.id), 150);
       }
     });
   }
