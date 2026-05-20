@@ -119,6 +119,291 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- Asset Management normalized relational schema.
+-- These tables provide a scalable SQL structure for production asset
+-- operations while the JSONB collection tables above keep the current
+-- single-page app sync backward-compatible.
+-- ---------------------------------------------------------------------
+create table if not exists public.asset_categories_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  name text not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  primary key (user_id, id),
+  unique (user_id, name)
+);
+
+create table if not exists public.asset_locations_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  name text not null,
+  location_type text,
+  project_id text,
+  parent_location_id text,
+  created_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+create table if not exists public.assets_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  qr_code text,
+  barcode text,
+  asset_name text not null,
+  category_id text,
+  asset_type text,
+  brand text,
+  model text,
+  serial_number text,
+  registration_number text,
+  purchase_date date,
+  purchase_cost numeric(14,2) default 0,
+  supplier_name text,
+  warranty_until date,
+  ownership_type text check (ownership_type in ('owned','rented','leased','subcontractor-owned')),
+  current_condition text,
+  current_status text check (current_status in ('available','allocated','under maintenance','breakdown','lost','disposed')),
+  current_location_id text,
+  assigned_project_id text,
+  assigned_department text,
+  assigned_user_id uuid references public.profiles (id),
+  assigned_user_name text,
+  operator_name text,
+  asset_photo text,
+  document_summary text,
+  depreciation_method text,
+  depreciation_rate numeric(6,2) default 0,
+  resale_value numeric(14,2) default 0,
+  created_by uuid references public.profiles (id),
+  updated_by uuid references public.profiles (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, id),
+  foreign key (user_id, category_id) references public.asset_categories_rel (user_id, id),
+  foreign key (user_id, current_location_id) references public.asset_locations_rel (user_id, id)
+);
+
+create table if not exists public.asset_allocations_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  project_id text,
+  site_location text,
+  work_package text,
+  department text,
+  store text,
+  workshop text,
+  engineer text,
+  operator text,
+  subcontractor text,
+  allocation_date date,
+  expected_return_date date,
+  actual_return_date date,
+  handover_condition text,
+  receiving_condition text,
+  remarks text,
+  approval_status text,
+  approved_by uuid references public.profiles (id),
+  created_at timestamptz not null default now(),
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_transfers_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  from_location_id text,
+  to_location_id text,
+  request_date date,
+  approved_by uuid references public.profiles (id),
+  dispatch_date date,
+  received_date date,
+  condition_before text,
+  condition_after text,
+  photos text,
+  supporting_documents text,
+  status text,
+  remarks text,
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_maintenance_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  maintenance_type text,
+  schedule_basis text,
+  service_interval_value numeric(12,2),
+  service_interval_unit text,
+  request_date date,
+  approved_by uuid references public.profiles (id),
+  work_order_no text,
+  spare_parts_used text,
+  labour_used text,
+  maintenance_cost numeric(14,2) default 0,
+  service_provider text,
+  workshop_details text,
+  completion_report text,
+  due_date date,
+  next_due_date date,
+  status text,
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_breakdowns_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  reported_by text,
+  reported_at timestamptz,
+  location text,
+  problem_description text,
+  asset_condition text,
+  urgency_level text,
+  assigned_mechanic_team text,
+  repair_cost numeric(14,2) default 0,
+  downtime_hours numeric(10,2) default 0,
+  cause_of_breakdown text,
+  corrective_action text,
+  repaired_date date,
+  reuse_approved_by uuid references public.profiles (id),
+  status text,
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_fuel_logs_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  log_date date,
+  running_hour numeric(10,2),
+  kilometer_reading numeric(12,2),
+  fuel_issued numeric(12,2),
+  fuel_consumption numeric(12,2),
+  operator_name text,
+  work_location text,
+  work_description text,
+  idle_hour numeric(10,2),
+  productive_hour numeric(10,2),
+  fuel_efficiency text,
+  abnormal_consumption boolean default false,
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_inspections_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  inspection_type text,
+  inspection_date date,
+  checklist jsonb default '{}'::jsonb,
+  defect_report text,
+  photo_evidence text,
+  inspector_signature text,
+  approval_status text,
+  approved_by uuid references public.profiles (id),
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_documents_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  document_type text,
+  title text,
+  file_name text,
+  file_url text,
+  issue_date date,
+  expiry_date date,
+  status text,
+  uploaded_by uuid references public.profiles (id),
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_depreciation_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  book_value numeric(14,2),
+  annual_depreciation numeric(14,2),
+  accumulated_depreciation numeric(14,2),
+  repair_maintenance_cost numeric(14,2),
+  total_ownership_cost numeric(14,2),
+  disposal_value numeric(14,2),
+  as_of_date date,
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_disposals_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text not null,
+  disposal_request_date date,
+  reason text,
+  current_condition text,
+  approval_status text,
+  approved_by uuid references public.profiles (id),
+  valuation numeric(14,2),
+  sale_scrap_value numeric(14,2),
+  disposal_date date,
+  buyer_vendor_details text,
+  supporting_documents text,
+  final_status text,
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_notifications_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id text not null,
+  asset_id text,
+  notification_type text,
+  title text,
+  due_date date,
+  status text default 'Open',
+  created_at timestamptz not null default now(),
+  primary key (user_id, id),
+  foreign key (user_id, asset_id) references public.assets_rel (user_id, id) on delete cascade
+);
+
+create table if not exists public.asset_audit_logs_rel (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  id bigserial,
+  asset_id text,
+  action text,
+  actor_id uuid references public.profiles (id),
+  old_value jsonb,
+  new_value jsonb,
+  remarks text,
+  created_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+do $$
+declare tbl text;
+begin
+  foreach tbl in array array[
+    'asset_categories_rel','asset_locations_rel','assets_rel','asset_allocations_rel',
+    'asset_transfers_rel','asset_maintenance_rel','asset_breakdowns_rel','asset_fuel_logs_rel',
+    'asset_inspections_rel','asset_documents_rel','asset_depreciation_rel','asset_disposals_rel',
+    'asset_notifications_rel','asset_audit_logs_rel'
+  ] loop
+    execute format('alter table public.%I enable row level security', tbl);
+    execute format('drop policy if exists "owner all" on public.%I', tbl);
+    execute format('create policy "owner all" on public.%I for all using (auth.uid() = user_id) with check (auth.uid() = user_id)', tbl);
+  end loop;
+end $$;
+
+-- ---------------------------------------------------------------------
 -- Typed, queryable views over the JSONB for the core business entities.
 -- These give external tools / dashboards real columns without the app
 -- having to maintain a second write path.

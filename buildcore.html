@@ -1459,7 +1459,10 @@
             <button class="ims-tab" data-assettab="breakdown"><i data-lucide="triangle-alert" class="w-3 h-3"></i>Breakdowns</button>
             <button class="ims-tab" data-assettab="fuel"><i data-lucide="fuel" class="w-3 h-3"></i>Fuel / Hours</button>
             <button class="ims-tab" data-assettab="inspection"><i data-lucide="clipboard-check" class="w-3 h-3"></i>Inspections</button>
+            <button class="ims-tab" data-assettab="documents"><i data-lucide="file-stack" class="w-3 h-3"></i>Documents</button>
             <button class="ims-tab" data-assettab="finance"><i data-lucide="calculator" class="w-3 h-3"></i>Depreciation</button>
+            <button class="ims-tab" data-assettab="disposal"><i data-lucide="trash-2" class="w-3 h-3"></i>Disposal</button>
+            <button class="ims-tab" data-assettab="field"><i data-lucide="smartphone" class="w-3 h-3"></i>Field App</button>
             <button class="ims-tab" data-assettab="reports"><i data-lucide="file-output" class="w-3 h-3"></i>Reports</button>
           </div>
           <div id="assetTabContent" class="p-5"></div>
@@ -4441,7 +4444,10 @@
     if (tab === 'register') return renderAssetRegister(c);
     if (tab === 'profile') return renderAssetProfile(c);
     if (['allocation','transfer','maintenance','breakdown','fuel','inspection'].includes(tab)) return renderAssetFlow(c, tab);
+    if (tab === 'documents') return renderAssetDocuments(c);
     if (tab === 'finance') return renderAssetFinance(c);
+    if (tab === 'disposal') return renderAssetDisposal(c);
+    if (tab === 'field') return renderAssetField(c);
     if (tab === 'reports') return renderAssetReports(c);
   }
 
@@ -4454,7 +4460,12 @@
         <div class="card p-4"><div class="font-display font-bold text-lg mb-3">Assets by Project</div><table class="data"><tbody>${Object.entries(byProject).map(([k,v]) => `<tr><td class="text-xs">${esc(assetProjectName(k))}</td><td class="text-right font-mono">${v}</td></tr>`).join('')}</tbody></table></div>
         <div class="card p-4"><div class="font-display font-bold text-lg mb-3">Alerts</div>${(State.assetNotifications || []).slice(0,8).map(n => `<div class="p-2 border border-stone-200 mb-2"><div class="text-xs font-bold">${esc(n.title)}</div><div class="text-[10px] text-stone-500">${esc(n.dueDate || 'Action required')}</div></div>`).join('') || '<div class="text-xs text-stone-500">No asset alerts.</div>'}</div>
       </div>
-      <div class="grid grid-cols-4 gap-3 mt-4">${['Purchase or rental','Registration and QR tagging','Allocation to project/site','Daily usage and fuel','Inspection and maintenance','Transfer workflow','Project cost allocation','Return or disposal'].map((s,i) => `<div class="card p-3"><div class="font-mono text-[10px] text-stone-500">STEP ${i+1}</div><div class="font-bold text-sm mt-1">${s}</div></div>`).join('')}</div>`;
+      <div class="grid grid-cols-4 gap-3 mt-4">${['Purchase or rental','Registration and QR tagging','Allocation to project/site','Daily usage and fuel','Inspection and maintenance','Transfer workflow','Project cost allocation','Return or disposal'].map((s,i) => `<div class="card p-3"><div class="font-mono text-[10px] text-stone-500">STEP ${i+1}</div><div class="font-bold text-sm mt-1">${s}</div></div>`).join('')}</div>
+      <div class="grid grid-cols-3 gap-4 mt-4">
+        <div class="card p-4"><div class="font-display font-bold mb-3">Status Kanban</div><div class="grid grid-cols-3 gap-2">${['available','allocated','under maintenance','breakdown','disposed'].map(s => `<div class="p-2 bg-stone-50 border border-stone-200"><div class="font-mono text-[10px] text-stone-500">${s.toUpperCase()}</div><div class="font-display font-black text-xl">${State.assets.filter(a=>a.status===s).length}</div></div>`).join('')}</div></div>
+        <div class="card p-4"><div class="font-display font-bold mb-3">Maintenance Calendar</div>${State.assetMaintenance.slice(0,6).map(m => `<div class="flex justify-between text-xs border-b border-stone-100 py-1"><span>${esc(assetName(m.assetId))}</span><b>${esc(m.dueDate || m.nextDue || '-')}</b></div>`).join('')}</div>
+        <div class="card p-4"><div class="font-display font-bold mb-3">Map / Location View</div>${State.assetLocations.map(l => `<div class="text-xs border-b border-stone-100 py-1"><b>${esc(l.name)}</b><div class="text-[10px] text-stone-500">${State.assets.filter(a=>a.location===l.name).length} assets · ${esc(l.type)}</div></div>`).join('')}</div>
+      </div>`;
   }
 
   function renderAssetRegister(c) {
@@ -4507,6 +4518,34 @@
 
   function renderAssetFinance(c) {
     c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Asset Depreciation and Value Tracking</div><div class="overflow-x-auto"><table class="data"><thead><tr><th>Asset</th><th>Purchase Cost</th><th>Method</th><th>Rate</th><th>Annual Dep.</th><th>Accum. Dep.</th><th>Book Value</th><th>Total Ownership Cost</th><th>Resale</th></tr></thead><tbody>${State.assets.map(a => { const maint = State.assetMaintenance.filter(m=>m.assetId===a.id).reduce((s,m)=>s+(+m.cost||0),0); return `<tr><td><b>${esc(a.name)}</b><div class="font-mono text-[10px] text-stone-500">${a.id}</div></td><td class="font-mono">${fmtINR(a.purchaseCost)}</td><td>${esc(a.depreciationMethod)}</td><td class="font-mono">${a.depreciationRate||0}%</td><td class="font-mono">${fmtINR((+a.purchaseCost||0)*(+a.depreciationRate||0)/100)}</td><td class="font-mono">${fmtINR((+a.purchaseCost||0)-assetBookValue(a))}</td><td class="font-mono font-bold">${fmtINR(assetBookValue(a))}</td><td class="font-mono">${fmtINR((+a.purchaseCost||0)+maint)}</td><td class="font-mono">${fmtINR(a.resaleValue)}</td></tr>`; }).join('')}</tbody></table></div><div class="grid grid-cols-2 gap-3 mt-4">${State.assets.filter(a=>['rented','leased'].includes(a.ownership)).map(a=>`<div class="card p-3"><div class="font-bold">${esc(a.name)}</div><div class="text-xs text-stone-500">Supplier: ${esc(a.rentalSupplier || a.supplier)} - ${esc(a.rentalBasis || 'monthly')} rate ${fmtINR(a.rentalRate)} - expiry ${esc(a.rentalEnd || '-')}</div><div class="text-xs mt-2">Fuel: ${esc(a.fuelResponsibility || '-')} - Operator: ${esc(a.operatorResponsibility || '-')} - Maintenance: ${esc(a.maintenanceResponsibility || '-')}</div></div>`).join('') || '<div class="text-xs text-stone-500">No rented or leased assets.</div>'}</div>`;
+  }
+
+  function renderAssetDocuments(c) {
+    const types = ['Purchase invoice','Warranty card','Insurance document','Vehicle bluebook / registration','Tax clearance','Fitness certificate','Calibration certificate','Maintenance records','Rental agreement','Lease agreement','Handover forms','Inspection reports','Disposal records'];
+    c.innerHTML = `<div class="flex justify-between items-center mb-4"><div><div class="font-display font-bold text-lg">Asset Documents</div><div class="text-xs text-stone-500">Invoices, warranty, insurance, bluebook, calibration, handover, inspection and disposal files.</div></div><button class="btn btn-amber" data-doc-new><i data-lucide="plus" class="w-3.5 h-3.5"></i>Add Document</button></div><div class="overflow-x-auto"><table class="data"><thead><tr><th>Asset</th><th>Document Type</th><th>Title</th><th>Expiry</th><th>Status</th><th>File</th></tr></thead><tbody>${State.assetDocuments.map(d => `<tr><td>${assetName(d.assetId)}</td><td>${esc(d.type)}</td><td>${esc(d.title)}</td><td class="font-mono text-xs">${esc(d.expiry || '-')}</td><td>${assetBadge(d.status)}</td><td class="font-mono text-xs">${esc(d.fileName || '-')}</td></tr>`).join('')}</tbody></table></div><div class="grid grid-cols-4 gap-2 mt-4">${types.map(t => `<div class="p-2 bg-stone-50 border border-stone-200 text-xs">${t}</div>`).join('')}</div>`;
+    c.querySelector('[data-doc-new]').onclick = () => openModal({ title:'Add Asset Document', submitLabel:'Save Document', body:`<div class="form-grid-2"><div class="form-row"><label>Asset</label><select name="assetId">${assetOptions()}</select></div><div class="form-row"><label>Type</label><select name="type">${types.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-row"><label>Title</label><input name="title"></div><div class="form-row"><label>Expiry / Due Date</label><input type="date" name="expiry"></div><div class="form-row"><label>File Name</label><input name="fileName"></div><div class="form-row"><label>Status</label><select name="status"><option>Valid</option><option>Due Soon</option><option>Expired</option><option>Missing</option></select></div></div>`, onSubmit:(d)=>{ d.id='AD-'+String(State.assetDocuments.length+1).padStart(3,'0'); State.assetDocuments.unshift(d); saveState(); audit('create','Asset Document - '+d.id,d.assetId); toast('Document Added',d.title,'ok'); renderAssetView(); }});
+  }
+
+  function renderAssetDisposal(c) {
+    c.innerHTML = `<div class="flex justify-between items-center mb-4"><div><div class="font-display font-bold text-lg">Asset Disposal System</div><div class="text-xs text-stone-500">Request, approve, value, sell/scrap, document and close disposal workflow.</div></div><button class="btn btn-amber" data-disp-new><i data-lucide="plus" class="w-3.5 h-3.5"></i>Disposal Request</button></div><table class="data"><thead><tr><th>Asset</th><th>Reason</th><th>Condition</th><th>Valuation</th><th>Sale / Scrap</th><th>Buyer</th><th>Date</th><th>Status</th></tr></thead><tbody>${State.assetDisposals.map(d => `<tr><td>${assetName(d.assetId)}</td><td>${esc(d.reason)}</td><td>${esc(d.condition)}</td><td class="font-mono">${fmtINR(d.valuation)}</td><td class="font-mono">${fmtINR(d.saleValue)}</td><td>${esc(d.buyer)}</td><td>${esc(d.disposalDate || d.requestDate)}</td><td>${assetBadge(d.status)}</td></tr>`).join('')}</tbody></table>`;
+    c.querySelector('[data-disp-new]').onclick = () => openModal({ title:'Asset Disposal Request', wide:true, submitLabel:'Submit Disposal', body:`<div class="form-grid-3"><div class="form-row"><label>Asset</label><select name="assetId">${assetOptions()}</select></div><div class="form-row"><label>Reason</label><input name="reason"></div><div class="form-row"><label>Current Condition</label><select name="condition"><option>Poor</option><option>Scrap</option><option>Beyond economic repair</option><option>Obsolete</option></select></div><div class="form-row"><label>Valuation</label><input type="number" name="valuation"></div><div class="form-row"><label>Sale / Scrap Value</label><input type="number" name="saleValue"></div><div class="form-row"><label>Disposal Date</label><input type="date" name="disposalDate"></div><div class="form-row"><label>Buyer / Scrap Vendor</label><input name="buyer"></div><div class="form-row"><label>Status</label><select name="status"><option>Requested</option><option>Approved</option><option>Disposed</option></select></div></div><div class="form-row"><label>Supporting Documents</label><textarea name="documents"></textarea></div>`, onSubmit:(d)=>{ d.id='DP-'+String(State.assetDisposals.length+1).padStart(3,'0'); d.valuation=+d.valuation||0; d.saleValue=+d.saleValue||0; d.requestDate=new Date().toISOString().slice(0,10); State.assetDisposals.unshift(d); const a=State.assets.find(x=>x.id===d.assetId); if(a && d.status==='Disposed') a.status='disposed'; saveState(); audit('create','Asset Disposal - '+d.id,d.assetId); toast('Disposal Submitted',d.id,'ok'); renderAssetView(); }});
+  }
+
+  function renderAssetField(c) {
+    const actions = [
+      ['Scan QR code','scan-line','assetScanModal()'],
+      ['Submit running hour','clock','assetRecordModal("fuel")'],
+      ['Submit fuel consumption','fuel','assetRecordModal("fuel")'],
+      ['Report breakdown','triangle-alert','assetRecordModal("breakdown")'],
+      ['Upload inspection photo','camera','assetRecordModal("inspection")'],
+      ['Request maintenance','wrench','assetRecordModal("maintenance")'],
+      ['Confirm receiving','check-circle','assetRecordModal("transfer")'],
+      ['Return asset','undo-2','assetRecordModal("allocation")']
+    ];
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Mobile-Friendly Field Use</div><div class="grid grid-cols-4 gap-3">${actions.map(([label,icon,act]) => `<button class="btn btn-ghost justify-start" onclick='${act}'><i data-lucide="${icon}" class="w-4 h-4"></i>${label}</button>`).join('')}</div><div class="card p-4 mt-4"><div class="font-display font-bold mb-2">Field Snapshot</div><div class="grid grid-cols-3 gap-2 text-xs"><div class="p-2 bg-stone-50">Current project: <b>${esc(assetProjectName(assetCurrentProjectId()))}</b></div><div class="p-2 bg-stone-50">Open breakdowns: <b>${State.assetBreakdowns.filter(b=>!['Closed','Repaired'].includes(b.status)).length}</b></div><div class="p-2 bg-stone-50">Due alerts: <b>${State.assetNotifications.length}</b></div></div></div>`;
+    window.assetScanModal = assetScanModal;
+    window.assetRecordModal = assetRecordModal;
+    if (window.lucide) lucide.createIcons();
   }
 
   function renderAssetReports(c) {
