@@ -44,6 +44,18 @@
     vos:      { table: 'variation_orders',  id: 'id'   },
     risks:    { table: 'risks',             id: 'id'   },
     photos:   { table: 'photos',            id: 'id'   },
+    assets:   { table: 'assets',            id: 'id'   },
+    assetCategories:   { table: 'asset_categories',   id: 'id' },
+    assetLocations:    { table: 'asset_locations',    id: 'id' },
+    assetAllocations:  { table: 'asset_allocations',  id: 'id' },
+    assetTransfers:    { table: 'asset_transfers',    id: 'id' },
+    assetMaintenance:  { table: 'asset_maintenance',  id: 'id' },
+    assetBreakdowns:   { table: 'asset_breakdowns',   id: 'id' },
+    assetFuelLogs:     { table: 'asset_fuel_logs',    id: 'id' },
+    assetInspections:  { table: 'asset_inspections',  id: 'id' },
+    assetDocuments:    { table: 'asset_documents',    id: 'id' },
+    assetDisposals:    { table: 'asset_disposals',    id: 'id' },
+    assetNotifications:{ table: 'asset_notifications',id: 'id' },
     activity: { table: 'activity',          id: null   },
     audit:    { table: 'audit_log',         id: 'hash' }
   };

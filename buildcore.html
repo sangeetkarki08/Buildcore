@@ -500,6 +500,9 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="equipment">
         <i data-lucide="truck" class="nav-icon w-4 h-4 text-white/60"></i>Plant & Equipment
       </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="assets">
+        <i data-lucide="qr-code" class="nav-icon w-4 h-4 text-white/60"></i>Asset Management
+      </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="quality">
         <i data-lucide="badge-check" class="nav-icon w-4 h-4 text-white/60"></i>Quality (QA/QC)
       </a>
@@ -1426,6 +1429,40 @@
             <button class="ims-tab" data-eqtab="utilization"><i data-lucide="activity" class="w-3 h-3"></i>Utilization Reports</button>
           </div>
           <div id="eqTabContent" class="p-5"><!-- populated by JS --></div>
+        </div>
+      </section>
+
+      <section id="view-assets" class="view">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <div class="stamp mb-3"><i data-lucide="qr-code" class="w-3 h-3"></i>ASSET MANAGEMENT</div>
+            <h1 class="font-display font-black text-3xl title-mark">Asset Management Module</h1>
+            <p class="text-sm text-stone-500 mt-3">Central register for plant, vehicles, tools, survey instruments, camp assets, IT, safety, temporary works, hydropower, road and building project assets.</p>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button class="btn btn-ghost" data-asset-act="export"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
+            <button class="btn btn-ghost" data-asset-act="scan"><i data-lucide="scan-line" class="w-3.5 h-3.5"></i>QR Scan</button>
+            <button class="btn btn-ghost" data-asset-act="label"><i data-lucide="printer" class="w-3.5 h-3.5"></i>Print QR Label</button>
+            <button class="btn btn-amber" data-asset-act="new"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Register Asset</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-6 gap-3 mb-5" id="assetKpis"></div>
+        <div class="card">
+          <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs flex-wrap">
+            <button class="ims-tab active" data-assettab="dashboard"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>Dashboard</button>
+            <button class="ims-tab" data-assettab="register"><i data-lucide="list" class="w-3 h-3"></i>Asset Register</button>
+            <button class="ims-tab" data-assettab="profile"><i data-lucide="info" class="w-3 h-3"></i>Asset Profile</button>
+            <button class="ims-tab" data-assettab="allocation"><i data-lucide="user-check" class="w-3 h-3"></i>Allocation</button>
+            <button class="ims-tab" data-assettab="transfer"><i data-lucide="repeat-2" class="w-3 h-3"></i>Transfers</button>
+            <button class="ims-tab" data-assettab="maintenance"><i data-lucide="wrench" class="w-3 h-3"></i>Maintenance</button>
+            <button class="ims-tab" data-assettab="breakdown"><i data-lucide="triangle-alert" class="w-3 h-3"></i>Breakdowns</button>
+            <button class="ims-tab" data-assettab="fuel"><i data-lucide="fuel" class="w-3 h-3"></i>Fuel / Hours</button>
+            <button class="ims-tab" data-assettab="inspection"><i data-lucide="clipboard-check" class="w-3 h-3"></i>Inspections</button>
+            <button class="ims-tab" data-assettab="finance"><i data-lucide="calculator" class="w-3 h-3"></i>Depreciation</button>
+            <button class="ims-tab" data-assettab="reports"><i data-lucide="file-output" class="w-3 h-3"></i>Reports</button>
+          </div>
+          <div id="assetTabContent" class="p-5"></div>
         </div>
       </section>
 
@@ -2890,6 +2927,7 @@
     labReports: [], // QA/QC test reports with signatures and approval status
     labTestTypes: [], // customizable lab and field test catalogue
     clientSubmissions: [], // DPR / lab report / document client approval queue
+    documents: [], // document control register: drawings, contracts, letters, RFIs, approvals
     vos: [],       // variation orders
     risks: [],     // risk register
     photos: [],    // photo metadata
@@ -2921,6 +2959,22 @@
     eqCurrentTab: 'overview',
     eqSelectedEquip: '',  // currently-selected equipment ID in Logsheets tab
     eqNextId: { equip:1, log:1, op:1, mt:1 },
+    // ============== ASSET MANAGEMENT DATA STORES ==============
+    assets: [],
+    assetCategories: [],
+    assetLocations: [],
+    assetAllocations: [],
+    assetTransfers: [],
+    assetMaintenance: [],
+    assetBreakdowns: [],
+    assetFuelLogs: [],
+    assetInspections: [],
+    assetDocuments: [],
+    assetDisposals: [],
+    assetNotifications: [],
+    assetCurrentTab: 'dashboard',
+    assetSelectedId: '',
+    assetNextId: { asset:1, cat:1, alloc:1, transfer:1, mt:1, br:1, fuel:1, insp:1, doc:1, disp:1, note:1 },
     // ============== EVENTS & TODOS ==============
     events: [],
     todos: [],
@@ -2938,6 +2992,7 @@
     estCurrentTab: 'boq',
     finCurrentTab: 'pl',
     dprCurrentTab: 'log',
+    docCurrentTab: 'drawings',
     dprTemplates: {},
     dprNextTemplateId: 1,
     qualityCurrentTab: 'reports',
@@ -2969,6 +3024,14 @@
           dprs: State.dprs, dprTemplates: State.dprTemplates, dprNextTemplateId: State.dprNextTemplateId,
           labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
           labNextId: State.labNextId, labTestNextId: State.labTestNextId, clientSubmissionNextId: State.clientSubmissionNextId,
+          documents: State.documents, docCurrentTab: State.docCurrentTab,
+          assets: State.assets, assetCategories: State.assetCategories, assetLocations: State.assetLocations,
+          assetAllocations: State.assetAllocations, assetTransfers: State.assetTransfers,
+          assetMaintenance: State.assetMaintenance, assetBreakdowns: State.assetBreakdowns,
+          assetFuelLogs: State.assetFuelLogs, assetInspections: State.assetInspections,
+          assetDocuments: State.assetDocuments, assetDisposals: State.assetDisposals,
+          assetNotifications: State.assetNotifications, assetCurrentTab: State.assetCurrentTab,
+          assetSelectedId: State.assetSelectedId, assetNextId: State.assetNextId,
           vos: State.vos, risks: State.risks, photos: State.photos,
           activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
           audit: State.audit.slice(0,2000)
@@ -2987,7 +3050,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['projects','tenders','materials','ncrs','raBills','pos','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3005,6 +3068,14 @@
         dprs:State.dprs, dprTemplates:State.dprTemplates, dprNextTemplateId:State.dprNextTemplateId,
         labReports:State.labReports, labTestTypes:State.labTestTypes, clientSubmissions:State.clientSubmissions,
         labNextId:State.labNextId, labTestNextId:State.labTestNextId, clientSubmissionNextId:State.clientSubmissionNextId,
+        documents:State.documents, docCurrentTab:State.docCurrentTab,
+        assets:State.assets, assetCategories:State.assetCategories, assetLocations:State.assetLocations,
+        assetAllocations:State.assetAllocations, assetTransfers:State.assetTransfers,
+        assetMaintenance:State.assetMaintenance, assetBreakdowns:State.assetBreakdowns,
+        assetFuelLogs:State.assetFuelLogs, assetInspections:State.assetInspections,
+        assetDocuments:State.assetDocuments, assetDisposals:State.assetDisposals,
+        assetNotifications:State.assetNotifications, assetCurrentTab:State.assetCurrentTab,
+        assetSelectedId:State.assetSelectedId, assetNextId:State.assetNextId,
         vos:State.vos, risks:State.risks, photos:State.photos,
         activity:State.activity, audit:State.audit }
     }, null, 2);
@@ -4256,6 +4327,220 @@
     setTimeout(() => URL.revokeObjectURL(url), 200);
     audit('export','Stock CSV', rows.length + ' items');
     toast('CSV Exported', rows.length + ' items downloaded', 'ok');
+  }
+
+  // =====================================================================
+  //                  ASSET MANAGEMENT MODULE
+  // =====================================================================
+
+  const ASSET_DEFAULT_CATEGORIES = ['Heavy equipment','Excavator','Loader','Crane','Dozer','Roller','Compressor','Generator','Concrete mixer','Batching plant','Crusher plant','Vehicle','Survey instrument','Lab equipment','Electrical tools','Mechanical tools','Safety equipment','Camp asset','Office asset','IT equipment','Temporary construction facilities','Ropeway equipment','Tunnel equipment','Hydropower-specific equipment'];
+  const ASSET_REPORTS = ['Asset register','Project-wise asset list','Location-wise asset list','User-wise assigned assets','Maintenance report','Breakdown report','Fuel report','Asset utilization report','Depreciation report','Rental asset report','Transfer history report','Idle asset report','Disposal report','Expired document report','Calibration due report'];
+  const ASSET_ROLES = ['Admin','Asset manager','Project manager','Store keeper','Site engineer','Operator','Mechanic','Accountant','Auditor','Viewer'];
+  function assetDatePlus(days) { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0,10); }
+  function assetDaysUntil(s) { return s ? Math.ceil((new Date(s) - new Date()) / 86400000) : null; }
+  function assetName(id) { return (State.assets || []).find(a => a.id === id)?.name || id || '-'; }
+  function assetProjectName(id) { const p = (State.projects || []).find(x => x.id === id); return p ? p.id + ' - ' + p.name : (id || 'Unassigned'); }
+  function assetCurrentProjectId() { const p = State.session?.projectId || State.activeProject; return p && p !== 'ALL' ? p : 'PRJ-017'; }
+  function assetBookValue(a) { const y = a.purchaseDate ? Math.max(0, (Date.now() - new Date(a.purchaseDate).getTime()) / 31557600000) : 0; return Math.max(0, (+a.purchaseCost || 0) - ((+a.purchaseCost || 0) * (+a.depreciationRate || 0) / 100 * y)); }
+  function assetBadge(s) { const k = String(s || '').toLowerCase(); const cls = ({available:'ok',allocated:'info','under maintenance':'warn',breakdown:'bad',lost:'bad',disposed:'neutral',approved:'ok',completed:'ok',received:'ok',pending:'warn',open:'bad',scheduled:'warn'})[k] || 'neutral'; return `<span class="badge badge-${cls}">${esc(s || 'Open')}</span>`; }
+  function assetOptions(sel='') { return (State.assets || []).map(a => `<option value="${a.id}" ${a.id===sel?'selected':''}>${a.id} - ${esc(a.name)}</option>`).join(''); }
+  function assetProjectOptions(sel='') { return `<option value="">- None -</option>${(State.projects || []).map(p => `<option value="${p.id}" ${p.id===sel?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}`; }
+  function assetCategoryOptions(sel='') { return (State.assetCategories || []).map(c => `<option ${c.name===sel?'selected':''}>${esc(c.name)}</option>`).join(''); }
+
+  function seedAssetData() {
+    State.assetCategories = Array.isArray(State.assetCategories) ? State.assetCategories : [];
+    ASSET_DEFAULT_CATEGORIES.forEach((name, i) => { if (!State.assetCategories.some(c => c.name === name)) State.assetCategories.push({ id:'AC' + String(i+1).padStart(3,'0'), name, active:true }); });
+    State.assetNextId = State.assetNextId || { asset:1, cat:1, alloc:1, transfer:1, mt:1, br:1, fuel:1, insp:1, doc:1, disp:1, note:1 };
+    State.assetLocations = State.assetLocations?.length ? State.assetLocations : [
+      { id:'LOC-001', name:'Central Yard / Main Store', type:'Store', projectId:'' },
+      { id:'LOC-002', name:'Workshop - Lalitpur', type:'Workshop', projectId:'' },
+      { id:'LOC-003', name:'Skyline Towers Block A', type:'Project Site', projectId:'PRJ-017' },
+      { id:'LOC-004', name:'Kalanki Underpass Yard', type:'Project Site', projectId:'PRJ-021' },
+      { id:'LOC-005', name:'Mewa Khola Camp / Headworks', type:'Hydropower Site', projectId:'PRJ-030' }
+    ];
+    if (State.assets?.length) { buildAssetNotifications(); return; }
+    State.assets = [
+      { id:'AST-0001', qr:'BC-AST-0001', name:'Komatsu Excavator PC200', category:'Excavator', type:'Heavy equipment', brand:'Komatsu', model:'PC200-8', serial:'KMTPC260J0012345', regNo:'Ba 1 Kha 2345', purchaseDate:'2022-03-15', purchaseCost:12500000, supplier:'Komatsu Nepal', warrantyUntil:'2027-03-14', ownership:'owned', condition:'Good', status:'allocated', location:'Skyline Towers Block A', projectId:'PRJ-017', department:'Plant & Machinery', assignedTo:'Ram Bahadur Tamang', operator:'Ram Bahadur Tamang', photo:'excavator_pc200.jpg', docs:'Invoice, insurance, bluebook, fitness', depreciationMethod:'SLM', depreciationRate:12, resaleValue:6200000, calibrationDue:'', insuranceExpiry:assetDatePlus(34), registrationExpiry:assetDatePlus(62), nextMaintenanceDue:assetDatePlus(12), rentalEnd:'' },
+      { id:'AST-0002', qr:'BC-AST-0002', name:'Leica Total Station TS-09', category:'Survey instrument', type:'Survey', brand:'Leica', model:'TS09', serial:'LCA-TS09-22418', regNo:'', purchaseDate:'2024-01-18', purchaseCost:1180000, supplier:'Geo Survey Nepal', warrantyUntil:'2027-01-17', ownership:'owned', condition:'Excellent', status:'available', location:'Central Yard / Main Store', projectId:'', department:'Survey', assignedTo:'Survey Store', operator:'', photo:'total_station.jpg', docs:'Invoice, warranty, calibration certificate', depreciationMethod:'SLM', depreciationRate:15, resaleValue:780000, calibrationDue:assetDatePlus(18), insuranceExpiry:'', registrationExpiry:'', nextMaintenanceDue:'', rentalEnd:'' },
+      { id:'AST-0003', qr:'BC-AST-0003', name:'Diesel Generator 150 kVA', category:'Generator', type:'Electrical/mechanical', brand:'Cummins', model:'C150D5', serial:'CUMC150-2022-1841', regNo:'', purchaseDate:'2022-07-04', purchaseCost:2800000, supplier:'Cummins Service Nepal', warrantyUntil:'2027-07-03', ownership:'owned', condition:'Fair', status:'under maintenance', location:'Workshop - Lalitpur', projectId:'PRJ-030', department:'Electrical', assignedTo:'Hydropower Electrical Team', operator:'', photo:'generator_150kva.jpg', docs:'Invoice, service record', depreciationMethod:'SLM', depreciationRate:10, resaleValue:1500000, calibrationDue:'', insuranceExpiry:'', registrationExpiry:'', nextMaintenanceDue:assetDatePlus(-2), rentalEnd:'' },
+      { id:'AST-0004', qr:'BC-AST-0004', name:'Ropeway Winch Set', category:'Ropeway equipment', type:'Hydropower-specific equipment', brand:'Tirfor', model:'TU-32', serial:'RWS-2026-118', regNo:'', purchaseDate:'2026-04-10', purchaseCost:1850000, supplier:'Himalayan Lifting', warrantyUntil:'2027-04-09', ownership:'rented', condition:'Good', status:'allocated', location:'Mewa Khola Camp / Headworks', projectId:'PRJ-030', department:'Hydromechanical', assignedTo:'Ropeway crew', operator:'Nima Sherpa', photo:'ropeway_winch.jpg', docs:'Rental agreement, load test certificate', depreciationMethod:'N/A', depreciationRate:0, resaleValue:0, calibrationDue:assetDatePlus(44), insuranceExpiry:'', registrationExpiry:'', nextMaintenanceDue:assetDatePlus(9), rentalSupplier:'Himalayan Lifting', rentalStart:'2026-04-10', rentalEnd:assetDatePlus(42), rentalRate:9500, rentalBasis:'daily', fuelResponsibility:'Company', operatorResponsibility:'Supplier', maintenanceResponsibility:'Supplier' },
+      { id:'AST-0005', qr:'BC-AST-0005', name:'Safety Harness Set - Batch HSE-12', category:'Safety equipment', type:'HSE', brand:'Karam', model:'PN56', serial:'HSE-12-2026', regNo:'', purchaseDate:'2026-02-05', purchaseCost:185000, supplier:'SafeBuild Traders', warrantyUntil:'2027-02-04', ownership:'owned', condition:'Good', status:'available', location:'Central Yard / Main Store', projectId:'', department:'HSE', assignedTo:'HSE Store', operator:'', photo:'safety_harness.jpg', docs:'Invoice, test certificate', depreciationMethod:'SLM', depreciationRate:25, resaleValue:25000, calibrationDue:'', insuranceExpiry:'', registrationExpiry:'', nextMaintenanceDue:'', rentalEnd:'' },
+      { id:'AST-0006', qr:'BC-AST-0006', name:'Site Office Container', category:'Temporary construction facilities', type:'Temporary facility', brand:'Prefab Nepal', model:'20 ft office', serial:'CNT-20-044', regNo:'', purchaseDate:'2025-11-15', purchaseCost:640000, supplier:'Prefab Nepal', warrantyUntil:'2026-11-14', ownership:'leased', condition:'Fair', status:'allocated', location:'Kalanki Underpass Yard', projectId:'PRJ-021', department:'Administration', assignedTo:'Project Manager', operator:'', photo:'site_office_container.jpg', docs:'Lease agreement, handover form', depreciationMethod:'SLM', depreciationRate:18, resaleValue:320000, calibrationDue:'', insuranceExpiry:assetDatePlus(90), registrationExpiry:'', nextMaintenanceDue:'', rentalEnd:assetDatePlus(66) }
+    ];
+    State.assetNextId.asset = 7;
+    State.assetAllocations = [
+      { id:'AL-001', assetId:'AST-0001', projectId:'PRJ-017', location:'Skyline Towers Block A', workPackage:'Earthwork / raft excavation', department:'Plant & Machinery', assignedTo:'Ram Bahadur Tamang', subcontractor:'', issueDate:'2026-05-01', expectedReturn:'2026-06-15', actualReturn:'', handoverCondition:'Good', receivingCondition:'', status:'Approved', remarks:'Charged to project P&M cost head.' },
+      { id:'AL-002', assetId:'AST-0004', projectId:'PRJ-030', location:'Mewa Khola Camp / Headworks', workPackage:'Ropeway erection', department:'Hydromechanical', assignedTo:'Ropeway crew', subcontractor:'', issueDate:'2026-04-12', expectedReturn:'2026-07-01', actualReturn:'', handoverCondition:'Good', receivingCondition:'', status:'Approved', remarks:'Rental agreement attached.' }
+    ];
+    State.assetTransfers = [{ id:'TR-001', assetId:'AST-0003', from:'Mewa Khola Camp / Headworks', to:'Workshop - Lalitpur', requestDate:'2026-05-12', approvedBy:'Asset Manager', dispatchDate:'2026-05-13', receivedDate:'2026-05-15', beforeCondition:'Starting issue', afterCondition:'Received with alternator fault', status:'Received', remarks:'Photos and service request linked.' }];
+    State.assetMaintenance = [
+      { id:'AM-001', assetId:'AST-0003', type:'Corrective', scheduleBasis:'Date', requestDate:'2026-05-15', dueDate:assetDatePlus(-2), workOrder:'WO-AM-001', parts:'AVR module, fuel filter', labour:'Electrician 8 hr', cost:48600, provider:'Cummins Service Nepal', workshop:'Workshop - Lalitpur', status:'In Progress', nextDue:assetDatePlus(90), report:'Alternator fault under diagnosis.' },
+      { id:'AM-002', assetId:'AST-0001', type:'Preventive', scheduleBasis:'250 running hours', requestDate:'2026-05-18', dueDate:assetDatePlus(12), workOrder:'WO-AM-002', parts:'Engine oil, hydraulic filter', labour:'Mechanic 6 hr', cost:0, provider:'In-house', workshop:'Skyline site workshop', status:'Scheduled', nextDue:assetDatePlus(120), report:'250-hour service reminder.' }
+    ];
+    State.assetBreakdowns = [{ id:'BD-001', assetId:'AST-0003', reportedBy:'Hydro Electrical Team', date:'2026-05-12T10:30', location:'Mewa Khola Camp', description:'Generator tripping under load.', condition:'Not usable', urgency:'High', assignedTo:'Electrical mechanic team', cost:48600, downtimeHours:72, cause:'Alternator / AVR suspected', action:'Transferred to workshop', repairedDate:'', reuseApproval:'Pending', status:'Open' }];
+    State.assetFuelLogs = [
+      { id:'FL-001', assetId:'AST-0001', date:'2026-05-19', meter:4528, km:0, fuel:48, operator:'Ram Bahadur Tamang', location:'Skyline Towers Block A', work:'Raft excavation', idleHours:1, productiveHours:8, efficiency:'6.0 L/hr', abnormal:'No' },
+      { id:'FL-002', assetId:'AST-0004', date:'2026-05-19', meter:96, km:0, fuel:0, operator:'Nima Sherpa', location:'Mewa Khola Headworks', work:'Ropeway cable positioning', idleHours:0.5, productiveHours:6, efficiency:'N/A', abnormal:'No' }
+    ];
+    State.assetInspections = [
+      { id:'IN-001', assetId:'AST-0001', type:'Daily inspection', date:'2026-05-20', inspector:'Site Engineer', checklist:'Oil level OK; track condition OK; horn/reverse alarm OK; fire extinguisher OK', defects:'Minor hydraulic seepage', photos:'AST-0001-IN-001.jpg', signature:'S. Adhikari', status:'Approved' },
+      { id:'IN-002', assetId:'AST-0002', type:'Calibration inspection', date:'2026-05-18', inspector:'Survey Chief', checklist:'Tripod, battery, prism, level bubble, data cable checked', defects:'None', photos:'', signature:'Survey Chief', status:'Approved' }
+    ];
+    State.assetDocuments = [
+      { id:'AD-001', assetId:'AST-0001', type:'Insurance document', title:'Comprehensive insurance FY 2082/83', expiry:assetDatePlus(34), fileName:'AST-0001-insurance.pdf', status:'Valid' },
+      { id:'AD-002', assetId:'AST-0002', type:'Calibration certificate', title:'Leica TS09 calibration certificate', expiry:assetDatePlus(18), fileName:'AST-0002-calibration.pdf', status:'Due Soon' },
+      { id:'AD-003', assetId:'AST-0004', type:'Rental agreement', title:'Ropeway winch rental agreement', expiry:assetDatePlus(42), fileName:'AST-0004-rental.pdf', status:'Valid' }
+    ];
+    State.assetDisposals = [{ id:'DP-001', assetId:'AST-OLD-09', reason:'Beyond economic repair', condition:'Scrap', requestDate:'2026-04-04', valuation:85000, saleValue:92000, buyer:'Shree Scrap Traders', disposalDate:'2026-04-22', status:'Disposed', documents:'Board approval, sale receipt' }];
+    buildAssetNotifications(); saveState();
+  }
+
+  function buildAssetNotifications() {
+    const notes = [];
+    const add = (type, a, due='') => notes.push({ id:'AN-' + String(notes.length + 1).padStart(3,'0'), type, assetId:a.id, title:type + ': ' + a.name, dueDate:due, status:'Open' });
+    (State.assets || []).forEach(a => {
+      [['Maintenance due',a.nextMaintenanceDue],['Calibration expiry',a.calibrationDue],['Insurance expiry',a.insuranceExpiry],['Registration renewal',a.registrationExpiry],['Warranty expiry',a.warrantyUntil],['Rental agreement expiry',a.rentalEnd]].forEach(([t,d]) => { const n = assetDaysUntil(d); if (n !== null && n <= 45) add(t, a, d); });
+      if (!a.docs) add('Document missing', a);
+      if (a.status === 'breakdown') add('Breakdown not resolved', a);
+    });
+    (State.assetBreakdowns || []).filter(b => !['Closed','Repaired'].includes(b.status)).forEach(b => { const a = State.assets.find(x => x.id === b.assetId); if (a) add('Breakdown not resolved', a, b.date); });
+    (State.assetAllocations || []).filter(x => !x.actualReturn && assetDaysUntil(x.expectedReturn) < 0).forEach(x => { const a = State.assets.find(y => y.id === x.assetId); if (a) add('Asset not returned on time', a, x.expectedReturn); });
+    State.assetNotifications = notes;
+  }
+
+  function renderAssetView() {
+    seedAssetData(); renderAssetKPIs();
+    document.querySelectorAll('#view-assets .ims-tab').forEach(btn => btn.onclick = () => { State.assetCurrentTab = btn.dataset.assettab; saveState(); renderAssetView(); });
+    document.querySelectorAll('#view-assets [data-asset-act]').forEach(btn => btn.onclick = () => {
+      if (btn.dataset.assetAct === 'new') return assetEdit();
+      if (btn.dataset.assetAct === 'export') return assetExportCSV();
+      if (btn.dataset.assetAct === 'scan') return assetScanModal();
+      if (btn.dataset.assetAct === 'label') return assetPrintLabel(State.assetSelectedId || State.assets[0]?.id);
+    });
+    document.querySelectorAll('#view-assets .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.assettab === (State.assetCurrentTab || 'dashboard')));
+    renderAssetTab(State.assetCurrentTab || 'dashboard');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderAssetKPIs() {
+    buildAssetNotifications();
+    const a = State.assets || [], fuel = (State.assetFuelLogs || []).reduce((s,x) => s + (+x.fuel || 0), 0);
+    const value = a.reduce((s,x) => s + assetBookValue(x), 0);
+    $('#assetKpis').innerHTML = `
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">TOTAL ASSETS</div><div class="font-display font-black text-2xl tabular">${a.length}</div><div class="text-xs text-stone-500 mt-1">${State.assetCategories.length} categories</div></div>
+      <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">AVAILABLE</div><div class="font-display font-black text-2xl tabular">${a.filter(x=>x.status==='available').length}</div><div class="text-xs text-stone-500 mt-1">${a.filter(x=>x.status==='allocated').length} allocated</div></div>
+      <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">BOOK VALUE</div><div class="font-display font-black text-2xl tabular">${fmtINR(value)}</div><div class="text-xs text-stone-500 mt-1">after depreciation</div></div>
+      <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">EXCEPTIONS</div><div class="font-display font-black text-2xl tabular">${a.filter(x=>['under maintenance','breakdown'].includes(x.status)).length}</div><div class="text-xs text-stone-500 mt-1">maintenance / breakdown</div></div>
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">FUEL ISSUED</div><div class="font-display font-black text-2xl tabular">${fuel}<span class="text-sm">L</span></div><div class="text-xs text-stone-500 mt-1">${State.assetFuelLogs.length} running logs</div></div>
+      <div class="kpi ${State.assetNotifications.length ? 'kpi-red' : 'kpi-green'}"><div class="font-mono text-[10px] text-stone-500">ALERTS</div><div class="font-display font-black text-2xl tabular">${State.assetNotifications.length}</div><div class="text-xs text-stone-500 mt-1">renewals, missing docs, returns</div></div>`;
+  }
+
+  function renderAssetTab(tab) {
+    const c = $('#assetTabContent'); if (!c) return;
+    if (tab === 'dashboard') return renderAssetDashboard(c);
+    if (tab === 'register') return renderAssetRegister(c);
+    if (tab === 'profile') return renderAssetProfile(c);
+    if (['allocation','transfer','maintenance','breakdown','fuel','inspection'].includes(tab)) return renderAssetFlow(c, tab);
+    if (tab === 'finance') return renderAssetFinance(c);
+    if (tab === 'reports') return renderAssetReports(c);
+  }
+
+  function renderAssetDashboard(c) {
+    const byCat = {}, byProject = {};
+    State.assets.forEach(a => { byCat[a.category] = (byCat[a.category] || 0) + 1; byProject[a.projectId || 'Unassigned'] = (byProject[a.projectId || 'Unassigned'] || 0) + 1; });
+    c.innerHTML = `
+      <div class="grid grid-cols-3 gap-4">
+        <div class="card p-4"><div class="font-display font-bold text-lg mb-3">Assets by Category</div>${Object.entries(byCat).map(([k,v]) => `<div class="mb-2"><div class="flex justify-between text-xs"><span>${esc(k)}</span><b>${v}</b></div><div class="pbar mt-1"><div style="width:${Math.min(100,v*18)}%"></div></div></div>`).join('')}</div>
+        <div class="card p-4"><div class="font-display font-bold text-lg mb-3">Assets by Project</div><table class="data"><tbody>${Object.entries(byProject).map(([k,v]) => `<tr><td class="text-xs">${esc(assetProjectName(k))}</td><td class="text-right font-mono">${v}</td></tr>`).join('')}</tbody></table></div>
+        <div class="card p-4"><div class="font-display font-bold text-lg mb-3">Alerts</div>${(State.assetNotifications || []).slice(0,8).map(n => `<div class="p-2 border border-stone-200 mb-2"><div class="text-xs font-bold">${esc(n.title)}</div><div class="text-[10px] text-stone-500">${esc(n.dueDate || 'Action required')}</div></div>`).join('') || '<div class="text-xs text-stone-500">No asset alerts.</div>'}</div>
+      </div>
+      <div class="grid grid-cols-4 gap-3 mt-4">${['Purchase or rental','Registration and QR tagging','Allocation to project/site','Daily usage and fuel','Inspection and maintenance','Transfer workflow','Project cost allocation','Return or disposal'].map((s,i) => `<div class="card p-3"><div class="font-mono text-[10px] text-stone-500">STEP ${i+1}</div><div class="font-bold text-sm mt-1">${s}</div></div>`).join('')}</div>`;
+  }
+
+  function renderAssetRegister(c) {
+    const cats = ['All', ...new Set(State.assetCategories.map(x => x.name))];
+    c.innerHTML = `<div class="flex justify-between items-center mb-4 gap-3 flex-wrap"><div><div class="font-display font-bold text-lg">Asset Master Database</div><div class="text-xs text-stone-500">Search by asset ID, QR, serial, project, location, operator, category or status.</div></div><div class="flex gap-2 flex-wrap"><input id="assetSearch" class="border border-stone-200 px-2 py-1 text-xs" style="min-width:240px" placeholder="Search assets..."><select id="assetCatFilter" class="border border-stone-200 px-2 py-1 text-xs">${cats.map(x => `<option>${esc(x)}</option>`).join('')}</select><button class="btn btn-ghost" data-asset-local="categories"><i data-lucide="settings-2" class="w-3.5 h-3.5"></i>Categories</button><button class="btn btn-amber" data-asset-local="new"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Asset</button></div></div><div class="overflow-x-auto"><table class="data"><thead><tr><th>Asset</th><th>Category</th><th>QR / Serial</th><th>Ownership</th><th>Status</th><th>Location</th><th>Assigned</th><th>Book Value</th><th></th></tr></thead><tbody id="assetRows"></tbody></table></div>`;
+    const draw = () => {
+      const q = ($('#assetSearch')?.value || '').toLowerCase(), cat = $('#assetCatFilter')?.value || 'All';
+      const rows = State.assets.filter(a => (!q || Object.values(a).join(' ').toLowerCase().includes(q)) && (cat === 'All' || a.category === cat));
+      $('#assetRows').innerHTML = rows.map(a => `<tr><td><div class="font-bold">${esc(a.name)}</div><div class="font-mono text-[10px] text-stone-500">${a.id}</div></td><td class="text-xs">${esc(a.category)}<div class="text-[10px] text-stone-500">${esc(a.type)}</div></td><td class="font-mono text-xs">${esc(a.qr)}<div class="text-[10px] text-stone-500">${esc(a.serial || a.regNo || '-')}</div></td><td class="text-xs">${esc(a.ownership)}</td><td>${assetBadge(a.status)}</td><td class="text-xs">${esc(a.location)}<div class="text-[10px] text-stone-500">${esc(a.projectId || 'No project')}</div></td><td class="text-xs">${esc(a.assignedTo || a.operator || '-')}</td><td class="font-mono text-xs">${fmtINR(assetBookValue(a))}</td><td class="text-right"><button class="btn btn-ghost text-xs" data-asset-open="${a.id}"><i data-lucide="eye" class="w-3 h-3"></i>Open</button></td></tr>`).join('');
+      c.querySelectorAll('[data-asset-open]').forEach(b => b.onclick = () => { State.assetSelectedId = b.dataset.assetOpen; State.assetCurrentTab = 'profile'; renderAssetView(); });
+      if (window.lucide) lucide.createIcons();
+    };
+    $('#assetSearch').addEventListener('input', draw); $('#assetCatFilter').addEventListener('change', draw);
+    c.querySelector('[data-asset-local="new"]').onclick = () => assetEdit();
+    c.querySelector('[data-asset-local="categories"]').onclick = () => assetCategoriesModal();
+    draw();
+  }
+
+  function renderAssetProfile(c) {
+    const a = State.assets.find(x => x.id === State.assetSelectedId) || State.assets[0]; if (!a) return;
+    State.assetSelectedId = a.id;
+    const count = list => (list || []).filter(x => x.assetId === a.id).length;
+    c.innerHTML = `<div class="flex justify-between gap-3 flex-wrap mb-4"><div><div class="font-display font-bold text-xl">${esc(a.name)}</div><div class="text-xs text-stone-500 font-mono">${a.id} - QR ${esc(a.qr)} - ${esc(a.category)} - ${assetBadge(a.status)}</div></div><div class="flex gap-2"><button class="btn btn-ghost" data-profile-act="qr"><i data-lucide="qr-code" class="w-3.5 h-3.5"></i>QR Card</button><button class="btn btn-ghost" data-profile-act="edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i>Edit</button><button class="btn btn-amber" data-profile-act="alloc"><i data-lucide="user-check" class="w-3.5 h-3.5"></i>Allocate</button></div></div>
+      <div class="grid grid-cols-3 gap-4"><div class="card p-4"><div class="font-display font-bold mb-3">Current Position</div><div class="space-y-2 text-xs"><div><b>Project:</b> ${esc(assetProjectName(a.projectId))}</div><div><b>Location:</b> ${esc(a.location)}</div><div><b>Department:</b> ${esc(a.department)}</div><div><b>User / Operator:</b> ${esc(a.assignedTo || a.operator || '-')}</div><div><b>Condition:</b> ${esc(a.condition)}</div></div></div><div class="card p-4"><div class="font-display font-bold mb-3">Financials</div><div class="grid grid-cols-2 gap-2 text-xs"><div class="p-2 bg-stone-50"><div class="text-stone-500">Purchase</div><b>${fmtINR(a.purchaseCost)}</b></div><div class="p-2 bg-stone-50"><div class="text-stone-500">Book value</div><b>${fmtINR(assetBookValue(a))}</b></div><div class="p-2 bg-stone-50"><div class="text-stone-500">Accum. dep.</div><b>${fmtINR((+a.purchaseCost||0)-assetBookValue(a))}</b></div><div class="p-2 bg-stone-50"><div class="text-stone-500">Resale</div><b>${fmtINR(a.resaleValue)}</b></div></div></div><div class="card p-4"><div class="font-display font-bold mb-3">Renewals</div>${[['Maintenance',a.nextMaintenanceDue],['Calibration',a.calibrationDue],['Insurance',a.insuranceExpiry],['Registration',a.registrationExpiry],['Warranty',a.warrantyUntil],['Rental',a.rentalEnd]].map(([k,d]) => `<div class="flex justify-between text-xs mb-2"><span>${k}</span><b>${d || '-'}</b></div>`).join('')}</div></div>
+      <div class="grid grid-cols-2 gap-3 mt-4">${[['Basic information',`${a.brand} ${a.model} - ${a.serial || a.regNo || '-'}`],['Allocation history',count(State.assetAllocations)+' records'],['Transfer history',count(State.assetTransfers)+' records'],['Maintenance history',count(State.assetMaintenance)+' work orders'],['Breakdown history',count(State.assetBreakdowns)+' reports'],['Fuel/running record',count(State.assetFuelLogs)+' logs'],['Inspection checklist',count(State.assetInspections)+' inspections'],['Documents',count(State.assetDocuments)+' files'],['Financial/depreciation',fmtINR(assetBookValue(a))+' book value'],['Photos',a.photo || 'No photo uploaded'],['Audit log',(State.audit || []).filter(x => String(x.entity).includes(a.id) || String(x.detail).includes(a.id)).length+' audit events']].map(([t,v]) => `<div class="card p-3"><div class="font-mono text-[10px] text-stone-500">${esc(t).toUpperCase()}</div><div class="text-sm font-bold mt-1">${esc(v)}</div></div>`).join('')}</div>`;
+    c.querySelector('[data-profile-act="edit"]').onclick = () => assetEdit(a.id);
+    c.querySelector('[data-profile-act="qr"]').onclick = () => assetPrintLabel(a.id);
+    c.querySelector('[data-profile-act="alloc"]').onclick = () => assetRecordModal('allocation', a.id);
+  }
+
+  function assetFlowStore(type) { return ({ allocation:'assetAllocations', transfer:'assetTransfers', maintenance:'assetMaintenance', breakdown:'assetBreakdowns', fuel:'assetFuelLogs', inspection:'assetInspections' })[type]; }
+  function renderAssetFlow(c, type) {
+    const heads = { allocation:['Asset','Project','Location','Assigned To','Issue','Expected Return','Status'], transfer:['Asset','From','To','Requested','Received','Status','Remarks'], maintenance:['Asset','Type','Due','Work Order','Provider','Cost','Status'], breakdown:['Asset','Date','Location','Urgency','Downtime','Cost','Status'], fuel:['Asset','Date','Meter','Fuel','Operator','Productive','Abnormal'], inspection:['Asset','Type','Date','Inspector','Defects','Signature','Status'] }[type];
+    const titles = { allocation:'Asset Allocation System', transfer:'Asset Transfer System', maintenance:'Maintenance Management', breakdown:'Breakdown Management', fuel:'Fuel and Running Hour Tracking', inspection:'Asset Inspection System' };
+    const list = State[assetFlowStore(type)] || [];
+    c.innerHTML = `<div class="flex justify-between items-center mb-4 gap-3 flex-wrap"><div><div class="font-display font-bold text-lg">${titles[type]}</div><div class="text-xs text-stone-500">Operational workflow records with approval, remarks, documents, condition and audit tracking.</div></div><button class="btn btn-amber" data-flow-new="${type}"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Record</button></div><div class="overflow-x-auto"><table class="data"><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}<th></th></tr></thead><tbody>${list.map(r => assetFlowRow(type,r)).join('')}</tbody></table></div>`;
+    c.querySelector('[data-flow-new]').onclick = () => assetRecordModal(type);
+    c.querySelectorAll('[data-flow-edit]').forEach(b => b.onclick = () => assetRecordModal(type, '', b.dataset.flowEdit));
+    if (window.lucide) lucide.createIcons();
+  }
+  function assetFlowRow(type, r) {
+    const btn = `<td class="text-right"><button class="btn btn-ghost text-xs" data-flow-edit="${r.id}"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button></td>`;
+    if (type === 'allocation') return `<tr><td>${assetName(r.assetId)}</td><td class="font-mono text-xs">${r.projectId}</td><td>${esc(r.location)}</td><td>${esc(r.assignedTo)}</td><td>${r.issueDate||''}</td><td>${r.expectedReturn||''}</td><td>${assetBadge(r.status)}</td>${btn}</tr>`;
+    if (type === 'transfer') return `<tr><td>${assetName(r.assetId)}</td><td>${esc(r.from)}</td><td>${esc(r.to)}</td><td>${r.requestDate||''}</td><td>${r.receivedDate||'-'}</td><td>${assetBadge(r.status)}</td><td>${esc(r.remarks)}</td>${btn}</tr>`;
+    if (type === 'maintenance') return `<tr><td>${assetName(r.assetId)}</td><td>${esc(r.type)}</td><td>${r.dueDate||''}</td><td class="font-mono text-xs">${esc(r.workOrder)}</td><td>${esc(r.provider)}</td><td class="font-mono">${fmtINR(r.cost)}</td><td>${assetBadge(r.status)}</td>${btn}</tr>`;
+    if (type === 'breakdown') return `<tr><td>${assetName(r.assetId)}</td><td>${String(r.date||'').slice(0,16)}</td><td>${esc(r.location)}</td><td>${esc(r.urgency)}</td><td class="font-mono">${r.downtimeHours||0} hr</td><td class="font-mono">${fmtINR(r.cost)}</td><td>${assetBadge(r.status)}</td>${btn}</tr>`;
+    if (type === 'fuel') return `<tr><td>${assetName(r.assetId)}</td><td>${r.date||''}</td><td class="font-mono">${r.meter||0}</td><td class="font-mono">${r.fuel||0} L</td><td>${esc(r.operator)}</td><td class="font-mono">${r.productiveHours||0} hr</td><td>${assetBadge(r.abnormal === 'Yes' ? 'Open' : 'Completed')}</td>${btn}</tr>`;
+    return `<tr><td>${assetName(r.assetId)}</td><td>${esc(r.type)}</td><td>${r.date||''}</td><td>${esc(r.inspector)}</td><td>${esc(r.defects || 'None')}</td><td>${esc(r.signature)}</td><td>${assetBadge(r.status)}</td>${btn}</tr>`;
+  }
+
+  function renderAssetFinance(c) {
+    c.innerHTML = `<div class="font-display font-bold text-lg mb-3">Asset Depreciation and Value Tracking</div><div class="overflow-x-auto"><table class="data"><thead><tr><th>Asset</th><th>Purchase Cost</th><th>Method</th><th>Rate</th><th>Annual Dep.</th><th>Accum. Dep.</th><th>Book Value</th><th>Total Ownership Cost</th><th>Resale</th></tr></thead><tbody>${State.assets.map(a => { const maint = State.assetMaintenance.filter(m=>m.assetId===a.id).reduce((s,m)=>s+(+m.cost||0),0); return `<tr><td><b>${esc(a.name)}</b><div class="font-mono text-[10px] text-stone-500">${a.id}</div></td><td class="font-mono">${fmtINR(a.purchaseCost)}</td><td>${esc(a.depreciationMethod)}</td><td class="font-mono">${a.depreciationRate||0}%</td><td class="font-mono">${fmtINR((+a.purchaseCost||0)*(+a.depreciationRate||0)/100)}</td><td class="font-mono">${fmtINR((+a.purchaseCost||0)-assetBookValue(a))}</td><td class="font-mono font-bold">${fmtINR(assetBookValue(a))}</td><td class="font-mono">${fmtINR((+a.purchaseCost||0)+maint)}</td><td class="font-mono">${fmtINR(a.resaleValue)}</td></tr>`; }).join('')}</tbody></table></div><div class="grid grid-cols-2 gap-3 mt-4">${State.assets.filter(a=>['rented','leased'].includes(a.ownership)).map(a=>`<div class="card p-3"><div class="font-bold">${esc(a.name)}</div><div class="text-xs text-stone-500">Supplier: ${esc(a.rentalSupplier || a.supplier)} - ${esc(a.rentalBasis || 'monthly')} rate ${fmtINR(a.rentalRate)} - expiry ${esc(a.rentalEnd || '-')}</div><div class="text-xs mt-2">Fuel: ${esc(a.fuelResponsibility || '-')} - Operator: ${esc(a.operatorResponsibility || '-')} - Maintenance: ${esc(a.maintenanceResponsibility || '-')}</div></div>`).join('') || '<div class="text-xs text-stone-500">No rented or leased assets.</div>'}</div>`;
+  }
+
+  function renderAssetReports(c) {
+    c.innerHTML = `<div class="grid grid-cols-2 gap-4"><div class="card p-4"><div class="font-display font-bold text-lg mb-3">Reports Required</div><div class="grid grid-cols-2 gap-2">${ASSET_REPORTS.map(r => `<button class="btn btn-ghost justify-between" data-report="${esc(r)}"><span>${esc(r)}</span><i data-lucide="download" class="w-3 h-3"></i></button>`).join('')}</div></div><div class="card p-4"><div class="font-display font-bold text-lg mb-3">Role-Based Access</div><table class="data"><tbody>${ASSET_ROLES.map(r => `<tr><td><b>${r}</b></td><td class="text-xs">${r==='Viewer'?'Read only':r==='Accountant'?'Financial values, depreciation, rental bills':r==='Mechanic'?'Maintenance work orders and repair reports':r==='Operator'?'Scan, submit hours, fuel and breakdown reports':'Add, edit, approve, issue, receive, export as permitted'}</td></tr>`).join('')}</tbody></table></div></div><div class="card p-4 mt-4"><div class="font-display font-bold text-lg mb-3">BuildCore Integrations</div><div class="grid grid-cols-4 gap-2 text-xs">${['Project management','Store and inventory','Procurement','Billing','Cost control','Daily progress report','Labour and equipment report','BOQ item tracking','Fuel management','Document management','Approval workflow'].map(x => `<div class="p-2 bg-stone-50 border border-stone-200">${x}</div>`).join('')}</div></div>`;
+    c.querySelectorAll('[data-report]').forEach(b => b.onclick = () => { assetExportCSV(); toast('Report Exported', b.dataset.report + ' exported as CSV. Use browser print for PDF.', 'ok'); });
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function assetEdit(id) {
+    const a = id ? State.assets.find(x => x.id === id) : { id:'AST-' + String(State.assetNextId.asset).padStart(4,'0'), qr:'BC-AST-' + String(State.assetNextId.asset).padStart(4,'0'), name:'', category:'Heavy equipment', type:'', brand:'', model:'', serial:'', regNo:'', purchaseDate:new Date().toISOString().slice(0,10), purchaseCost:0, supplier:'', warrantyUntil:'', ownership:'owned', condition:'Good', status:'available', location:'Central Yard / Main Store', projectId:assetCurrentProjectId(), department:'', assignedTo:'', operator:'', photo:'', docs:'', depreciationMethod:'SLM', depreciationRate:10, resaleValue:0 };
+    openModal({ title:id?'Edit Asset - '+a.id:'Register New Asset', wide:true, submitLabel:id?'Save Asset':'Register Asset', body:`<div class="form-grid-3"><div class="ims-field"><label>Asset ID</label><input name="id" value="${esc(a.id)}" ${id?'readonly':''}></div><div class="ims-field"><label>QR / Barcode</label><input name="qr" value="${esc(a.qr)}"></div><div class="ims-field"><label>Asset Name</label><input name="name" value="${esc(a.name)}" required></div><div class="ims-field"><label>Category</label><select name="category">${assetCategoryOptions(a.category)}</select></div><div class="ims-field"><label>Asset Type</label><input name="type" value="${esc(a.type)}"></div><div class="ims-field"><label>Brand</label><input name="brand" value="${esc(a.brand)}"></div><div class="ims-field"><label>Model</label><input name="model" value="${esc(a.model)}"></div><div class="ims-field"><label>Serial No</label><input name="serial" value="${esc(a.serial)}"></div><div class="ims-field"><label>Registration No</label><input name="regNo" value="${esc(a.regNo)}"></div><div class="ims-field"><label>Ownership</label><select name="ownership">${['owned','rented','leased','subcontractor-owned'].map(x=>`<option ${a.ownership===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="ims-field"><label>Purchase Date</label><input name="purchaseDate" type="date" value="${esc(a.purchaseDate)}"></div><div class="ims-field"><label>Purchase Cost</label><input name="purchaseCost" type="number" value="${esc(a.purchaseCost)}"></div><div class="ims-field"><label>Supplier</label><input name="supplier" value="${esc(a.supplier)}"></div><div class="ims-field"><label>Warranty Until</label><input name="warrantyUntil" type="date" value="${esc(a.warrantyUntil)}"></div><div class="ims-field"><label>Condition</label><select name="condition">${['Excellent','Good','Fair','Poor','Scrap'].map(x=>`<option ${a.condition===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="ims-field"><label>Status</label><select name="status">${['available','allocated','under maintenance','breakdown','lost','disposed'].map(x=>`<option ${a.status===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="ims-field"><label>Location</label><input name="location" value="${esc(a.location)}"></div><div class="ims-field"><label>Project</label><select name="projectId">${assetProjectOptions(a.projectId)}</select></div><div class="ims-field"><label>Department</label><input name="department" value="${esc(a.department)}"></div><div class="ims-field"><label>Assigned User</label><input name="assignedTo" value="${esc(a.assignedTo)}"></div><div class="ims-field"><label>Operator</label><input name="operator" value="${esc(a.operator)}"></div><div class="ims-field"><label>Photo</label><input name="photo" value="${esc(a.photo)}"></div><div class="ims-field"><label>Depreciation Rate %</label><input name="depreciationRate" type="number" value="${esc(a.depreciationRate)}"></div><div class="ims-field"><label>Maintenance Due</label><input name="nextMaintenanceDue" type="date" value="${esc(a.nextMaintenanceDue)}"></div><div class="ims-field"><label>Calibration Due</label><input name="calibrationDue" type="date" value="${esc(a.calibrationDue)}"></div><div class="ims-field"><label>Insurance Expiry</label><input name="insuranceExpiry" type="date" value="${esc(a.insuranceExpiry)}"></div><div class="ims-field"><label>Registration Expiry</label><input name="registrationExpiry" type="date" value="${esc(a.registrationExpiry)}"></div></div><div class="ims-field mt-2"><label>Documents / Attachments</label><textarea name="docs">${esc(a.docs)}</textarea></div>`, onSubmit:(d)=>{ d.purchaseCost=+d.purchaseCost||0; d.depreciationRate=+d.depreciationRate||0; d.depreciationMethod=a.depreciationMethod||'SLM'; d.resaleValue=+a.resaleValue||0; if(id) Object.assign(a,d); else { State.assets.unshift(d); State.assetNextId.asset++; State.assetSelectedId=d.id; } buildAssetNotifications(); saveState(); audit(id?'update':'create','Asset - '+d.id,d.name); toast(id?'Asset Updated':'Asset Registered', d.id + ' - ' + d.name, 'ok'); renderAssetView(); }});
+  }
+
+  function assetRecordModal(type, assetId='', recordId='') {
+    const key = assetFlowStore(type), list = State[key], prefix = ({allocation:'AL',transfer:'TR',maintenance:'AM',breakdown:'BD',fuel:'FL',inspection:'IN'})[type], nextKey = ({allocation:'alloc',transfer:'transfer',maintenance:'mt',breakdown:'br',fuel:'fuel',inspection:'insp'})[type];
+    const r = recordId ? list.find(x => x.id === recordId) : { id:prefix + '-' + String(State.assetNextId[nextKey]).padStart(3,'0'), assetId:assetId || State.assetSelectedId || State.assets[0]?.id || '', projectId:assetCurrentProjectId(), status:'Pending' };
+    const common = `<div class="form-grid-3"><div class="ims-field"><label>Record ID</label><input name="id" value="${esc(r.id)}" ${recordId?'readonly':''}></div><div class="ims-field"><label>Asset</label><select name="assetId">${assetOptions(r.assetId)}</select></div>`;
+    const body = common + `<div class="ims-field"><label>Project</label><select name="projectId">${assetProjectOptions(r.projectId)}</select></div><div class="ims-field"><label>Location / From</label><input name="${type==='transfer'?'from':'location'}" value="${esc(r.from || r.location || '')}"></div><div class="ims-field"><label>To / Assigned To</label><input name="${type==='transfer'?'to':'assignedTo'}" value="${esc(r.to || r.assignedTo || '')}"></div><div class="ims-field"><label>Date</label><input type="date" name="${type==='allocation'?'issueDate':type==='maintenance'?'dueDate':'date'}" value="${esc(r.issueDate || r.dueDate || String(r.date || new Date().toISOString()).slice(0,10))}"></div><div class="ims-field"><label>Expected Return / Received</label><input type="date" name="${type==='transfer'?'receivedDate':'expectedReturn'}" value="${esc(r.receivedDate || r.expectedReturn || '')}"></div><div class="ims-field"><label>Status</label><select name="status"><option>${esc(r.status || 'Pending')}</option><option>Approved</option><option>Scheduled</option><option>In Progress</option><option>Completed</option><option>Received</option><option>Open</option><option>Closed</option></select></div><div class="ims-field"><label>Cost / Fuel / Hours</label><input name="cost" type="number" value="${esc(r.cost || r.fuel || r.productiveHours || 0)}"></div><div class="ims-field"><label>Inspector / Operator / Provider</label><input name="operator" value="${esc(r.operator || r.inspector || r.provider || '')}"></div><div class="ims-field"><label>Urgency / Type</label><input name="type" value="${esc(r.type || r.urgency || '')}"></div></div><div class="ims-field"><label>Description / Checklist / Remarks</label><textarea name="remarks">${esc(r.remarks || r.description || r.checklist || r.report || '')}</textarea></div>`;
+    openModal({ title:(recordId?'Edit ':'New ') + type + ' record', wide:true, submitLabel:'Save Record', body, onSubmit:(d)=>{ if(type==='transfer') d.requestDate = d.date || d.issueDate || new Date().toISOString().slice(0,10); if(type==='maintenance') { d.workOrder = r.workOrder || d.id; d.provider = d.operator; d.dueDate = d.dueDate || d.date; } if(type==='fuel') { d.fuel=+d.cost||0; d.productiveHours=+d.cost||0; d.date=d.date || d.issueDate; } if(type==='inspection') { d.inspector=d.operator; d.checklist=d.remarks; } if(type==='breakdown') { d.description=d.remarks; d.urgency=d.type; d.date=d.date || d.issueDate; } d.cost=+d.cost||0; if(recordId) Object.assign(r,d); else { State[key].unshift(d); State.assetNextId[nextKey]++; } const a=State.assets.find(x=>x.id===d.assetId); if(a){ if(type==='allocation' && d.status==='Approved') Object.assign(a,{status:'allocated',projectId:d.projectId,location:d.location,assignedTo:d.assignedTo}); if(type==='transfer' && d.receivedDate) a.location=d.to; if(type==='breakdown') a.status=d.status==='Closed'?'available':'breakdown'; if(type==='maintenance') a.status=d.status==='Completed'?'available':'under maintenance'; } buildAssetNotifications(); saveState(); audit(recordId?'update':'create','Asset '+type+' - '+d.id,d.assetId); toast('Asset Record Saved',d.id,'ok'); renderAssetView(); }});
+  }
+
+  function assetCategoriesModal() {
+    openModal({ title:'Asset Categories', wide:true, submitLabel:'Add Category', body:`<div class="form-row"><label>New Custom Category</label><input name="name" placeholder="e.g. Tunnel ventilation equipment"></div><div class="grid grid-cols-3 gap-2 mt-3">${State.assetCategories.map(c=>`<div class="p-2 border border-stone-200 text-xs flex justify-between gap-2"><span>${esc(c.name)}</span><button type="button" class="text-red-700" onclick="assetDeleteCategory('${c.id}')">Delete</button></div>`).join('')}</div>`, onSubmit:(d)=>{ if(!d.name) return false; State.assetCategories.push({id:'AC'+String(State.assetCategories.length+1).padStart(3,'0'), name:d.name, active:true}); saveState(); toast('Category Added',d.name,'ok'); renderAssetView(); }});
+  }
+  function assetDeleteCategory(id) { State.assetCategories = State.assetCategories.filter(c => c.id !== id); saveState(); closeModal(); toast('Category Deleted', id, 'warn'); renderAssetView(); }
+  window.assetDeleteCategory = assetDeleteCategory;
+  function assetScanModal() { openModal({ title:'QR / Barcode Scan', submitLabel:'Open Asset', body:`<div class="text-xs text-stone-500 mb-3">Enter a QR code, barcode, asset ID or serial number. A mobile camera scanner can feed this field.</div><div class="form-row"><label>Scan Result</label><input name="scan" placeholder="BC-AST-0001 or AST-0001"></div>`, onSubmit:(d)=>{ const q=String(d.scan||'').toLowerCase(); const a=State.assets.find(x=>[x.id,x.qr,x.serial,x.regNo].some(v=>String(v||'').toLowerCase()===q)); if(!a){ toast('Asset Not Found',d.scan,'bad'); return false; } State.assetSelectedId=a.id; State.assetCurrentTab='profile'; audit('view','Asset QR Scan',a.id); renderAssetView(); toast('Asset Opened',a.id+' - '+a.name,'ok'); }}); }
+  function assetPrintLabel(id) { const a=State.assets.find(x=>x.id===id); if(!a) return toast('No Asset Selected','Open an asset first','warn'); openModal({ title:'Print Asset Card / QR Label', hideFooter:true, body:`<div class="card p-5 text-center" style="max-width:360px;margin:0 auto;border:2px solid #0F0F0E"><div class="font-display font-black text-xl">BuildCore Asset</div><div class="font-mono text-xs mt-1">${esc(a.id)} - ${esc(a.qr)}</div><div style="width:142px;height:142px;margin:18px auto;background:repeating-linear-gradient(45deg,#111 0 8px,#fff 8px 16px);border:10px solid #fff;box-shadow:0 0 0 1px #111"></div><div class="font-bold">${esc(a.name)}</div><div class="text-xs text-stone-500">${esc(a.category)} - ${esc(a.location)}</div><button class="btn btn-amber mt-4" onclick="window.print()"><i data-lucide="printer" class="w-3 h-3"></i>Print</button></div>`}); }
+  function assetExportCSV() {
+    seedAssetData();
+    const rows = [['Asset ID','QR','Name','Category','Type','Brand','Model','Serial','Reg No','Purchase Date','Purchase Cost','Supplier','Warranty','Ownership','Condition','Status','Location','Project','Department','Assigned To','Operator','Book Value','Documents'], ...State.assets.map(a => [a.id,a.qr,a.name,a.category,a.type,a.brand,a.model,a.serial,a.regNo,a.purchaseDate,a.purchaseCost,a.supplier,a.warrantyUntil,a.ownership,a.condition,a.status,a.location,a.projectId,a.department,a.assignedTo,a.operator,Math.round(assetBookValue(a)),a.docs])];
+    const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'buildcore-assets-' + new Date().toISOString().slice(0,10) + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 200);
+    audit('export','Asset Register','CSV - ' + State.assets.length + ' assets'); toast('Asset Report Exported', State.assets.length + ' assets exported', 'ok');
   }
 
   // =====================================================================
@@ -9996,6 +10281,7 @@
       { view:'workforce',  icon:'users',          title:'Workforce',          sub:'Labour register · payroll',color:'#1E3A4C' },
       { view:'materials',  icon:'package',        title:'Materials & Inventory',sub:'IMS · GRN · Issue · POs', color:'#15803D' },
       { view:'equipment',  icon:'truck',          title:'Plant & Equipment',  sub:'Logsheets · operators · maint',color:'#B45309' },
+      { view:'assets',     icon:'qr-code',        title:'Asset Management',   sub:'QR · allocation · lifecycle', color:'#1E3A4C' },
       { view:'quality',    icon:'badge-check',    title:'Quality (QA/QC)',    sub:'NCRs · tests · checklists', color:'#0EA5E9' },
       { view:'clientportal',icon:'file-check-2',  title:'Client Portal',      sub:'DPR · lab approvals', color:'#7C3AED' },
       { view:'safety',     icon:'hard-hat',       title:'Safety / HSE',       sub:'Incidents · TBT · permits', color:'#C0383B' }
@@ -10019,12 +10305,13 @@
   function launcherTileCount(view) {
     if (view === 'materials') return State.items?.length || 0;
     if (view === 'equipment') return State.equipment?.length || 0;
+    if (view === 'assets')    { seedAssetData(); return State.assets?.length || 0; }
     if (view === 'events')    return State.events?.length || 0;
     if (view === 'todos')     return State.todos?.filter(t => t.status !== 'completed').length || 0;
     if (view === 'projects')  return State.projects?.length || 0;
     if (view === 'projectsites') { const pid = State.session?.projectId || State.activeProject; return pid && pid !== 'ALL' ? projectSitesFor(pid).length : State.projectSites?.length || 0; }
     if (view === 'audit')     return State.audit?.length || 0;
-    if (view === 'documents') return 248;
+    if (view === 'documents') { seedDocumentsData(); return State.documents?.length || 0; }
     if (view === 'workforce') return 142;
     if (view === 'procurement') return State.pos?.length || 0;
     if (view === 'tenders')   return State.tenders?.length || 0;
@@ -10099,6 +10386,10 @@
     const equipmentDown = (State.equipment || []).filter(e => e.status === 'Breakdown' || e.status === 'Under Maintenance');
     if (equipmentDown.length) add('bad', equipmentDown.length + ' equipment exceptions', 'Check breakdowns, maintenance records, and utilization impact.', 'equipment', 'truck', 'Open fleet');
 
+    try { seedAssetData(); } catch(_) {}
+    const assetAlerts = (State.assetNotifications || []).filter(n => n.status !== 'Closed');
+    if (assetAlerts.length) add('warn', assetAlerts.length + ' asset alerts', 'Review maintenance, calibration, insurance, rental, return and document exceptions.', 'assets', 'qr-code', 'Open assets');
+
     const portfolioRisk = projectPortfolio().filter(p => p.status === 'At Risk' || p.status === 'Delayed');
     if (portfolioRisk.length) add('bad', portfolioRisk.length + ' projects at risk', 'Use the dashboard rollup to review schedule, cost, and alert pressure.', 'projects', 'folder-kanban', 'Open projects');
 
@@ -10106,6 +10397,7 @@
   }
 
   function moduleSummaries() {
+    try { seedAssetData(); } catch(_) {}
     const activeTasks = (State.todos || []).filter(t => t.status !== 'completed').length;
     const openEvents = (State.events || []).filter(e => e.status !== 'completed').length;
     const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed').length;
@@ -10118,6 +10410,7 @@
       { view:'todos', icon:'check-square', label:'To-Do', value:activeTasks, detail:'open work items', color:activeTasks ? '#B45309' : '#15803D' },
       { view:'events', icon:'calendar-check', label:'Events', value:openEvents, detail:'active contractual records', color:'#7C3AED' },
       { view:'materials', icon:'package', label:'Materials', value:(State.items || []).length, detail:'catalogued inventory items', color:'#15803D' },
+      { view:'assets', icon:'qr-code', label:'Assets', value:(State.assets || []).length, detail:'asset lifecycle and QR tracking', color:'#1E3A4C' },
       { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs, detail:'POs not yet delivered', color:'#7C3AED' },
       { view:'quality', icon:'badge-check', label:'QA/QC', value:(State.labReports || []).length || openNcrs, detail:'lab reports and NCRs', color:openNcrs ? '#C0383B' : '#15803D' },
       { view:'clientportal', icon:'file-check-2', label:'Client Portal', value:pendingClient, detail:'pending approvals', color:pendingClient ? '#B45309' : '#15803D' },
@@ -10253,6 +10546,7 @@
           { view:'dpr', icon:'clipboard-list', title:'Daily Progress', value:project.pctComplete + '%', sub:'DPR, manpower, weather, output', color:'#E8742C' },
           { view:'materials', icon:'package', title:'Inventory Flow', value:fmtINR(projectStockValue), sub:'Project stock, issues, GRN, transfers', color:'#15803D' },
           { view:'equipment', icon:'truck', title:'Equipment', value:project.equipment, sub:'Plant allocation and logsheets', color:'#B45309' },
+          { view:'assets', icon:'qr-code', title:'Assets', value:(State.assets || []).filter(a => !a.projectId || a.projectId === project.id).length, sub:'Asset register, QR, transfers', color:'#1E3A4C' },
           { view:'quality', icon:'badge-check', title:'QA / QC', value:openNcrs, sub:'NCRs, inspections, tests', color:openNcrs ? '#C0383B' : '#15803D' },
           { view:'clientportal', icon:'file-check-2', title:'Client Portal', value:(State.clientSubmissions || []).filter(s => s.projectId === project.id && !['approved','rejected'].includes(s.approval || s.status)).length, sub:'DPR and lab approvals', color:'#7C3AED' },
           { view:'events', icon:'calendar-check', title:'Events & Claims', value:projectEvents.length, sub:'Notices, delay, EOT, VO records', color:'#7C3AED' },
@@ -10643,9 +10937,9 @@
     ceo:      { name:'Mr. Rajesh Tamang',     role:'CEO · Full Access',           avatar:'RT', projects:'ALL', modules:'ALL' },
     cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO · Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','finance','billing','procurement','analytics','audit','reports'] },
     pm:       { name:'R. Tamang (PM)',        role:'Project Manager · Projects',  avatar:'RT', projects:['PRJ-017','PRJ-030'], modules:'ALL' },
-    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','dpr','workforce','materials','equipment','quality','safety','events','todos'] },
+    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','dpr','workforce','materials','equipment','assets','quality','safety','events','todos'] },
     qc:       { name:'M. Khatri (QC)',        role:'QC Officer · Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019','PRJ-030'], modules:['dashboard','projects','quality','safety','dpr','documents','events','todos'] },
-    store:    { name:'Store Manager',          role:'Store · Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','events','todos'] },
+    store:    { name:'Store Manager',          role:'Store · Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','assets','events','todos'] },
     estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','finance','documents','events','todos'] },
     client:   { name:'Client Reviewer',        role:'Client · Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','reports'] }
   };
@@ -10865,9 +11159,9 @@
           </div>
           <div class="col-span-4 grid grid-cols-2 gap-3">
             <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff;padding:14px">
-              <div class="font-mono text-[10px] opacity-60">AVAILABLE</div>
+              <div class="font-mono text-[10px] opacity-60">ROLE ACCESS</div>
               <div class="font-display font-black text-3xl">${accessibleProjects.length}</div>
-              <div class="text-[10px] opacity-60">projects</div>
+              <div class="text-[10px] opacity-60">assigned projects</div>
             </div>
             <div class="card" style="background:rgba(232,116,44,.18);border-color:rgba(232,116,44,.34);color:#fff;padding:14px">
               <div class="font-mono text-[10px] opacity-70">ACCESS MODE</div>
@@ -10880,8 +11174,8 @@
 
       <div class="flex items-end justify-between mb-4">
         <div>
-          <div class="font-display font-black text-2xl title-mark">Project Names</div>
-          <div class="text-xs text-stone-500 mt-3">Only project selection is shown here. Full navigation opens after successful project entry.</div>
+          <div class="font-display font-black text-2xl title-mark">Accessible Projects</div>
+          <div class="text-xs text-stone-500 mt-3">This list shows only projects assigned to your role. Full navigation opens after successful project entry.</div>
         </div>
         <button class="btn btn-ghost" onclick="signOut()"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Sign Out</button>
       </div>
@@ -11450,6 +11744,242 @@
   $('#drawerBackdrop').addEventListener('click', closeDrawer);
   $('#drawerClose').addEventListener('click', closeDrawer);
 
+  // -------- DOCUMENT CONTROL --------
+  function seedDocumentsData() {
+    if (State.documents && State.documents.length) return;
+    State.documents = [
+      { id:'DOC-001', code:'STR-S-201', title:'Slab Plan - Tower B - Level 7-8', type:'Drawing', discipline:'Structural', projectId:'PRJ-017', rev:'R4', status:'Approved for construction', updated:'2026-05-15', issuedBy:'B&P Consultants', owner:'S. Adhikari', dueDate:'', fileName:'STR-S-201_R4.pdf', notes:'Approved with cover-block condition from PMC.', revisions:['R0 issued for review','R2 column grid coordinated','R4 approved for construction'] },
+      { id:'DOC-002', code:'ARC-A-104', title:'Facade Detail - East elevation', type:'Drawing', discipline:'Architecture', projectId:'PRJ-017', rev:'R7', status:'Under review', updated:'2026-05-17', issuedBy:'Studio Wai', owner:'PM', dueDate:'2026-05-20', fileName:'ARC-A-104_R7.pdf', notes:'Architect response pending on aluminium profile.', revisions:['R5 material changed','R6 client comments','R7 under review'] },
+      { id:'DOC-003', code:'MEP-E-302', title:'Electrical DB schedule Level 3-6', type:'Drawing', discipline:'MEP-E', projectId:'PRJ-017', rev:'R2', status:'Approved for construction', updated:'2026-05-12', issuedBy:'Voltage Engineers', owner:'MEP Coordinator', dueDate:'', fileName:'MEP-E-302_R2.pdf', notes:'Released to site for execution.', revisions:['R1 load schedule corrected','R2 AFC'] },
+      { id:'DOC-004', code:'CON-017', title:'Skyline Towers main contract', type:'Contract', discipline:'Commercial', projectId:'PRJ-017', rev:'Signed', status:'Active', updated:'2024-08-15', issuedBy:'NIC Asia / NCC', owner:'Contracts', dueDate:'', fileName:'CON-017_signed.pdf', notes:'Lump-sum with re-measurement clauses.', revisions:['Signed baseline'] },
+      { id:'DOC-005', code:'MAT-CEM-1842', title:'OPC cement test certificate - GRN-1842', type:'Certificate', discipline:'Materials', projectId:'PRJ-017', rev:'A', status:'Accepted', updated:'2026-05-11', issuedBy:'Shivam Cement', owner:'Store Manager', dueDate:'', fileName:'cement_cert_grn1842.pdf', notes:'Linked to L4 slab pour.', revisions:['Supplier certificate received','QC accepted'] },
+      { id:'DOC-006', code:'RFI-128', title:'Column reinforcement clash at C-08', type:'RFI', discipline:'Structural', projectId:'PRJ-017', rev:'Open', status:'Action pending', updated:'2026-05-10', issuedBy:'PMC', owner:'M. Khatri (QC)', dueDate:'2026-05-14', fileName:'RFI-128.pdf', notes:'Response delayed; cover-block evidence required.', revisions:['Raised by PMC','Site photos attached'] },
+      { id:'DOC-007', code:'BC/OUT/2026/142', title:'EOT claim for rain delay 08 May', type:'Letter', discipline:'Correspondence', projectId:'PRJ-017', rev:'OUT', status:'Awaiting response', updated:'2026-05-13', issuedBy:'PM to Client', owner:'R. Tamang (PM)', dueDate:'2026-05-23', fileName:'BC_OUT_2026_142.pdf', notes:'12.5 days extension requested under Clause 8.4.', revisions:['Drafted','Issued to client'] },
+      { id:'DOC-008', code:'BC/OUT/2026/140', title:'VO-08 dewatering pumps request', type:'Letter', discipline:'Correspondence', projectId:'PRJ-021', rev:'OUT', status:'Awaiting response', updated:'2026-05-09', issuedBy:'PM to DoR', owner:'Project Director', dueDate:'2026-05-23', fileName:'BC_OUT_2026_140.pdf', notes:'Additional dewatering pumps for monsoon work.', revisions:['Submitted with BOQ backup'] },
+      { id:'DOC-009', code:'MOM-017-052', title:'Weekly site review minutes', type:'Minutes', discipline:'Meeting', projectId:'PRJ-017', rev:'Final', status:'Open actions', updated:'2026-05-12', issuedBy:'PMC', owner:'PM', dueDate:'2026-05-19', fileName:'MOM_017_052.pdf', notes:'8 action items remain open.', revisions:['Draft circulated','Final issued'] },
+      { id:'DOC-010', code:'APP-STR-201', title:'Approval note for STR-S-201 R4', type:'Approval', discipline:'Structural', projectId:'PRJ-017', rev:'A', status:'Closed', updated:'2026-05-12', issuedBy:'Client / PMC', owner:'QC', dueDate:'', fileName:'APP_STR_201.pdf', notes:'Conditional approval logged and linked to drawing.', revisions:['Submitted','Approved with condition'] }
+    ];
+  }
+  function docVisibleRows() {
+    seedDocumentsData();
+    const pid = State.session?.inProjectMode ? State.session?.projectId : '';
+    const tab = State.docCurrentTab || 'drawings';
+    const typeMap = { drawings:'Drawing', contracts:'Contract', certificates:'Certificate', rfis:'RFI', letters:'Letter', approvals:'Approval', minutes:'Minutes' };
+    return State.documents
+      .filter(d => !pid || pid === 'ALL' || d.projectId === pid)
+      .filter(d => tab === 'all' || d.type === typeMap[tab])
+      .sort((a,b) => String(b.updated||'').localeCompare(String(a.updated||'')));
+  }
+  function docStatusBadge(status='') {
+    const s = status.toLowerCase();
+    const cls = s.includes('approved') || s.includes('accepted') || s.includes('closed') || s.includes('active') ? 'ok'
+      : s.includes('superseded') || s.includes('overdue') ? 'bad'
+      : s.includes('review') || s.includes('awaiting') || s.includes('pending') || s.includes('open') ? 'warn'
+      : 'neutral';
+    return `<span class="badge badge-${cls}">${esc(status || 'Draft')}</span>`;
+  }
+  function docTypeIcon(type) {
+    return ({ Drawing:'layout-template', Contract:'file-signature', Certificate:'award', RFI:'help-circle', Letter:'mail', Approval:'badge-check', Minutes:'users' })[type] || 'file-text';
+  }
+  function docDateLabel(v) {
+    if (!v) return '—';
+    const d = new Date(v); if (isNaN(d)) return esc(v);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' });
+  }
+  function renderDocumentsView() {
+    seedDocumentsData();
+    const section = $('#view-documents');
+    if (!section) return;
+    const rows = docVisibleRows();
+    const total = State.documents.length;
+    const open = State.documents.filter(d => /review|awaiting|pending|open/i.test(d.status || '')).length;
+    const pid = State.session?.inProjectMode ? State.session?.projectId : '';
+    const counts = ['Drawing','Contract','Certificate','RFI','Letter','Approval','Minutes'].reduce((m,t) => (m[t] = State.documents.filter(d => d.type === t && (!pid || pid === 'ALL' || d.projectId === pid)).length, m), {});
+    section.innerHTML = `
+      <div class="flex items-end justify-between mb-6">
+        <div>
+          <div class="stamp mb-3"><i data-lucide="file-stack" class="w-3 h-3"></i>DOCUMENT CONTROL</div>
+          <h1 class="font-display font-black text-3xl title-mark">Document & Drawing Control</h1>
+          <p class="text-sm text-stone-500 mt-3">Controlled register for drawings, RFIs, approvals, letters, certificates, contracts, and meeting records${pid && pid !== 'ALL' ? ' in ' + pid : ''}.</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-ghost" data-doc-act="history"><i data-lucide="git-branch" class="w-3.5 h-3.5"></i>Revision History</button>
+          <button class="btn btn-ghost" data-doc-act="export"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
+          <button class="btn btn-amber" data-doc-act="upload"><i data-lucide="upload" class="w-3.5 h-3.5"></i>Upload</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-4 gap-4 mb-5">
+        ${[
+          ['Drawing','layout-template','#B45309'], ['RFI','help-circle','#1E3A4C'], ['Letter','mail','#7C3AED'], ['Approval','badge-check','#15803D']
+        ].map(([type,icon,color]) => `<div class="card p-4 lift cursor-pointer" data-doc-type="${type}"><div class="flex items-center gap-3"><i data-lucide="${icon}" class="w-8 h-8" style="color:${color}"></i><div><div class="font-display font-bold">${type === 'RFI' ? 'RFIs' : type + 's'}</div><div class="text-xs text-stone-500">${counts[type] || 0} records</div></div></div></div>`).join('')}
+      </div>
+      <div class="grid grid-cols-6 gap-3 mb-5">
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">TOTAL</div><div class="font-display font-black text-2xl tabular">${total}</div></div>
+        <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">VISIBLE</div><div class="font-display font-black text-2xl tabular">${rows.length}</div></div>
+        <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">OPEN / DUE</div><div class="font-display font-black text-2xl tabular">${open}</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">DRAWINGS</div><div class="font-display font-black text-2xl tabular">${counts.Drawing || 0}</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">LETTERS</div><div class="font-display font-black text-2xl tabular">${counts.Letter || 0}</div></div>
+        <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">APPROVALS</div><div class="font-display font-black text-2xl tabular">${counts.Approval || 0}</div></div>
+      </div>
+      <div class="card">
+        <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs">
+          ${[
+            ['drawings','Drawings','layout-template'], ['contracts','Contracts','file-signature'], ['certificates','Certificates','award'], ['rfis','RFIs','help-circle'], ['letters','Letters','mail'], ['approvals','Approvals','badge-check'], ['minutes','Minutes','users'], ['all','All','list']
+          ].map(([key,label,icon]) => `<button class="ims-tab ${State.docCurrentTab === key ? 'active' : ''}" data-doctab="${key}"><i data-lucide="${icon}" class="w-3 h-3"></i>${label}</button>`).join('')}
+        </div>
+        <div class="p-5">
+          <div class="flex justify-between items-center gap-3 flex-wrap mb-4">
+            <input id="docSearch" type="text" placeholder="Search code, title, issuer, project..." class="border border-stone-200 px-2 py-1 text-xs" style="min-width:280px">
+            <div class="flex gap-2">
+              <select id="docProjectFilter" class="text-xs border border-stone-200 px-2 py-1 rounded"><option value="">All visible projects</option>${State.projects.map(p => `<option value="${p.id}">${p.id} - ${esc(p.name)}</option>`).join('')}</select>
+              <select id="docStatusFilter" class="text-xs border border-stone-200 px-2 py-1 rounded"><option value="">All statuses</option><option>Approved for construction</option><option>Under review</option><option>Awaiting response</option><option>Action pending</option><option>Closed</option></select>
+            </div>
+          </div>
+          <table class="data">
+            <thead><tr><th>Ref</th><th>Title</th><th>Type</th><th>Project</th><th>Rev</th><th>Status</th><th>Updated</th><th>Issued by</th><th>Action</th></tr></thead>
+            <tbody id="docTableBody">${renderDocumentRows(rows)}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    bindDocumentsView();
+    if (window.lucide) lucide.createIcons();
+  }
+  function renderDocumentRows(rows) {
+    return rows.map(d => {
+      const search = [d.code,d.title,d.type,d.discipline,d.projectId,d.status,d.issuedBy,d.owner,d.fileName].join(' ').toLowerCase();
+      return `<tr data-doc-row="${esc(d.id)}" data-search="${esc(search)}" data-project="${esc(d.projectId)}" data-status="${esc(d.status)}">
+        <td class="font-mono text-xs"><b>${esc(d.code)}</b></td>
+        <td><b>${esc(d.title)}</b><div class="text-[10px] text-stone-500">${esc(d.fileName || '')}</div></td>
+        <td><span class="badge badge-neutral"><i data-lucide="${docTypeIcon(d.type)}" class="w-3 h-3 inline"></i> ${esc(d.type)}</span><div class="text-[10px] text-stone-500 mt-1">${esc(d.discipline || '')}</div></td>
+        <td class="font-mono text-xs">${esc(d.projectId || 'ALL')}</td>
+        <td class="font-mono text-xs">${esc(d.rev || 'R0')}</td>
+        <td>${docStatusBadge(d.status)}</td>
+        <td class="text-xs">${docDateLabel(d.updated)}</td>
+        <td class="text-xs">${esc(d.issuedBy || 'Internal')}</td>
+        <td><div class="ims-row-action"><button class="ims-icon-btn" data-doc-act="view" data-id="${esc(d.id)}" title="View">View</button><button class="ims-icon-btn" data-doc-act="edit" data-id="${esc(d.id)}" title="Edit">Edit</button><button class="ims-icon-btn danger" data-doc-act="delete" data-id="${esc(d.id)}" title="Delete">Del</button></div></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="9" class="text-center text-stone-400 py-5">No records match this view.</td></tr>';
+  }
+  function bindDocumentsView() {
+    const section = $('#view-documents');
+    section.querySelectorAll('[data-doctab]').forEach(btn => {
+      btn.onclick = () => { State.docCurrentTab = btn.dataset.doctab; saveState(); renderDocumentsView(); };
+    });
+    section.querySelectorAll('[data-doc-type]').forEach(card => {
+      card.onclick = () => {
+        const map = { Drawing:'drawings', RFI:'rfis', Letter:'letters', Approval:'approvals' };
+        State.docCurrentTab = map[card.dataset.docType] || 'all';
+        saveState(); renderDocumentsView();
+      };
+    });
+    const filter = () => {
+      const q = ($('#docSearch')?.value || '').toLowerCase();
+      const p = $('#docProjectFilter')?.value || '';
+      const s = $('#docStatusFilter')?.value || '';
+      $$('#docTableBody tr').forEach(tr => {
+        const ok = (!q || tr.dataset.search?.includes(q)) && (!p || tr.dataset.project === p) && (!s || tr.dataset.status === s);
+        tr.style.display = ok ? '' : 'none';
+      });
+    };
+    $('#docSearch')?.addEventListener('input', filter);
+    $('#docProjectFilter')?.addEventListener('change', filter);
+    $('#docStatusFilter')?.addEventListener('change', filter);
+    section.onclick = (e) => {
+      const btn = e.target.closest('[data-doc-act]');
+      if (!btn) return;
+      const act = btn.dataset.docAct;
+      if (act === 'upload') docEdit();
+      if (act === 'export') docExportCSV();
+      if (act === 'history') docRevisionHistory();
+      if (act === 'view') docView(btn.dataset.id);
+      if (act === 'edit') docEdit(btn.dataset.id);
+      if (act === 'delete') docDelete(btn.dataset.id);
+    };
+  }
+  function docView(id) {
+    const d = State.documents.find(x => x.id === id);
+    if (!d) return;
+    openDrawer({ title: d.code + ' - ' + d.title, body: `
+      <div class="stamp mb-3"><i data-lucide="${docTypeIcon(d.type)}" class="w-3 h-3"></i>${esc(d.type)} · ${esc(d.projectId)}</div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="card p-3"><div class="font-mono text-[10px] text-stone-400">REVISION</div><div class="font-mono font-bold text-lg">${esc(d.rev)}</div></div>
+        <div class="card p-3"><div class="font-mono text-[10px] text-stone-400">STATUS</div>${docStatusBadge(d.status)}</div>
+        <div class="card p-3"><div class="font-mono text-[10px] text-stone-400">UPDATED</div><div class="font-mono font-bold">${docDateLabel(d.updated)}</div></div>
+        <div class="card p-3"><div class="font-mono text-[10px] text-stone-400">OWNER</div><div class="font-semibold">${esc(d.owner || 'Unassigned')}</div></div>
+      </div>
+      <div class="text-xs text-stone-500 mb-1">Issued by</div><div class="font-semibold mb-3">${esc(d.issuedBy || 'Internal')}</div>
+      <div class="text-xs text-stone-500 mb-1">File</div><div class="font-mono text-xs mb-3">${esc(d.fileName || 'No file attached')}</div>
+      <div class="text-xs text-stone-500 mb-1">Notes</div><div class="text-sm mb-4">${esc(d.notes || 'No notes recorded.')}</div>
+      <div class="text-xs text-stone-500 mb-2">Revision trail</div>
+      <div class="space-y-2">${(d.revisions || []).map((r,i) => `<div class="card p-3 text-xs"><b>${esc(d.rev || 'R')}.${i+1}</b><div class="text-stone-500 mt-1">${esc(r)}</div></div>`).join('') || '<div class="text-xs text-stone-400">No revisions logged.</div>'}</div>
+      <div class="flex gap-2 flex-wrap mt-4">
+        <button class="btn btn-ghost" onclick="docEdit('${esc(d.id)}'); closeDrawer();"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button>
+        <button class="btn btn-amber" onclick="toast('Download Ready','${esc(d.fileName || d.code)}','ok')"><i data-lucide="download" class="w-3 h-3"></i>Download</button>
+      </div>` });
+  }
+  function docEdit(id) {
+    seedDocumentsData();
+    const d = id ? State.documents.find(x => x.id === id) : { id:'', code:'DOC-' + String(Date.now()).slice(-5), title:'', type:'Drawing', discipline:'Structural', projectId:State.session?.projectId || 'PRJ-017', rev:'R0', status:'Under review', updated:new Date().toISOString().slice(0,10), issuedBy:'', owner:State.session?.user?.name || '', dueDate:'', fileName:'', notes:'', revisions:[] };
+    if (!d) return;
+    openModal({ title: id ? 'Edit Document' : 'Upload Document', wide:true, submitLabel: id ? 'Save Changes' : 'Add Document', body: `
+      <div class="form-grid-2">
+        <div class="form-row"><label>Reference / Drawing No.</label><input name="code" value="${esc(d.code)}" required></div>
+        <div class="form-row"><label>Type</label><select name="type">${['Drawing','Contract','Certificate','RFI','Letter','Approval','Minutes'].map(t => `<option ${d.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+        <div class="form-row"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${d.projectId===p.id?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div>
+        <div class="form-row"><label>Discipline</label><input name="discipline" value="${esc(d.discipline||'')}" placeholder="Structural / MEP / Commercial"></div>
+        <div class="form-row"><label>Revision</label><input name="rev" value="${esc(d.rev||'R0')}"></div>
+        <div class="form-row"><label>Status</label><select name="status">${['Under review','Approved for construction','Awaiting response','Action pending','Accepted','Active','Closed','Superseded'].map(s => `<option ${d.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="form-row"><label>Updated</label><input type="date" name="updated" value="${String(d.updated || '').slice(0,10) || new Date().toISOString().slice(0,10)}"></div>
+        <div class="form-row"><label>Response Due</label><input type="date" name="dueDate" value="${esc(d.dueDate||'')}"></div>
+      </div>
+      <div class="form-row"><label>Title</label><input name="title" value="${esc(d.title||'')}" required placeholder="Document title"></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>Issued By</label><input name="issuedBy" value="${esc(d.issuedBy||'')}"></div>
+        <div class="form-row"><label>Owner</label><input name="owner" value="${esc(d.owner||'')}"></div>
+      </div>
+      <div class="form-row"><label>File Name</label><input name="fileName" value="${esc(d.fileName||'')}" placeholder="document.pdf"></div>
+      <div class="form-row"><label>Notes</label><textarea name="notes" rows="3">${esc(d.notes||'')}</textarea></div>
+      <div class="form-row"><label>Revision Note</label><input name="revisionNote" placeholder="What changed in this revision?"></div>
+    `, onSubmit: (data) => {
+      if (!data.code || !data.title) { toast('Missing Details','Reference and title are required','warn'); return false; }
+      const next = id ? d : { id:'DOC-' + String(Date.now()).slice(-6), revisions:[] };
+      Object.assign(next, data);
+      delete next.revisionNote;
+      next.revisions = Array.isArray(d.revisions) ? [...d.revisions] : [];
+      if (data.revisionNote) next.revisions.push(data.revisionNote);
+      if (!id) State.documents.unshift(next);
+      audit(id ? 'update' : 'create', 'Document · ' + next.code, next.title);
+      saveState();
+      toast(id ? 'Document Updated' : 'Document Added', next.code + ' · ' + next.title, 'ok');
+      renderDocumentsView();
+    }});
+  }
+  function docDelete(id) {
+    const d = State.documents.find(x => x.id === id);
+    if (!d) return;
+    openModal({ title:'Delete Document', submitLabel:'Delete', submitClass:'btn-danger',
+      body:`<div class="text-sm">Delete <b>${esc(d.code)}</b><br>${esc(d.title)}?</div>`,
+      onSubmit: () => { State.documents = State.documents.filter(x => x.id !== id); audit('delete','Document · ' + d.code, d.title); saveState(); toast('Document Deleted', d.code, 'warn'); renderDocumentsView(); }
+    });
+  }
+  function docRevisionHistory() {
+    seedDocumentsData();
+    const items = State.documents.filter(d => (d.revisions || []).length).slice(0,12);
+    openDrawer({ title:'Revision History', body:`<div class="space-y-3">${items.map(d => `<div class="card p-3 text-xs"><div class="font-mono font-bold">${esc(d.code)} · ${esc(d.rev)}</div><div class="font-semibold mt-1">${esc(d.title)}</div><div class="text-stone-500 mt-2">${(d.revisions || []).map(r => esc(r)).join('<br>')}</div></div>`).join('') || '<div class="text-sm text-stone-500">No revision records yet.</div>'}</div>` });
+  }
+  function docExportCSV() {
+    seedDocumentsData();
+    const rows = [['ID','Ref','Title','Type','Discipline','Project','Revision','Status','Updated','Issued By','Owner','Due Date','File','Notes'],
+      ...State.documents.map(d => [d.id,d.code,d.title,d.type,d.discipline,d.projectId,d.rev,d.status,d.updated,d.issuedBy,d.owner,d.dueDate,d.fileName,d.notes])];
+    const csv = rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'buildcore-documents-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 200);
+    audit('export','Documents','CSV · ' + State.documents.length + ' records');
+  }
+  window.docEdit = docEdit;
+
   // -------- NAVIGATION --------
   function navTo(view) {
     if (!canAccessModule(view)) {
@@ -11472,6 +12002,7 @@
     if (view === 'schedule') { renderScheduleTable(); }
     if (view === 'materials') { if (State.session?.inProjectMode) State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
     if (view === 'equipment') { setTimeout(renderEquipmentView, 30); }
+    if (view === 'assets')    { setTimeout(renderAssetView, 30); }
     if (view === 'events')    { setTimeout(renderEventsView, 30); }
     if (view === 'todos')     { setTimeout(renderTodosView, 30); }
     if (view === 'estimation'){ setTimeout(renderEstimationView, 30); }
@@ -11479,6 +12010,7 @@
     if (view === 'quality')   { setTimeout(renderQualityView, 30); }
     if (view === 'clientportal') { setTimeout(renderClientPortalView, 30); }
     if (view === 'finance')   { setTimeout(renderFinanceView, 30); }
+    if (view === 'documents') { setTimeout(renderDocumentsView, 30); }
     if (view === 'projectsites') { setTimeout(renderProjectSitesView, 30); }
     if (view === 'dashboard') { setTimeout(renderLauncher, 30); }
     audit('view', 'Module', view);
@@ -11496,7 +12028,7 @@
 
   // -------- COMMAND PALETTE (Cmd+K) --------
   const palItems = [
-    ...['dashboard','projects','schedule','tenders','estimation','dpr','workforce','materials','equipment','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
+    ...['dashboard','projects','schedule','tenders','estimation','dpr','workforce','materials','equipment','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
     ...State.projects.map(p => ({ label: p.name, sub: p.id + ' · ' + p.client, kind:'Project', action: () => { navTo('projects'); setTimeout(() => openProjectDetail(p.id), 100); }})),
     { label:'New Project', kind:'Action', action: () => actNewProject() },
     { label:'New Tender', kind:'Action', action: () => actNewTender() },
@@ -11805,6 +12337,7 @@
     });
   }
   function actUploadDoc() {
+    return docEdit();
     openModal({
       title: 'Upload Document',
       body: `
@@ -12022,7 +12555,8 @@
       card.addEventListener('click', () => {
         // Try matching to seeded project; else build a generic detail from card content
         const codeEl = card.querySelector('.font-mono');
-        const code = codeEl?.textContent.split('·')[0].trim();
+        const codeText = card.dataset.projectId || codeEl?.textContent || '';
+        const code = (codeText.match(/\bPRJ-\d+\b/) || [codeText.split('·')[0].trim()])[0];
         const seeded = State.projects.find(p => p.id === code);
         if (seeded) { openProjectDetail(code); return; }
         // Generic — read fields from DOM
@@ -12049,6 +12583,7 @@
     const card = document.createElement('div');
     card.className = 'card p-5 lift cursor-pointer';
     card.dataset.wired = '1';
+    card.dataset.projectId = p.id;
     card.innerHTML = `
       <div class="flex items-start justify-between mb-3">
         <div>
@@ -12918,6 +13453,7 @@
   }
 
   renderActivityFeed();
+  seedDocumentsData();
   renderProjectsView();
   renderTendersView();
   enhanceBOQTable();

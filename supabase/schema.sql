@@ -88,7 +88,11 @@ declare
   collection_tables text[] := array[
     'projects', 'tenders', 'materials', 'ncrs', 'ra_bills',
     'purchase_orders', 'dprs', 'variation_orders', 'risks',
-    'photos', 'activity', 'audit_log'
+    'photos', 'assets', 'asset_categories', 'asset_locations',
+    'asset_allocations', 'asset_transfers', 'asset_maintenance',
+    'asset_breakdowns', 'asset_fuel_logs', 'asset_inspections',
+    'asset_documents', 'asset_disposals', 'asset_notifications',
+    'activity', 'audit_log'
   ];
 begin
   foreach tbl in array collection_tables loop
@@ -175,6 +179,48 @@ select user_id, id,
        data ->> 'status'            as status,
        updated_at
 from public.purchase_orders;
+
+create or replace view public.v_assets as
+select user_id, id,
+       data ->> 'qr'                    as qr_code,
+       data ->> 'name'                  as asset_name,
+       data ->> 'category'              as category,
+       data ->> 'type'                  as asset_type,
+       data ->> 'brand'                 as brand,
+       data ->> 'model'                 as model,
+       data ->> 'serial'                as serial_number,
+       data ->> 'regNo'                 as registration_number,
+       data ->> 'ownership'             as ownership_type,
+       data ->> 'condition'             as current_condition,
+       data ->> 'status'                as current_status,
+       data ->> 'location'              as current_location,
+       data ->> 'projectId'             as project_id,
+       data ->> 'department'            as department,
+       data ->> 'assignedTo'            as assigned_user,
+       data ->> 'operator'              as operator,
+       nullif(data ->> 'purchaseCost','')::numeric as purchase_cost,
+       data ->> 'purchaseDate'          as purchase_date,
+       data ->> 'warrantyUntil'         as warranty_until,
+       data ->> 'nextMaintenanceDue'    as next_maintenance_due,
+       data ->> 'calibrationDue'        as calibration_due,
+       data ->> 'insuranceExpiry'       as insurance_expiry,
+       updated_at
+from public.assets;
+
+create or replace view public.v_asset_allocations as
+select user_id, id, data ->> 'assetId' as asset_id, data ->> 'projectId' as project_id,
+       data ->> 'location' as location, data ->> 'assignedTo' as assigned_to,
+       data ->> 'issueDate' as allocation_date, data ->> 'expectedReturn' as expected_return,
+       data ->> 'actualReturn' as actual_return, data ->> 'status' as approval_status,
+       updated_at
+from public.asset_allocations;
+
+create or replace view public.v_asset_maintenance as
+select user_id, id, data ->> 'assetId' as asset_id, data ->> 'type' as maintenance_type,
+       data ->> 'dueDate' as due_date, data ->> 'workOrder' as work_order,
+       data ->> 'provider' as service_provider, nullif(data ->> 'cost','')::numeric as cost,
+       data ->> 'status' as status, updated_at
+from public.asset_maintenance;
 
 -- ---------------------------------------------------------------------
 -- Scalar / object workspace settings (automations map, active project).
