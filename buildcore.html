@@ -12078,7 +12078,9 @@
     const form = document.getElementById('loginForm');
     const modeEl = document.getElementById('loginMode');
     const online = !!(window.BC && BC.enabled);
-    if (modeEl) modeEl.textContent = online
+    const useRemoteAuth = online && !STARTER_MODE;
+    if (modeEl && STARTER_MODE) modeEl.textContent = 'Starter workspace - sign in locally with any email and password';
+    else if (modeEl) modeEl.textContent = online
       ? 'Connected to Supabase · synced across devices'
       : 'Offline mode · data stored locally on this device';
 
@@ -12091,13 +12093,14 @@
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const { email, pass } = creds();
-        if (online) {
+        if (useRemoteAuth) {
           try { await BC.auth.signIn(email, pass); }
           catch (err) {
             toast('Sign-in failed', (err && err.message) || 'Wrong credentials — or use "Create account"', 'bad');
             return;
           }
         }
+        if (STARTER_MODE) toast('Signed in', 'Starter workspace opened locally', 'ok');
         bcAfterAuth();
       });
     }
@@ -12106,6 +12109,7 @@
     if (acctBtn) acctBtn.addEventListener('click', async () => {
       const { email, pass } = creds();
       if (!email || !pass) { toast('Create account', 'Enter an email and password first', 'bad'); return; }
+      if (STARTER_MODE) { toast('Account ready', 'Starter workspace opened locally', 'ok'); bcAfterAuth(); return; }
       if (!online) { toast('Offline mode', 'Supabase is not configured — sign in works locally', 'info'); bcAfterAuth(); return; }
       try {
         await BC.auth.signUp(email, pass, { full_name: email });
@@ -12120,7 +12124,7 @@
     });
 
     // Auto-restore an existing Supabase session on reload.
-    if (online) {
+    if (useRemoteAuth) {
       try {
         const u = await BC.auth.currentUser();
         if (u) await bcAfterAuth();
