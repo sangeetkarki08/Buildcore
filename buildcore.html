@@ -773,6 +773,7 @@
           <div class="flex gap-2">
             <select class="btn btn-ghost"><option>Month</option><option>Week</option><option>Quarter</option></select>
             <button class="btn btn-ghost"><i data-lucide="git-compare" class="w-3.5 h-3.5"></i>Baseline diff</button>
+            <button class="btn btn-ghost" onclick="scheduleGenerateMilestones()"><i data-lucide="flag" class="w-3.5 h-3.5"></i>Set milestones</button>
             <button class="btn btn-amber"><i data-lucide="zap" class="w-3.5 h-3.5"></i>Auto-reschedule</button>
           </div>
         </div>
@@ -873,6 +874,11 @@
 
           <!-- today marker -->
           <div class="text-xs text-stone-500 mt-3 font-mono">▲ TODAY · 13 MAY 2026 · DAY 247</div>
+          <div id="scheduleMilestoneMarkers" class="mt-4"></div>
+        </div>
+
+        <div class="card mt-5 p-5" id="scheduleMilestonePanel">
+          <div class="text-sm text-stone-500">Schedule milestone tracker loading...</div>
         </div>
 
         <!-- Schedule Table: Baseline / Revised / Actual -->
@@ -900,13 +906,14 @@
               <th class="text-right">Var (d)</th>
               <th>% Comp</th>
               <th>Status</th>
+              <th>Milestone</th>
             </tr>
             <tr class="text-[10px] text-stone-500 uppercase">
               <th></th><th></th><th></th><th></th>
               <th>Start</th><th>Finish</th>
               <th>Start</th><th>Finish</th>
               <th>Start</th><th>Finish</th>
-              <th></th><th></th><th></th>
+              <th></th><th></th><th></th><th></th>
             </tr></thead>
             <tbody id="schedTbody">
               <!-- Rows populated by JS for live editing -->
@@ -13309,6 +13316,141 @@ Available Actions:
     return Math.round((parse(d2) - parse(d1)) / 86400000);
   }
 
+  function parseScheduleDate(s) {
+    if (!s || s === 'â€”' || s === '—') return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T00:00:00');
+    const [d,m,y] = String(s).split('-');
+    const mi = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(m);
+    if (mi < 0) return null;
+    return new Date('20' + y, mi, +d);
+  }
+  function scheduleDateISO(s) {
+    const d = parseScheduleDate(s);
+    return d && !isNaN(d) ? d.toISOString().slice(0,10) : '';
+  }
+  function scheduleDaysFromToday(s) {
+    const d = parseScheduleDate(s);
+    if (!d || isNaN(d)) return null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    return Math.round((d - today) / 86400000);
+  }
+  function scheduleMilestoneStatus(t) {
+    if ((+t.pct || 0) >= 100) return 'Completed';
+    const due = scheduleDaysFromToday(t.rf || t.bf);
+    if (due !== null && due < 0) return 'Delayed';
+    if (due !== null && due <= 14) return 'At Risk';
+    if (due !== null && due <= 30) return 'Upcoming';
+    return (+t.pct || 0) > 0 ? 'On Track' : 'Not Started';
+  }
+  function scheduleMilestones(projectId='PRJ-017') {
+    seedBCCData();
+    State.bccMilestones = State.bccMilestones || [];
+    State.bccNextId = State.bccNextId || { milestone:1 };
+    State.bccNextId.milestone = State.bccNextId.milestone || ((State.bccMilestones.length || 0) + 1);
+    return (State.bccMilestones || []).filter(m => m.projectId === projectId && (m.linkedScheduleWbs || m.scheduleActivity));
+  }
+  function scheduleMilestoneForWbs(wbs) {
+    return (State.bccMilestones || []).find(m => m.linkedScheduleWbs === wbs);
+  }
+  function scheduleCreateMilestone(idx, silent=false) {
+    seedBCCData();
+    State.bccMilestones = State.bccMilestones || [];
+    State.bccNextId = State.bccNextId || { milestone:1 };
+    State.bccNextId.milestone = State.bccNextId.milestone || ((State.bccMilestones.length || 0) + 1);
+    const t = ScheduleData[idx];
+    if (!t) return null;
+    const existing = scheduleMilestoneForWbs(t.wbs);
+    const actualFinish = t.af !== 'â€”' && t.af !== '—' ? t.af : '';
+    const status = scheduleMilestoneStatus(t);
+    const delayDays = Math.max(0, daysBetween(t.bf, actualFinish || t.rf) || 0);
+    const payload = {
+      title:t.name,
+      category:/testing|commissioning|handover/i.test(t.name) ? 'Commissioning' : /MEP|facade|façade|glazing/i.test(t.name) ? 'Subcontractor' : 'Physical Progress',
+      projectId:'PRJ-017',
+      location:'Skyline Towers Block A',
+      boqId:'',
+      package:t.wbs,
+      plannedFinish:scheduleDateISO(t.bf),
+      revisedFinish:scheduleDateISO(t.rf),
+      actualFinish:(+t.pct || 0) >= 100 ? scheduleDateISO(actualFinish) : '',
+      plannedPct:100,
+      actualPct:+t.pct || 0,
+      weight:t.wbs.endsWith('.0') ? 8 : 3,
+      importance:t.wbs.endsWith('.0') ? 'Major schedule milestone' : 'Activity milestone',
+      paymentLink:/MEP|facade|façade|glazing/i.test(t.name) ? 'Subcontractor progress/payment checkpoint' : 'Schedule progress checkpoint',
+      delayStatus:status,
+      delayDays,
+      responsible:t.resp,
+      docs:'Generated from Schedule / Gantt activity ' + t.wbs,
+      approval:status === 'Completed' ? 'Completed' : 'Pending',
+      risk:status === 'Delayed' ? 'High' : status === 'At Risk' ? 'Medium' : 'Low',
+      costImpact:0,
+      overheadImpact:status === 'Delayed' ? delayDays * 85000 : 0,
+      ldImpact:status === 'Delayed' && t.wbs === '9.0' ? delayDays * 125000 : 0,
+      billingImpact:0,
+      subPaymentImpact:0,
+      linkedScheduleWbs:t.wbs,
+      scheduleActivity:t.name,
+      sourceModule:'Schedule / Gantt'
+    };
+    if (existing) Object.assign(existing, payload);
+    else State.bccMilestones.unshift({ id:'MS-' + String(State.bccNextId.milestone++).padStart(3,'0'), ...payload });
+    saveState();
+    audit(existing ? 'update' : 'create', 'Schedule milestone · ' + t.wbs, t.name);
+    if (!silent) { toast(existing ? 'Milestone Updated' : 'Milestone Created', t.wbs + ' · ' + t.name, 'ok'); renderScheduleTable(); }
+    return existing || State.bccMilestones[0];
+  }
+  function scheduleGenerateMilestones() {
+    seedBCCData();
+    let count = 0;
+    ScheduleData.forEach((t,i) => {
+      if (t.wbs.endsWith('.0') || (+t.pct || 0) < 100) { scheduleCreateMilestone(i, true); count++; }
+    });
+    saveState();
+    toast('Milestones Set From Schedule', count + ' schedule activities linked for tracking', 'ok');
+    renderScheduleTable();
+  }
+  function renderScheduleMilestoneMarkers() {
+    const wrap = $('#scheduleMilestoneMarkers');
+    if (!wrap) return;
+    const milestones = scheduleMilestones('PRJ-017').slice().sort((a,b) => String(a.revisedFinish || a.plannedFinish).localeCompare(String(b.revisedFinish || b.plannedFinish)));
+    const start = new Date('2024-01-01'), end = new Date('2026-12-31'), span = end - start;
+    const pos = (m) => {
+      const d = new Date((m.revisedFinish || m.plannedFinish || '2026-01-01') + 'T00:00:00');
+      return Math.max(1, Math.min(98, Math.round(((d - start) / span) * 100)));
+    };
+    wrap.innerHTML = `<div class="font-display font-bold text-sm mb-2">Milestone Tracking Strip</div>
+      <div class="relative h-16 bg-stone-50 border border-stone-200 rounded">
+        <div class="absolute left-0 right-0 top-8 border-t border-stone-300"></div>
+        ${milestones.map(m => `<div class="absolute -translate-x-1/2 text-center" style="left:${pos(m)}%;top:12px" title="${esc(m.title)} · ${esc(m.delayStatus)}">
+          <div class="w-3 h-3 mx-auto rounded-full ${m.delayStatus === 'Delayed' ? 'bg-red-700' : m.delayStatus === 'At Risk' ? 'bg-amber-600' : m.delayStatus === 'Completed' ? 'bg-green-700' : 'bg-blue-700'}"></div>
+          <div class="font-mono text-[9px] mt-1 w-20 truncate">${esc(m.linkedScheduleWbs || m.id)}</div>
+        </div>`).join('') || '<div class="text-xs text-stone-500 p-4">No schedule-linked milestones yet. Click Set milestones.</div>'}
+      </div>`;
+  }
+  function renderScheduleMilestonePanel() {
+    const panel = $('#scheduleMilestonePanel');
+    if (!panel) return;
+    const milestones = scheduleMilestones('PRJ-017');
+    const delayed = milestones.filter(m => m.delayStatus === 'Delayed').length;
+    const due = milestones.filter(m => ['At Risk','Upcoming'].includes(m.delayStatus)).length;
+    const complete = milestones.filter(m => m.delayStatus === 'Completed').length;
+    panel.innerHTML = `<div class="flex justify-between items-start mb-4">
+      <div><div class="stamp mb-2"><i data-lucide="flag" class="w-3 h-3"></i>SCHEDULE MILESTONE TRACKER</div><div class="font-display font-bold text-lg">Milestones generated from schedule activities</div><div class="text-xs text-stone-500 mt-1">Track planned, revised and actual finish directly against the Gantt and Budget Control milestone register.</div></div>
+      <div class="flex gap-2"><button class="btn btn-ghost text-xs" onclick="scheduleGenerateMilestones()">Refresh from schedule</button><button class="btn btn-amber text-xs" onclick="navTo('budgetcontrol'); State.bccCurrentTab='milestones'; setTimeout(renderBCCView,40);">Open Budget Milestones</button></div>
+    </div>
+    <div class="grid grid-cols-4 gap-3 mb-4">
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">LINKED</div><div class="font-display font-black text-2xl">${milestones.length}</div></div>
+      <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">COMPLETED</div><div class="font-display font-black text-2xl">${complete}</div></div>
+      <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">UPCOMING / RISK</div><div class="font-display font-black text-2xl">${due}</div></div>
+      <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">DELAYED</div><div class="font-display font-black text-2xl">${delayed}</div></div>
+    </div>
+    <table class="data"><thead><tr><th>WBS</th><th>Milestone</th><th>Planned</th><th>Revised</th><th>Actual</th><th>Status</th><th>Delay</th><th>Impact</th></tr></thead><tbody>
+      ${milestones.map(m => `<tr><td class="font-mono text-xs">${esc(m.linkedScheduleWbs || '')}</td><td><b>${esc(m.title)}</b><div class="text-[10px] text-stone-500">${esc(m.category)} · ${esc(m.responsible)}</div></td><td class="font-mono text-xs">${esc(m.plannedFinish || '')}</td><td class="font-mono text-xs">${esc(m.revisedFinish || '')}</td><td class="font-mono text-xs">${esc(m.actualFinish || 'Pending')}</td><td><span class="badge badge-${milestoneColor(m.delayStatus)}">${esc(m.delayStatus)}</span></td><td class="font-mono">${m.delayDays || 0}</td><td class="text-xs">OH ${fmtINR(m.overheadImpact || 0)} · LD ${fmtINR(m.ldImpact || 0)}</td></tr>`).join('') || '<tr><td colspan="8" class="text-center text-stone-400 py-4">No schedule milestones yet.</td></tr>'}
+    </tbody></table>`;
+    if (window.lucide) lucide.createIcons();
+  }
+
   function renderScheduleTable() {
     const tbody = $('#schedTbody');
     if (!tbody) return;
@@ -13319,6 +13461,7 @@ Available Actions:
       const statusBadge = t.pct === 100 ? '<span class="badge badge-ok">Complete</span>' :
                           t.pct > 0 ? '<span class="badge badge-info">In Progress</span>' :
                           '<span class="badge badge-neutral">Future</span>';
+      const ms = scheduleMilestoneForWbs(t.wbs);
       return `<tr data-sched-idx="${i}">
         <td class="font-mono text-xs">${t.wbs}</td>
         <td class="text-xs">${t.name}</td>
@@ -13333,8 +13476,12 @@ Available Actions:
         <td class="text-right font-mono text-xs ${varColor}"><b>${varStr}</b></td>
         <td><div class="pbar w-12"><div style="width:${t.pct}%; background:${t.pct >= 100 ? '#15803D' : t.pct >= 50 ? '#E8742C' : '#C0383B'}"></div></div><div class="text-xs font-mono">${t.pct}%</div></td>
         <td>${statusBadge}</td>
+        <td><button class="btn btn-ghost text-xs" onclick="scheduleCreateMilestone(${i})"><i data-lucide="flag" class="w-3 h-3"></i>${ms ? 'Update' : 'Set'}</button>${ms ? `<div class="text-[10px] mt-1"><span class="badge badge-${milestoneColor(ms.delayStatus)}">${esc(ms.delayStatus)}</span></div>` : ''}</td>
       </tr>`;
     }).join('');
+    renderScheduleMilestoneMarkers();
+    renderScheduleMilestonePanel();
+    if (window.lucide) lucide.createIcons();
   }
 
   // Edit handler for schedule cells
