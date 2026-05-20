@@ -389,6 +389,16 @@
         <input type="text" id="loginEmail" value="rajesh@buildcore.com.np" placeholder="user@buildcore.com.np" required autofocus>
       </div>
       <div class="ims-field">
+        <label>TRIAL COMPANY</label>
+        <select id="trialCompany">
+          <option value="company-1">Trial Company 1</option>
+          <option value="company-2">Trial Company 2</option>
+          <option value="company-3">Trial Company 3</option>
+          <option value="company-4">Trial Company 4</option>
+          <option value="company-5">Trial Company 5</option>
+        </select>
+      </div>
+      <div class="ims-field">
         <label>PASSWORD</label>
         <input type="password" id="loginPass" value="demo" placeholder="••••••••" required>
       </div>
@@ -3112,7 +3122,20 @@
   }
 
   // ============== PERSISTENCE LAYER ==============
-  const STORAGE_KEY = STARTER_MODE ? 'buildcore.state.starter.v2' : 'buildcore.state.v1';
+  let CURRENT_TRIAL_WORKSPACE = 'company-1';
+  function trialWorkspaceId() {
+    if (!STARTER_MODE) return 'production';
+    const selected = document.getElementById('trialCompany')?.value;
+    return selected || CURRENT_TRIAL_WORKSPACE || 'company-1';
+  }
+  function trialWorkspaceLabel() {
+    if (!STARTER_MODE) return COMPANY?.name || 'BuildCore';
+    const sel = document.getElementById('trialCompany');
+    return sel?.options?.[sel.selectedIndex]?.text || 'Trial Company 1';
+  }
+  function storageKey() {
+    return STARTER_MODE ? 'buildcore.state.trial.' + trialWorkspaceId() + '.v1' : 'buildcore.state.v1';
+  }
   const STORAGE_AVAILABLE = (() => {
     try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }
     catch(e) { return false; }
@@ -3155,14 +3178,14 @@
           activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
           audit: State.audit.slice(0,2000)
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        localStorage.setItem(storageKey(), JSON.stringify(snapshot));
       } catch(e) { try { console.log('[BuildCore] Save failed:', e.message); } catch(_){} }
     }, 400);
   }
   function loadState() {
     if (!STORAGE_AVAILABLE) return false;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey());
       if (!raw) return false;
       const snap = JSON.parse(raw);
       if (snap.v !== 1) return false;
@@ -3176,8 +3199,14 @@
       return true;
     } catch(e) { try { console.log('[BuildCore] Load failed:', e.message); } catch(_){} return false; }
   }
+  function loadStarterTrialWorkspace(workspaceId) {
+    if (!STARTER_MODE) return loadState();
+    CURRENT_TRIAL_WORKSPACE = workspaceId || trialWorkspaceId();
+    applyStarterWorkspace();
+    return loadState();
+  }
   function clearState() {
-    if (STORAGE_AVAILABLE) localStorage.removeItem(STORAGE_KEY);
+    if (STORAGE_AVAILABLE) localStorage.removeItem(storageKey());
   }
   function exportState() {
     const data = JSON.stringify({
@@ -11605,6 +11634,11 @@
   function signInCompany() {
     const profile = Object.assign({}, COMPANY_PROFILE);
     try { if (typeof COMPANY !== 'undefined' && COMPANY.name) profile.name = COMPANY.name; } catch(e){}
+    if (STARTER_MODE) {
+      profile.name = trialWorkspaceLabel();
+      profile.role = 'Trial Workspace Â· create your projects';
+      profile.avatar = String(profile.name || 'T').split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase() || 'TC';
+    }
     State.session = { loggedIn:true, role:'company', user:profile, inProjectMode:false, projectId:null };
     State.activeProject = 'ALL';
     saveState();
@@ -12073,7 +12107,8 @@
 
   // Pull the user's Supabase workspace into State (or seed it on first
   // run), then enter the app via the existing role-based UI flow.
-  async function bcAfterAuth() {
+  async function bcAfterAuth(workspaceId) {
+    if (STARTER_MODE) loadStarterTrialWorkspace(workspaceId);
     if (window.BC && BC.enabled && !STARTER_MODE) {
       try {
         const hadData = await BC.pullInto(State);
@@ -12091,7 +12126,7 @@
     const modeEl = document.getElementById('loginMode');
     const online = !!(window.BC && BC.enabled);
     const useRemoteAuth = online && !STARTER_MODE;
-    if (modeEl && STARTER_MODE) modeEl.textContent = 'Starter workspace - sign in locally with any email and password';
+    if (modeEl && STARTER_MODE) modeEl.textContent = 'Five isolated trial workspaces - choose a company slot, then sign in locally';
     else if (modeEl) modeEl.textContent = online
       ? 'Connected to Supabase · synced across devices'
       : 'Offline mode · data stored locally on this device';
@@ -12113,7 +12148,7 @@
           }
         }
         if (STARTER_MODE) toast('Signed in', 'Starter workspace opened locally', 'ok');
-        bcAfterAuth();
+        bcAfterAuth(trialWorkspaceId());
       });
     }
 
@@ -12121,7 +12156,7 @@
     if (acctBtn) acctBtn.addEventListener('click', async () => {
       const { email, pass } = creds();
       if (!email || !pass) { toast('Create account', 'Enter an email and password first', 'bad'); return; }
-      if (STARTER_MODE) { toast('Account ready', 'Starter workspace opened locally', 'ok'); bcAfterAuth(); return; }
+      if (STARTER_MODE) { toast('Account ready', 'Starter workspace opened locally', 'ok'); bcAfterAuth(trialWorkspaceId()); return; }
       if (!online) { toast('Offline mode', 'Supabase is not configured — sign in works locally', 'info'); bcAfterAuth(); return; }
       try {
         await BC.auth.signUp(email, pass, { full_name: email });
@@ -14526,7 +14561,7 @@ Available Actions:
   });
 
   // -------- INITIAL SEED & RENDERS --------
-  const _hadStored = loadState();
+  const _hadStored = STARTER_MODE ? false : loadState();
   if (STARTER_MODE && !_hadStored) applyStarterWorkspace();
   ensureHydropowerProjects();
   const now = new Date();
