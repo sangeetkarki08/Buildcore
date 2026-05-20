@@ -447,14 +447,9 @@
       <div class="font-mono text-[10px] text-white/40 tracking-wider mb-1">ACTIVE PROJECT</div>
       <div class="flex items-center gap-2">
         <span class="dot bg-orange-500"></span>
-        <select id="active-project" class="bg-transparent text-white text-sm font-semibold border-none outline-none w-full cursor-pointer">
-          <option>Skyline Towers · Block A</option>
-          <option>Pokhara Resort Phase II</option>
-          <option>Ring Road Underpass</option>
-          <option>NIC Asia HQ Renovation</option>
-        </select>
+        <select id="active-project" class="bg-transparent text-white text-sm font-semibold border-none outline-none w-full cursor-pointer"></select>
       </div>
-      <div class="font-mono text-[10px] text-white/40 mt-1">PRJ-2024-017 · LALITPUR</div>
+      <div class="font-mono text-[10px] text-white/40 mt-1" id="activeProjectMeta">PORTFOLIO · ALL PROJECTS</div>
     </div>
 
     <!-- Nav -->
@@ -542,15 +537,7 @@
           <div class="flex items-center gap-2 px-3 py-1 border border-stone-200 bg-stone-50">
             <i data-lucide="folder" class="w-3.5 h-3.5 text-orange-600"></i>
             <span class="font-mono text-[10px] text-stone-500">ACTIVE PROJECT</span>
-            <select id="activeProjectSelect" class="bg-transparent outline-none text-xs font-semibold">
-              <option value="PRJ-017">PRJ-017 · Skyline Towers (Block A)</option>
-              <option value="PRJ-021">PRJ-021 · Ring Road Underpass</option>
-              <option value="PRJ-019">PRJ-019 · Pokhara Lakeside Resort</option>
-              <option value="PRJ-024">PRJ-024 · NIC Asia Corporate HQ</option>
-              <option value="PRJ-013">PRJ-013 · KMC School Balaju</option>
-              <option value="PRJ-030">PRJ-030 · Mewa Khola Hydropower</option>
-              <option value="ALL">— All Projects (Portfolio) —</option>
-            </select>
+            <select id="activeProjectSelect" class="bg-transparent outline-none text-xs font-semibold"></select>
           </div>
           <span class="badge badge-amber" id="notificationBadge">0 alerts</span>
           <button class="btn btn-ghost" onclick="navTo('settings')"><i data-lucide="zap" class="w-3.5 h-3.5"></i>Automations</button>
@@ -726,7 +713,7 @@
         <div class="flex items-end justify-between mb-6">
           <div>
             <div class="stamp mb-3"><i data-lucide="calendar-range" class="w-3 h-3"></i>MASTER PROGRAMME</div>
-            <h1 class="font-display font-black text-3xl title-mark">Schedule · Skyline Towers Block A</h1>
+            <h1 class="font-display font-black text-3xl title-mark" id="scheduleProjectTitle">Schedule · Active Project</h1>
             <p class="text-sm text-stone-500 mt-3">Last baseline: 01 Jan 2024 · Last update: today · CPM enabled</p>
           </div>
           <div class="flex gap-2">
@@ -10687,6 +10674,60 @@
     });
   }
 
+  function activeProjectId() {
+    return State.session?.inProjectMode && State.session?.projectId ? State.session.projectId : (State.activeProject || 'ALL');
+  }
+
+  function activeProjectRecord(id = activeProjectId()) {
+    if (!id || id === 'ALL') return null;
+    return projectPortfolio().find(p => p.id === id) || (State.projects || []).find(p => p.id === id) || null;
+  }
+
+  function projectOptionLabel(p) {
+    return `${p.id} · ${p.name}`;
+  }
+
+  function syncActiveProjectUI() {
+    const portfolio = projectPortfolio();
+    const current = activeProjectId();
+    const topbar = $('#activeProjectSelect');
+    const sidebar = $('#active-project');
+    const topbarOptions = [`<option value="ALL">All Projects · Portfolio</option>`]
+      .concat(portfolio.map(p => `<option value="${p.id}">${projectOptionLabel(p)}</option>`))
+      .join('');
+    const sidebarOptions = portfolio.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    if (topbar) {
+      topbar.innerHTML = topbarOptions;
+      topbar.value = current && portfolio.some(p => p.id === current) ? current : 'ALL';
+    }
+    if (sidebar) {
+      sidebar.innerHTML = sidebarOptions;
+      sidebar.value = current && current !== 'ALL' && portfolio.some(p => p.id === current) ? current : (portfolio[0]?.id || '');
+      sidebar.disabled = current === 'ALL';
+    }
+    const p = activeProjectRecord(current);
+    const meta = $('#activeProjectMeta');
+    if (meta) meta.textContent = p ? `${p.id} · ${p.location || p.loc || ''}` : 'PORTFOLIO · ALL PROJECTS';
+    const scheduleTitle = $('#scheduleProjectTitle');
+    if (scheduleTitle) scheduleTitle.textContent = p ? `Schedule · ${p.name}` : 'Schedule · Portfolio';
+  }
+
+  function applyActiveProjectSelection(projectId) {
+    if (State.session?.inProjectMode && State.session?.projectId && projectId !== State.session.projectId) {
+      syncActiveProjectUI();
+      toast('Project Locked', 'Exit to Portfolio to choose another project.', 'info');
+      return;
+    }
+    State.activeProject = projectId || 'ALL';
+    saveState();
+    syncActiveProjectUI();
+    toast('Active Project Changed', State.activeProject === 'ALL' ? 'Viewing portfolio rollup' : 'Switched to ' + State.activeProject + ' · views will filter accordingly', 'info');
+    audit('update', 'Active Project', State.activeProject);
+    renderNotificationCenter();
+    renderProjectBanner();
+    if (State.currentView === 'dashboard') renderLauncher();
+  }
+
   function statusColor(s) {
     return ({ 'On Track':'#15803D', 'At Risk':'#B45309', 'Delayed':'#C0383B', 'On Hold':'#6B7280', 'Completed':'#1E3A4C' })[s] || '#6B7280';
   }
@@ -11353,8 +11394,7 @@
     document.querySelectorAll('[data-portfolio-id]').forEach(card => {
       card.onclick = () => {
         State.activeProject = card.dataset.portfolioId;
-        const sel = $('#activeProjectSelect');
-        if (sel) sel.value = card.dataset.portfolioId;
+        syncActiveProjectUI();
         navTo('projects');
         toast('Project Selected', card.dataset.portfolioId + ' is now the active project · all views will filter to this', 'info');
       };
@@ -11404,8 +11444,7 @@
     document.getElementById('portfolioScreen').style.display = 'block';
     document.getElementById('appShell').style.display = 'none';
     document.getElementById('projectBanner').style.display = 'none';
-    const sel = $('#activeProjectSelect');
-    if (sel) sel.value = State.activeProject || 'ALL';
+    syncActiveProjectUI();
     filterSidebarByRole();
     renderPortfolioScreen();
     renderNotificationCenter();
@@ -11509,8 +11548,7 @@
     audit('view','Project entered', projectId + ' by ' + perm.role);
     document.getElementById('portfolioScreen').style.display = 'none';
     document.getElementById('appShell').style.display = 'flex';
-    const sel = $('#activeProjectSelect');
-    if (sel) sel.value = projectId;
+    syncActiveProjectUI();
     renderProjectBanner();
     filterSidebarByRole();
     navTo(State.session.role === 'client' ? 'clientportal' : 'dashboard');
@@ -11528,6 +11566,7 @@
     document.getElementById('appShell').style.display = 'none';
     document.getElementById('portfolioScreen').style.display = 'block';
     document.getElementById('projectBanner').style.display = 'none';
+    syncActiveProjectUI();
     renderPortfolioScreen();
   }
   window.exitToPortfolio = exitToPortfolio;
@@ -11809,6 +11848,7 @@
     saveState();
     document.getElementById('portfolioScreen').style.display = 'none';
     document.getElementById('appShell').style.display = 'flex';
+    syncActiveProjectUI();
     document.getElementById('projectBanner').style.display = 'flex';
     document.getElementById('projectBanner').innerHTML = `
       <button class="pb-back" onclick="exitToPortfolio()"><i data-lucide="arrow-left" class="w-3 h-3"></i>Exit to Portfolio</button>
@@ -14298,6 +14338,7 @@ Available Actions:
   renderAuditTable();
   renderScheduleTable();
   attachScheduleEditing();
+  syncActiveProjectUI();
   // Initial launcher render (dashboard is the default active view)
   renderLauncher();
   renderNotificationCenter();
@@ -14310,12 +14351,14 @@ Available Actions:
     projSelect.addEventListener('change', () => {
       if (State.session?.inProjectMode && State.session?.projectId) {
         projSelect.value = State.session.projectId;
+        syncActiveProjectUI();
         toast('Project Locked', 'Exit to Portfolio to choose another project.', 'info');
         return;
       }
       const v = projSelect.value;
       State.activeProject = v;
       saveState();
+      syncActiveProjectUI();
       toast('Active Project Changed', v === 'ALL' ? 'Viewing portfolio rollup' : 'Switched to ' + v + ' · views will filter accordingly', 'info');
       audit('update', 'Active Project', v);
       renderNotificationCenter();
@@ -14323,6 +14366,11 @@ Available Actions:
     });
     // Restore from state if present
     if (State.activeProject) projSelect.value = State.activeProject;
+  }
+
+  const sideProjSelect = $('#active-project');
+  if (sideProjSelect) {
+    sideProjSelect.addEventListener('change', () => applyActiveProjectSelection(sideProjSelect.value));
   }
 
   // Wire audit filter inputs (live filter)
