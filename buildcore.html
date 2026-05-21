@@ -2887,6 +2887,38 @@
     'company-4': { username:'trial4', password:'BuildCore@404', label:'Trial Company 4' },
     'company-5': { username:'trial5', password:'BuildCore@505', label:'Trial Company 5' }
   };
+  const PROJECT_TYPE_OPTIONS = [
+    'High-rise Residential',
+    'Low-rise Residential',
+    'Commercial Building',
+    'Institutional Building',
+    'Education / School',
+    'Healthcare / Hospital',
+    'Hospitality / Resort',
+    'Industrial / Plant',
+    'Road / Highway',
+    'Bridge / Flyover',
+    'Tunnel / Underpass',
+    'Airport / Airfield',
+    'Railway / Metro',
+    'Dry Port / Logistics Hub',
+    'Port / Marine Works',
+    'Hydropower',
+    'Dam / Reservoir',
+    'Irrigation / Canal',
+    'Water Supply',
+    'Sewerage / Drainage',
+    'River Training / Flood Control',
+    'Pipeline / Pumping Station',
+    'Transmission Line / Substation',
+    'Solar / Wind Power',
+    'Telecom / Utility Network',
+    'Ropeway / Cable Car',
+    'Solid Waste / Landfill',
+    'Sports / Stadium',
+    'Urban Infrastructure',
+    'Mixed-use Development'
+  ];
   const SAMPLE_PROJECT = {
     id:'PRJ-001',
     name:'Sample Starter Project',
@@ -11994,7 +12026,7 @@
         </div>
         <div class="flex gap-2">
           <button class="btn btn-ghost" onclick="renderPortfolioScreen()"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>Refresh</button>
-          ${perm.modules === 'ALL' || (Array.isArray(perm.modules) && perm.modules.includes('projects')) ? `<button class="btn btn-amber" onclick="alert('New Project workflow · would open project creation form'); "><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Project</button>` : ''}
+          ${perm.modules === 'ALL' || (Array.isArray(perm.modules) && perm.modules.includes('projects')) ? `<button class="btn btn-amber" onclick="actNewProject()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Project</button>` : ''}
         </div>
       </div>
 
@@ -13084,6 +13116,11 @@ Available Actions:
   }
 
   // -------- ACTION HANDLERS --------
+  function projectTypeOptionsHTML(selected='') {
+    return PROJECT_TYPE_OPTIONS.map(t => `<option value="${esc(t)}" ${selected===t?'selected':''}>${esc(t)}</option>`).join('')
+      + `<option value="__custom__">Custom project type...</option>`;
+  }
+
   function actNewProject() {
     openModal({
       title: 'New Project · Setup Wizard',
@@ -13092,18 +13129,46 @@ Available Actions:
           <div class="form-row"><label>Project Name</label><input name="name" placeholder="e.g. Kalanki Underpass"></div>
           <div class="form-row"><label>Project Code</label><input name="code" value="${uid('PRJ')}"></div>
           <div class="form-row"><label>Client</label><input name="client" placeholder="Client / Employer name"></div>
-          <div class="form-row"><label>Type</label><select name="type"><option>High-rise Residential</option><option>Commercial</option><option>Infrastructure</option><option>Industrial</option><option>Institutional</option></select></div>
+          <div class="form-row"><label>Type</label><select name="typePreset" onchange="document.getElementById('newProjectCustomTypeWrap').style.display=this.value==='__custom__'?'block':'none'">${projectTypeOptionsHTML()}</select></div>
+          <div class="form-row" id="newProjectCustomTypeWrap" style="display:none"><label>Custom Type</label><input name="typeCustom" placeholder="e.g. Data center, dry port, stadium"></div>
           <div class="form-row"><label>Location</label><input name="loc" placeholder="Lalitpur"></div>
           <div class="form-row"><label>Contract Value (NPR)</label><input name="value" type="number" placeholder="500000000"></div>
           <div class="form-row"><label>Start Date</label><input name="start" type="date"></div>
           <div class="form-row"><label>End Date</label><input name="end" type="date"></div>
         </div>
-        <div class="form-row"><label>Scope / Description</label><textarea name="desc" placeholder="G+12 luxury residential with basement parking"></textarea></div>
+        <div class="form-row"><label>Scope / Description</label><textarea name="desc" placeholder="Main scope, major structures, packages, or chainage"></textarea></div>
       `,
       submitLabel: 'Create Project',
       onSubmit: (d) => {
+        const code = (d.code || uid('PRJ')).trim();
+        const type = d.typePreset === '__custom__' ? (d.typeCustom || '').trim() : (d.typePreset || '').trim();
         if (!d.name) { toast('Validation', 'Project name is required', 'bad'); return false; }
-        const p = { id:d.code, name:d.name, client:d.client, loc:d.loc, value:+d.value||0, progress:0, margin:0, end:d.end||'TBD', status:'ok', team:0, issues:0 };
+        if (!type) { toast('Validation', 'Choose a project type or enter a custom type', 'bad'); return false; }
+        if ((State.projects || []).some(p => String(p.id).toLowerCase() === code.toLowerCase())) { toast('Validation', 'Project code already exists', 'bad'); return false; }
+        const p = {
+          id:code,
+          name:d.name.trim(),
+          client:(d.client || '').trim(),
+          type,
+          loc:(d.loc || '').trim(),
+          location:(d.loc || '').trim(),
+          value:+d.value || 0,
+          contract:(+d.value || 0) / 10000000,
+          progress:0,
+          pctComplete:0,
+          margin:0,
+          startDate:d.start || '',
+          endDate:d.end || '',
+          end:d.end || 'TBD',
+          status:'ok',
+          risk:'low',
+          team:0,
+          manpower:0,
+          equipment:0,
+          issues:0,
+          alerts:0,
+          desc:(d.desc || '').trim()
+        };
         State.projects.unshift(p);
         State.activeProject = p.id;
         syncActiveProjectUI();
@@ -13111,7 +13176,7 @@ Available Actions:
         insertNewProjectCard(p);
         renderPortfolioScreen?.();
         renderLauncher?.();
-        toast('Project Created', d.name + ' added to register · ' + d.code, 'ok');
+        toast('Project Created', p.name + ' added to register - ' + p.id, 'ok');
         setTimeout(() => enterProject(p.id), 150);
       }
     });
