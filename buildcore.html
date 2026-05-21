@@ -532,7 +532,7 @@
       <i data-lucide="log-out" class="w-4 h-4 text-white/40 cursor-pointer hover:text-white"></i>
     </div>
   </aside>
-  <div class="sidebar-backdrop" onclick="document.querySelector('aside.sidebar').classList.remove('sidebar-open')"></div>
+  <div class="sidebar-backdrop"></div>
 
   <!-- ===== MAIN ===== -->
   <main class="flex-1 min-w-0">
@@ -12524,7 +12524,6 @@
     $('#modalRoot').classList.remove('show');
     modalSubmitHandler = null;
   }
-  $('#modalBackdrop').addEventListener('click', closeModal);
   $('#modalClose').addEventListener('click', closeModal);
   $('#modalCancel').addEventListener('click', closeModal);
   $('#modalSubmit').addEventListener('click', () => {
@@ -12548,7 +12547,6 @@
     $('#drawerBackdrop').classList.remove('show');
     $('#drawerRoot').classList.remove('show');
   }
-  $('#drawerBackdrop').addEventListener('click', closeDrawer);
   $('#drawerClose').addEventListener('click', closeDrawer);
 
   // -------- DOCUMENT CONTROL --------
@@ -13110,8 +13108,6 @@ Available Actions:
     const idx = parseInt(item.dataset.palIdx);
     window._palFiltered?.[idx]?.action(); closePalette();
   });
-  $('#paletteBackdrop').addEventListener('click', closePalette);
-
   // -------- HEADER SEARCH BAR --------
   const searchBar = $('header input[type="text"]');
   if (searchBar) {
