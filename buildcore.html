@@ -3191,47 +3191,63 @@
     catch(e) { return false; }
   })();
   let _saveTimer = null;
+  function stateSnapshot() {
+    return {
+      v: 1,
+      savedAt: new Date().toISOString(),
+      activeProject: State.activeProject,
+      currentView: State.currentView,
+      session: State.session,
+      projects: State.projects, tenders: State.tenders, materials: State.materials,
+      items: State.items, stockMovements: State.stockMovements, toolIssues: State.toolIssues,
+      sites: State.sites, imsCurrentTab: State.imsCurrentTab, imsNextId: State.imsNextId,
+      ncrs: State.ncrs, raBills: State.raBills, pos: State.pos, vendors: State.vendors, automations: State.automations,
+      dprs: State.dprs, dprTemplates: State.dprTemplates, dprNextTemplateId: State.dprNextTemplateId,
+      labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
+      labNextId: State.labNextId, labTestNextId: State.labTestNextId, clientSubmissionNextId: State.clientSubmissionNextId,
+      documents: State.documents, docCurrentTab: State.docCurrentTab,
+      aiDocSourceMode: State.aiDocSourceMode, aiDocSelectedProject: State.aiDocSelectedProject,
+      aiDocSelectedDocs: State.aiDocSelectedDocs, aiDocCategoryFilter: State.aiDocCategoryFilter,
+      aiDocStatusFilter: State.aiDocStatusFilter, aiDocQuestion: State.aiDocQuestion,
+      aiDocCurrentAnswer: State.aiDocCurrentAnswer, aiDocAnswerHistory: State.aiDocAnswerHistory,
+      assets: State.assets, assetCategories: State.assetCategories, assetLocations: State.assetLocations,
+      assetAllocations: State.assetAllocations, assetTransfers: State.assetTransfers,
+      assetMaintenance: State.assetMaintenance, assetBreakdowns: State.assetBreakdowns,
+      assetFuelLogs: State.assetFuelLogs, assetInspections: State.assetInspections,
+      assetDocuments: State.assetDocuments, assetDisposals: State.assetDisposals,
+      assetNotifications: State.assetNotifications, assetCurrentTab: State.assetCurrentTab,
+      assetSelectedId: State.assetSelectedId, assetNextId: State.assetNextId,
+      bccBoq: State.bccBoq, bccResources: State.bccResources, bccRecipes: State.bccRecipes,
+      bccActuals: State.bccActuals, bccPackages: State.bccPackages, bccContracts: State.bccContracts,
+      bccOverheads: State.bccOverheads, bccMilestones: State.bccMilestones, bccApprovals: State.bccApprovals,
+      bccCurrentTab: State.bccCurrentTab, bccNextId: State.bccNextId,
+      vos: State.vos, risks: State.risks, photos: State.photos,
+      activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
+      audit: State.audit.slice(0,2000)
+    };
+  }
+  function persistStateNow() {
+    if (!STORAGE_AVAILABLE) return false;
+    try {
+      localStorage.setItem(storageKey(), JSON.stringify(stateSnapshot()));
+      return true;
+    } catch(e) { try { console.log('[BuildCore] Save failed:', e.message); } catch(_){} return false; }
+  }
+  function flushSaveState() {
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+    return persistStateNow();
+  }
   function saveState() {
     // Push to Supabase (debounced internally) — no-op in offline mode
     try { if (window.BC && BC.enabled && !STARTER_MODE) BC.push(State); } catch(e){}
     if (!STORAGE_AVAILABLE) return;
     if (_saveTimer) clearTimeout(_saveTimer);
     _saveTimer = setTimeout(() => {
-      try {
-        const snapshot = {
-          v: 1,
-          savedAt: new Date().toISOString(),
-          projects: State.projects, tenders: State.tenders, materials: State.materials,
-          items: State.items, stockMovements: State.stockMovements, toolIssues: State.toolIssues,
-          sites: State.sites, imsCurrentTab: State.imsCurrentTab, imsNextId: State.imsNextId,
-          ncrs: State.ncrs, raBills: State.raBills, pos: State.pos, vendors: State.vendors, automations: State.automations,
-          dprs: State.dprs, dprTemplates: State.dprTemplates, dprNextTemplateId: State.dprNextTemplateId,
-          labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
-          labNextId: State.labNextId, labTestNextId: State.labTestNextId, clientSubmissionNextId: State.clientSubmissionNextId,
-          documents: State.documents, docCurrentTab: State.docCurrentTab,
-          aiDocSourceMode: State.aiDocSourceMode, aiDocSelectedProject: State.aiDocSelectedProject,
-          aiDocSelectedDocs: State.aiDocSelectedDocs, aiDocCategoryFilter: State.aiDocCategoryFilter,
-          aiDocStatusFilter: State.aiDocStatusFilter, aiDocQuestion: State.aiDocQuestion,
-          aiDocCurrentAnswer: State.aiDocCurrentAnswer, aiDocAnswerHistory: State.aiDocAnswerHistory,
-          assets: State.assets, assetCategories: State.assetCategories, assetLocations: State.assetLocations,
-          assetAllocations: State.assetAllocations, assetTransfers: State.assetTransfers,
-          assetMaintenance: State.assetMaintenance, assetBreakdowns: State.assetBreakdowns,
-          assetFuelLogs: State.assetFuelLogs, assetInspections: State.assetInspections,
-          assetDocuments: State.assetDocuments, assetDisposals: State.assetDisposals,
-          assetNotifications: State.assetNotifications, assetCurrentTab: State.assetCurrentTab,
-          assetSelectedId: State.assetSelectedId, assetNextId: State.assetNextId,
-          bccBoq: State.bccBoq, bccResources: State.bccResources, bccRecipes: State.bccRecipes,
-          bccActuals: State.bccActuals, bccPackages: State.bccPackages, bccContracts: State.bccContracts,
-          bccOverheads: State.bccOverheads, bccMilestones: State.bccMilestones, bccApprovals: State.bccApprovals,
-          bccCurrentTab: State.bccCurrentTab, bccNextId: State.bccNextId,
-          vos: State.vos, risks: State.risks, photos: State.photos,
-          activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
-          audit: State.audit.slice(0,2000)
-        };
-        localStorage.setItem(storageKey(), JSON.stringify(snapshot));
-      } catch(e) { try { console.log('[BuildCore] Save failed:', e.message); } catch(_){} }
+      _saveTimer = null;
+      persistStateNow();
     }, 400);
   }
+  window.addEventListener('beforeunload', flushSaveState);
   function loadState() {
     if (!STORAGE_AVAILABLE) return false;
     try {
@@ -3242,7 +3258,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['projects','tenders','materials','items','stockMovements','toolIssues','sites','imsCurrentTab','imsNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','toolIssues','sites','imsCurrentTab','imsNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -11844,6 +11860,7 @@
       State.session.user = Object.assign({}, COMPANY_PROFILE);
     }
     saveState();
+    flushSaveState();
     audit('view','Exited project','Returned to portfolio');
     document.getElementById('appShell').style.display = 'none';
     document.getElementById('portfolioScreen').style.display = 'block';
@@ -13180,6 +13197,7 @@ Available Actions:
         State.activeProject = p.id;
         syncActiveProjectUI();
         saveState();
+        flushSaveState();
         insertNewProjectCard(p);
         renderPortfolioScreen?.();
         renderLauncher?.();
