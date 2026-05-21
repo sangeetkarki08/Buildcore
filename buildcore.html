@@ -128,12 +128,16 @@
   .dash-workflow-step { border:1px solid var(--line); border-radius:5px; padding:12px; min-height:92px; cursor:pointer; }
   .dash-workflow-step:hover { border-color:var(--amber); background:#FFFBF5; }
   .dash-tile-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
-  .project-select-hero { background:#102F3E; color:#fff; border-radius:8px; overflow:hidden; position:relative; border:1px solid rgba(255,255,255,.08); }
-  .project-select-hero::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size:30px 30px; pointer-events:none; }
+  .project-select-hero { background:#102F3E url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1800&q=80') center/cover no-repeat; color:#fff; border-radius:8px; overflow:hidden; position:relative; border:1px solid rgba(255,255,255,.08); min-height:315px; box-shadow:0 18px 48px rgba(16,47,62,.18); }
+  .project-select-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg, rgba(12,31,42,.94) 0%, rgba(12,31,42,.82) 45%, rgba(12,31,42,.38) 100%); pointer-events:none; }
+  .project-select-hero::after { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size:32px 32px; pointer-events:none; }
   .project-select-hero > * { position:relative; z-index:1; }
   .project-select-hero .grid-cols-12 { grid-template-columns:repeat(12,minmax(0,1fr)); }
   .project-select-hero .col-span-8 { grid-column:span 8 / span 8; min-width:0; }
   .project-select-hero .col-span-4 { grid-column:span 4 / span 4; min-width:0; }
+  .project-select-hero h1 { max-width:720px; text-wrap:balance; letter-spacing:0; }
+  .project-select-copy { max-width:650px; color:rgba(255,255,255,.78); line-height:1.7; }
+  .project-select-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
   .project-name-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
   .project-name-card { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; cursor:pointer; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
   .project-name-card:hover { transform:translateY(-2px); border-color:var(--amber); box-shadow:0 14px 30px rgba(15,15,14,.1); }
@@ -160,6 +164,9 @@
   }
   @media (max-width: 760px) {
     .dash-kpi-grid, .dash-tile-grid, .dash-workflow, .project-name-grid, .project-health-grid, .project-module-grid { grid-template-columns:1fr; }
+    .project-select-hero { min-height:0; }
+    .project-select-hero h1 { font-size:32px; line-height:1.08; }
+    .project-select-stats { grid-template-columns:1fr; }
     .dash-project-row { grid-template-columns:1fr; }
   }
 
@@ -11908,20 +11915,20 @@
       <div class="project-select-hero mb-5">
         <div class="p-6 grid grid-cols-12 gap-5 items-center">
           <div class="col-span-8">
-            <div class="stamp mb-3" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>STARTER DASHBOARD</div>
-            <h1 class="font-display font-black text-4xl leading-tight">Start With A Clean Workspace</h1>
-            <p class="text-sm mt-3" style="color:rgba(255,255,255,.72)">Create your first real project, or open the sample to explore the modules. The sample stays out of portfolio totals and real project registers.</p>
+            <div class="stamp mb-3" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><i data-lucide="hard-hat" class="w-3 h-3"></i>INFRASTRUCTURE PROJECT CONTROL</div>
+            <h1 class="font-display font-black text-4xl leading-tight">${accessibleProjects.length ? 'Manage Your Live Construction Portfolio' : 'Create Your First Infrastructure Project'}</h1>
+            <p class="text-sm mt-3 project-select-copy">${accessibleProjects.length ? 'Track project value, billing, site progress, risk and approvals from one contractor workspace. Enter a project to manage DPR, BOQ, procurement, QA/QC, documents and execution records.' : 'Set up a real project for roads, bridges, hydropower, buildings or utilities. The sample project is only for preview and stays separate from live project totals.'}</p>
           </div>
-          <div class="col-span-4 grid grid-cols-2 gap-3">
+          <div class="col-span-4 project-select-stats">
             <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff;padding:14px">
               <div class="font-mono text-[10px] opacity-60">PROJECTS</div>
               <div class="font-display font-black text-3xl">${accessibleProjects.length}</div>
-              <div class="text-[10px] opacity-60">${accessibleProjects.length ? 'ready to open' : 'none yet'}</div>
+              <div class="text-[10px] opacity-60">${accessibleProjects.length ? 'live workspace ready' : 'create your first'}</div>
             </div>
             <div class="card" style="background:rgba(232,116,44,.18);border-color:rgba(232,116,44,.34);color:#fff;padding:14px">
               <div class="font-mono text-[10px] opacity-70">NEXT STEP</div>
-              <div class="font-display font-black text-3xl">${accessibleProjects.length ? 'OPEN' : 'NEW'}</div>
-              <div class="text-[10px] opacity-70">${accessibleProjects.length ? 'enter a project' : 'create project'}</div>
+              <div class="font-display font-black text-3xl">${accessibleProjects.length ? 'OPEN' : 'START'}</div>
+              <div class="text-[10px] opacity-70">${accessibleProjects.length ? 'enter project control' : 'register project'}</div>
             </div>
           </div>
         </div>
