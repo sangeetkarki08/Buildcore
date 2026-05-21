@@ -137,47 +137,6 @@
   .project-card-top { height:6px; background:var(--amber); }
   .project-enter-btn { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 14px; background:#FAF8F0; border-top:1px solid var(--line); color:var(--steel); font-size:12px; font-weight:800; }
   .project-enter-btn span { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
-  .portfolio-shell { max-width:1180px; margin:0 auto; padding:0 0 32px; }
-  .portfolio-hero { background:#102F3E; color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; position:relative; box-shadow:0 18px 45px rgba(16,47,62,.16); }
-  .portfolio-hero::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px); background-size:32px 32px; pointer-events:none; }
-  .portfolio-hero::after { content:''; position:absolute; right:-12%; top:-35%; width:520px; height:520px; background:radial-gradient(circle, rgba(232,116,44,.22), rgba(232,116,44,0) 62%); pointer-events:none; }
-  .portfolio-hero-inner { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1.35fr) minmax(360px,.65fr); gap:28px; align-items:stretch; padding:32px; }
-  .portfolio-eyebrow { display:inline-flex; align-items:center; gap:8px; padding:6px 9px; border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.08); border-radius:4px; font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#EDE9DD; }
-  .portfolio-hero h1 { max-width:680px; margin-top:18px; font-family:var(--font-display); font-size:44px; line-height:1.02; font-weight:900; letter-spacing:0; }
-  .portfolio-hero-copy { max-width:620px; margin-top:14px; color:rgba(255,255,255,.75); font-size:14px; line-height:1.7; }
-  .portfolio-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; }
-  .portfolio-hero-panel { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-content:start; }
-  .portfolio-hero-stat { min-height:118px; padding:16px; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.08); border-radius:6px; }
-  .portfolio-hero-stat.accent { background:rgba(232,116,44,.2); border-color:rgba(232,116,44,.42); }
-  .portfolio-hero-stat .label, .portfolio-kpi .label { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.62); }
-  .portfolio-hero-stat .value { margin-top:10px; font-family:var(--font-display); font-size:34px; line-height:1; font-weight:900; }
-  .portfolio-hero-stat .sub { margin-top:8px; font-size:11px; color:rgba(255,255,255,.66); }
-  .portfolio-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:16px 0 18px; }
-  .portfolio-kpi { background:#fff; border:1px solid var(--line); border-radius:6px; padding:16px; min-height:112px; border-left:3px solid var(--steel); }
-  .portfolio-kpi .label { color:var(--muted); }
-  .portfolio-kpi .value { margin-top:10px; font-family:var(--font-display); font-size:27px; line-height:1; font-weight:900; font-variant-numeric:tabular-nums; }
-  .portfolio-kpi .sub { margin-top:9px; font-size:12px; color:var(--muted); }
-  .portfolio-section-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:20px 0 12px; }
-  .portfolio-title { font-family:var(--font-display); font-size:26px; line-height:1; font-weight:900; }
-  .portfolio-title::after { content:''; display:block; width:48px; height:3px; background:var(--amber); margin-top:10px; }
-  .portfolio-subtitle { margin-top:10px; font-size:12px; color:var(--muted); }
-  .portfolio-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
-  .portfolio-card { background:#fff; border:1px solid var(--line); border-radius:7px; overflow:hidden; cursor:pointer; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-  .portfolio-card:hover { transform:translateY(-2px); border-color:var(--amber); box-shadow:0 14px 30px rgba(15,15,14,.1); }
-  .portfolio-card-strip { height:5px; background:var(--amber); }
-  .portfolio-card-body { padding:16px; }
-  .portfolio-card-meta { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
-  .portfolio-card-code { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
-  .portfolio-card-title { font-family:var(--font-display); font-size:19px; line-height:1.2; font-weight:900; }
-  .portfolio-card-client { margin-top:7px; font-size:12px; color:var(--muted); }
-  .portfolio-card-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px; padding-top:13px; border-top:1px solid var(--line); }
-  .portfolio-card-stats span { display:block; font-family:var(--font-mono); font-size:9px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
-  .portfolio-card-stats b { display:block; margin-top:3px; font-family:var(--font-mono); font-size:12px; color:var(--ink); }
-  .portfolio-empty { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:16px; background:#fff; border:1px dashed #CFC8B8; border-radius:7px; padding:20px; }
-  .portfolio-empty h3 { font-family:var(--font-display); font-size:22px; font-weight:900; }
-  .portfolio-empty p { margin-top:8px; color:var(--muted); font-size:13px; line-height:1.65; }
-  .portfolio-empty-steps { display:grid; gap:8px; }
-  .portfolio-empty-step { border:1px solid var(--line); background:#FBFAF4; border-radius:5px; padding:10px; font-size:12px; }
   .project-dash-hero { background:#102F3E; color:#fff; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.1); position:relative; }
   .project-dash-hero::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size:28px 28px; pointer-events:none; }
   .project-dash-hero > * { position:relative; z-index:1; }
@@ -194,15 +153,9 @@
     .dash-main-grid { grid-template-columns:1fr; }
     .project-focus-grid { grid-template-columns:1fr; }
     .dash-project-row { grid-template-columns:1fr 1fr 1fr; }
-    .portfolio-hero-inner { grid-template-columns:1fr; }
-    .portfolio-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   }
   @media (max-width: 760px) {
     .dash-kpi-grid, .dash-tile-grid, .dash-workflow, .project-name-grid, .project-health-grid, .project-module-grid { grid-template-columns:1fr; }
-    .portfolio-hero-inner { padding:22px; }
-    .portfolio-hero h1 { font-size:34px; }
-    .portfolio-hero-panel, .portfolio-kpis, .portfolio-grid, .portfolio-empty { grid-template-columns:1fr; }
-    .portfolio-section-head { align-items:flex-start; flex-direction:column; }
     .dash-project-row { grid-template-columns:1fr; }
   }
 
@@ -11948,99 +11901,64 @@
     const accessMargin = accessContractTotal ? ((accessContractTotal - accessEACTotal) / accessContractTotal * 100) : 0;
 
     document.getElementById('portfolioContent').innerHTML = `
-      <div class="portfolio-shell">
-        <div class="portfolio-hero">
-          <div class="portfolio-hero-inner">
-            <div>
-              <div class="portfolio-eyebrow"><i data-lucide="building-2" class="w-3 h-3"></i>Contractor Operations Workspace</div>
-              <h1>${accessibleProjects.length ? 'Project Portfolio Control Center' : 'Set Up Your First Live Project'}</h1>
-              <p class="portfolio-hero-copy">${accessibleProjects.length ? 'Monitor contract value, billing progress, margin exposure, and risk across live projects. Enter a project to manage DPR, BOQ, procurement, QA/QC, billing, documents, and site execution records.' : 'Create a real project workspace with project type, contract value, dates, location, and scope. The sample remains available for exploration, but it stays out of live portfolio totals.'}</p>
-              <div class="portfolio-actions">
-                <button class="btn btn-amber" onclick="actNewProject()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Project</button>
-                <button class="btn btn-ghost" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff" onclick="enterProject('${SAMPLE_PROJECT.id}')"><i data-lucide="play-circle" class="w-3.5 h-3.5"></i>Open Sample</button>
-                <button class="btn btn-ghost" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#fff" onclick="signOut()"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Sign Out</button>
-              </div>
+      <div class="project-select-hero mb-5">
+        <div class="p-6 grid grid-cols-12 gap-5 items-center">
+          <div class="col-span-8">
+            <div class="stamp mb-3" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>STARTER DASHBOARD</div>
+            <h1 class="font-display font-black text-4xl leading-tight">Start With A Clean Workspace</h1>
+            <p class="text-sm mt-3" style="color:rgba(255,255,255,.72)">Create your first real project, or open the sample to explore the modules. The sample stays out of portfolio totals and real project registers.</p>
+          </div>
+          <div class="col-span-4 grid grid-cols-2 gap-3">
+            <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff;padding:14px">
+              <div class="font-mono text-[10px] opacity-60">PROJECTS</div>
+              <div class="font-display font-black text-3xl">${accessibleProjects.length}</div>
+              <div class="text-[10px] opacity-60">${accessibleProjects.length ? 'ready to open' : 'none yet'}</div>
             </div>
-            <div class="portfolio-hero-panel">
-              <div class="portfolio-hero-stat">
-                <div class="label">Live Projects</div>
-                <div class="value">${accessibleProjects.length}</div>
-                <div class="sub">${accessibleProjects.length ? 'ready to open' : 'waiting for setup'}</div>
-              </div>
-              <div class="portfolio-hero-stat accent">
-                <div class="label">Next Action</div>
-                <div class="value">${accessibleProjects.length ? 'OPEN' : 'CREATE'}</div>
-                <div class="sub">${accessibleProjects.length ? 'enter project modules' : 'start a real project'}</div>
-              </div>
-              <div class="portfolio-hero-stat">
-                <div class="label">Contract Book</div>
-                <div class="value">${accessContractTotal.toFixed(1)}</div>
-                <div class="sub">NPR crore under control</div>
-              </div>
-              <div class="portfolio-hero-stat">
-                <div class="label">Risk Watch</div>
-                <div class="value">${accessRiskCount}</div>
-                <div class="sub">${accessAlertTotal} open alert${accessAlertTotal === 1 ? '' : 's'}</div>
-              </div>
+            <div class="card" style="background:rgba(232,116,44,.18);border-color:rgba(232,116,44,.34);color:#fff;padding:14px">
+              <div class="font-mono text-[10px] opacity-70">NEXT STEP</div>
+              <div class="font-display font-black text-3xl">${accessibleProjects.length ? 'OPEN' : 'NEW'}</div>
+              <div class="text-[10px] opacity-70">${accessibleProjects.length ? 'enter a project' : 'create project'}</div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="portfolio-kpis">
-          <div class="portfolio-kpi" style="border-left-color:#E8742C"><div class="label">Contract Value</div><div class="value">NPR ${accessContractTotal.toFixed(1)}<span class="text-base text-stone-400"> Cr</span></div><div class="sub">active project portfolio</div></div>
-          <div class="portfolio-kpi" style="border-left-color:#1E3A4C"><div class="label">Billed</div><div class="value">NPR ${accessBilledTotal.toFixed(1)}<span class="text-base text-stone-400"> Cr</span></div><div class="sub">${accessContractTotal ? (accessBilledTotal/accessContractTotal*100).toFixed(0) : 0}% certified</div></div>
-          <div class="portfolio-kpi" style="border-left-color:${accessMargin >= 8 ? '#15803D' : accessMargin >= 3 ? '#B45309' : '#C0383B'}"><div class="label">Forecast Margin</div><div class="value" style="color:${accessMargin >= 8 ? '#15803D' : accessMargin >= 3 ? '#B45309' : '#C0383B'}">${accessMargin.toFixed(1)}%</div><div class="sub">contract less EAC</div></div>
-          <div class="portfolio-kpi" style="border-left-color:${accessRiskCount ? '#C0383B' : '#15803D'}"><div class="label">Risk Watch</div><div class="value" style="color:${accessRiskCount ? '#C0383B' : '#15803D'}">${accessRiskCount}</div><div class="sub">projects needing attention</div></div>
+      <div class="grid grid-cols-4 gap-3 mb-5">
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">CONTRACT VALUE</div><div class="font-display font-black text-2xl tabular">NPR ${accessContractTotal.toFixed(1)}<span class="text-base text-stone-400"> Cr</span></div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">BILLED</div><div class="font-display font-black text-2xl tabular">NPR ${accessBilledTotal.toFixed(1)}<span class="text-base text-stone-400"> Cr</span></div><div class="text-xs text-stone-500 mt-1">${accessContractTotal ? (accessBilledTotal/accessContractTotal*100).toFixed(0) : 0}% certified</div></div>
+        <div class="kpi ${accessMargin >= 8 ? 'kpi-green' : accessMargin >= 3 ? '' : 'kpi-red'}"><div class="font-mono text-[10px] text-stone-500">FORECAST MARGIN</div><div class="font-display font-black text-2xl tabular" style="color:${accessMargin >= 8 ? '#15803D' : accessMargin >= 3 ? '#B45309' : '#C0383B'}">${accessMargin.toFixed(1)}%</div></div>
+        <div class="kpi ${accessRiskCount ? 'kpi-red' : 'kpi-green'}"><div class="font-mono text-[10px] text-stone-500">RISK WATCH</div><div class="font-display font-black text-2xl tabular" style="color:${accessRiskCount ? '#C0383B' : '#15803D'}">${accessRiskCount}</div><div class="text-xs text-stone-500 mt-1">projects needing attention</div></div>
+      </div>
+
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <div class="font-display font-black text-2xl title-mark">Project Portfolio</div>
+          <div class="text-xs text-stone-500 mt-3">${accessibleProjects.length ? 'Open a real project or use the sample for a guided look.' : 'No real projects yet. Use New Project to create your own workspace.'}</div>
         </div>
-
-        <div class="portfolio-section-head">
-          <div>
-            <div class="portfolio-title">Project Portfolio</div>
-            <div class="portfolio-subtitle">${accessibleProjects.length ? 'Open a live project to continue execution records, approvals, procurement, billing, and reporting.' : 'No live projects yet. Create one to unlock the real project workspace.'}</div>
-          </div>
-          <div class="flex gap-2">
-            <button class="btn btn-amber" onclick="actNewProject()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Project</button>
-            <button class="btn btn-ghost" onclick="enterProject('${SAMPLE_PROJECT.id}')"><i data-lucide="play-circle" class="w-3.5 h-3.5"></i>Open Sample</button>
-          </div>
+        <div class="flex gap-2">
+          <button class="btn btn-amber" onclick="actNewProject()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Project</button>
+          <button class="btn btn-ghost" onclick="enterProject('${SAMPLE_PROJECT.id}')"><i data-lucide="play-circle" class="w-3.5 h-3.5"></i>Open Sample</button>
+          <button class="btn btn-ghost" onclick="signOut()"><i data-lucide="log-out" class="w-3.5 h-3.5"></i>Sign Out</button>
         </div>
+      </div>
 
-        ${accessibleProjects.length ? '' : `
-          <div class="portfolio-empty mb-4">
-            <div>
-              <h3>Build a clean project register</h3>
-              <p>Use New Project to capture project type, location, client, contract value, start and completion dates, and scope. After creation, the project opens into the full BuildCore execution dashboard.</p>
-              <div class="portfolio-actions" style="margin-top:16px">
-                <button class="btn btn-amber" onclick="actNewProject()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Create Project</button>
-                <button class="btn btn-ghost" onclick="enterProject('${SAMPLE_PROJECT.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i>Preview Sample</button>
-              </div>
-            </div>
-            <div class="portfolio-empty-steps">
-              <div class="portfolio-empty-step"><b>1. Register project</b><br><span class="text-stone-500">Type, client, value, dates, and scope.</span></div>
-              <div class="portfolio-empty-step"><b>2. Enter workspace</b><br><span class="text-stone-500">DPR, BOQ, procurement, QA/QC, billing.</span></div>
-              <div class="portfolio-empty-step"><b>3. Track execution</b><br><span class="text-stone-500">Progress, cost, risk, documents, approvals.</span></div>
-            </div>
-          </div>
-        `}
-
-        <div class="portfolio-grid">
+      <div class="project-name-grid">
         ${visibleProjects.map(p => {
           const sc = statusColor(p.status);
           const rc = riskColor(p.risk);
           const sample = isSampleProject(p);
-          return `<div class="portfolio-card" onclick="enterProject('${p.id}')">
-            <div class="portfolio-card-strip" style="background:${sc}"></div>
-            <div class="portfolio-card-body">
-              <div class="portfolio-card-meta">
-                <span class="portfolio-card-code">${p.id}</span>
+          return `<div class="project-name-card" onclick="enterProject('${p.id}')">
+            <div class="project-card-top" style="background:${sc}"></div>
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-mono text-[11px] text-stone-500">${p.id}</span>
                 <span class="badge" style="background:${sample ? '#DBEAFE' : sc + '18'};color:${sample ? '#1E3A8A' : sc};border:1px solid ${sample ? '#93C5FD' : sc + '44'}">${sample ? 'Sample demo' : p.status}</span>
               </div>
-              <div class="portfolio-card-title">${p.name}</div>
-              <div class="portfolio-card-client">${p.client || 'Client not assigned'}${p.type ? ' - ' + p.type : ''}</div>
-              <div class="portfolio-card-stats">
-                <div><span>Location</span><b>${p.location || 'Not set'}</b></div>
-                <div><span>Risk</span><b style="color:${rc}">${(p.risk || 'low').toUpperCase()}</b></div>
-                <div><span>Contract</span><b>NPR ${(+p.contract || 0).toFixed(1)} Cr</b></div>
-                <div><span>Progress</span><b>${(+p.pctComplete || 0).toFixed(0)}%</b></div>
+              <div class="font-display font-black text-xl leading-tight">${p.name}</div>
+              <div class="text-xs text-stone-500 mt-2">${p.client}</div>
+              <div class="flex items-center justify-between mt-4 text-[10px] font-mono text-stone-500">
+                <span>${p.location}</span>
+                <span style="color:${rc};font-weight:800">${p.risk.toUpperCase()} RISK</span>
               </div>
             </div>
             <div class="project-enter-btn">
@@ -12049,7 +11967,6 @@
             </div>
           </div>`;
         }).join('')}
-        </div>
       </div>
     `;
     if (window.lucide) try { lucide.createIcons(); } catch(e){}
