@@ -386,7 +386,7 @@
     <form id="loginForm" class="login-form">
       <div class="ims-field">
         <label>EMAIL / USER ID</label>
-        <input type="text" id="loginEmail" value="rajesh@buildcore.com.np" placeholder="user@buildcore.com.np" required autofocus>
+        <input type="text" id="loginEmail" value="trial1" placeholder="trial1" required autofocus>
       </div>
       <div class="ims-field">
         <label>TRIAL COMPANY</label>
@@ -400,12 +400,12 @@
       </div>
       <div class="ims-field">
         <label>PASSWORD</label>
-        <input type="password" id="loginPass" value="demo" placeholder="••••••••" required>
+        <input type="password" id="loginPass" value="BuildCore@101" placeholder="password" required>
       </div>
       <button type="submit" class="login-btn">SIGN IN <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
       <button type="button" id="createAcctBtn" class="login-btn" style="background:transparent;color:inherit;border:1px solid currentColor;margin-top:8px;opacity:.85">CREATE ACCOUNT</button>
       <div class="login-footer">
-        <div class="text-[10px] text-stone-400" id="loginHint">First time? Enter an email + password, then "Create account". Job role is chosen per project.</div>
+        <div class="text-[10px] text-stone-400" id="loginHint">Trial Company 1 login: trial1 / BuildCore@101</div>
         <div class="text-[10px] text-stone-400 mt-1" id="loginMode">Connecting…</div>
       </div>
     </form>
@@ -2880,6 +2880,13 @@
   const uid = (p='ID') => p + '-' + Math.floor(Math.random()*9000+1000);
   const esc = (v='') => String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const STARTER_MODE = true;
+  const TRIAL_CREDENTIALS = {
+    'company-1': { username:'trial1', password:'BuildCore@101', label:'Trial Company 1' },
+    'company-2': { username:'trial2', password:'BuildCore@202', label:'Trial Company 2' },
+    'company-3': { username:'trial3', password:'BuildCore@303', label:'Trial Company 3' },
+    'company-4': { username:'trial4', password:'BuildCore@404', label:'Trial Company 4' },
+    'company-5': { username:'trial5', password:'BuildCore@505', label:'Trial Company 5' }
+  };
   const SAMPLE_PROJECT = {
     id:'PRJ-001',
     name:'Sample Starter Project',
@@ -12135,11 +12142,36 @@
       email: (document.getElementById('loginEmail').value || '').trim(),
       pass:  document.getElementById('loginPass').value
     });
+    const selectedTrialCredential = () => TRIAL_CREDENTIALS[trialWorkspaceId()] || TRIAL_CREDENTIALS['company-1'];
+    const setStarterCredentialFields = () => {
+      if (!STARTER_MODE) return;
+      const trialCred = selectedTrialCredential();
+      const emailEl = document.getElementById('loginEmail');
+      const passEl = document.getElementById('loginPass');
+      if (emailEl) emailEl.value = trialCred.username;
+      if (passEl) passEl.value = trialCred.password;
+      const hintEl = document.getElementById('loginHint');
+      if (hintEl) hintEl.textContent = trialCred.label + ' login: ' + trialCred.username + ' / ' + trialCred.password;
+    };
+    const starterCredentialMatches = (email, pass) => {
+      const trialCred = selectedTrialCredential();
+      return email.toLowerCase() === trialCred.username.toLowerCase() && pass === trialCred.password;
+    };
+
+    const trialSelect = document.getElementById('trialCompany');
+    if (STARTER_MODE) {
+      setStarterCredentialFields();
+      if (trialSelect) trialSelect.addEventListener('change', setStarterCredentialFields);
+    }
 
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const { email, pass } = creds();
+        if (STARTER_MODE && !starterCredentialMatches(email, pass)) {
+          toast('Sign-in failed', 'Use the username and password assigned to the selected trial company', 'bad');
+          return;
+        }
         if (useRemoteAuth) {
           try { await BC.auth.signIn(email, pass); }
           catch (err) {
@@ -12153,10 +12185,19 @@
     }
 
     const acctBtn = document.getElementById('createAcctBtn');
+    if (acctBtn && STARTER_MODE) acctBtn.style.display = 'none';
     if (acctBtn) acctBtn.addEventListener('click', async () => {
       const { email, pass } = creds();
       if (!email || !pass) { toast('Create account', 'Enter an email and password first', 'bad'); return; }
-      if (STARTER_MODE) { toast('Account ready', 'Starter workspace opened locally', 'ok'); bcAfterAuth(trialWorkspaceId()); return; }
+      if (STARTER_MODE) {
+        if (!starterCredentialMatches(email, pass)) {
+          toast('Sign-in failed', 'Use the username and password assigned to the selected trial company', 'bad');
+          return;
+        }
+        toast('Signed in', 'Starter workspace opened locally', 'ok');
+        bcAfterAuth(trialWorkspaceId());
+        return;
+      }
       if (!online) { toast('Offline mode', 'Supabase is not configured — sign in works locally', 'info'); bcAfterAuth(); return; }
       try {
         await BC.auth.signUp(email, pass, { full_name: email });
