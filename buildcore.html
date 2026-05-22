@@ -3517,6 +3517,70 @@
     State.items.forEach(it => map.set(it.id, stockValueOf(it.id)));
     return map;
   }
+  function projectNameById(pid) {
+    const p = (State.projects || []).find(x => x.id === pid);
+    return p ? (p.name || p.id) : (pid || 'Project');
+  }
+  function nextClientBillNo() {
+    const n = (State.raBills || []).length + 13;
+    return 'RA-' + String(n).padStart(2,'0');
+  }
+  function createClientBillFromChargeable(sourceType, record, opts = {}) {
+    State.raBills = State.raBills || [];
+    const sourceId = record?.id || opts.recordId || '';
+    const existing = State.raBills.find(b => b.sourceType === sourceType && String(b.sourceId) === String(sourceId));
+    if (existing) return existing;
+    const gross = Number(opts.gross ?? record?.clientBillAmount ?? record?.netBillAmount ?? 0);
+    const deductions = Number(opts.deductions ?? record?.clientDeductions ?? record?.totalDeductions ?? 0);
+    const net = Math.max(0, Number(opts.net ?? (gross - deductions)));
+    const bill = {
+      id: nextClientBillNo(),
+      proj: opts.projectId || record?.projectId || record?.chargeProject || State.activeProject || '',
+      period: opts.period || new Date().toLocaleDateString('en-GB',{month:'short',year:'2-digit'}),
+      gross,
+      net,
+      status:'under-review',
+      age:'client approved',
+      sourceType,
+      sourceId,
+      deductions,
+      description: opts.description || record?.clientBillDescription || record?.purpose || sourceType,
+      clientName: opts.clientName || record?.clientName || ''
+    };
+    State.raBills.push(bill);
+    return bill;
+  }
+  function updateChargeableRecordStatus(s, status) {
+    if (!s) return null;
+    const map = {
+      'Store Material Issue':'stockMovements',
+      'Equipment Log':'equipLogs'
+    };
+    const list = State[map[s.type]] || [];
+    const rec = list.find(x => String(x.id) === String(s.recordId));
+    if (rec) {
+      rec.clientApprovalStatus = status;
+      if (status === 'approved') rec.clientApprovedAt = new Date().toISOString();
+      if (status === 'rejected') rec.clientRejectedAt = new Date().toISOString();
+    }
+    return rec;
+  }
+  function submitStoreIssueToClient(m, silent=false) {
+    if (!m) return null;
+    m.clientApprovalRequired = true;
+    m.clientApprovalStatus = m.clientApprovalStatus === 'approved' ? 'approved' : 'submitted';
+    const s = createClientSubmission({
+      type:'Store Material Issue',
+      recordId:m.id,
+      projectId:m.projectId || m.chargeProject || State.activeProject || '',
+      title:(m.refNo || 'Material Issue') + ' - ' + (m.clientName || m.issuedTo || 'Client') + ' - ' + fmtINR(m.clientBillAmount || 0),
+      submittedBy:State.session?.user?.name || 'Store',
+      dueDate:''
+    });
+    audit('create','Client submission - Store Issue', s.id + ' - ' + (m.refNo || m.id));
+    if (!silent) toast('Client Approval Requested', (m.refNo || m.id) + ' - ' + fmtINR(m.clientBillAmount || 0), 'ok');
+    return s;
+  }
   function imsActiveProjectId() {
     const pid = State.session?.projectId || State.activeProject;
     return pid && pid !== 'ALL' ? pid : '';
@@ -4176,6 +4240,7 @@
               <div class="ims-form-row-3">
                 <div class="ims-field"><label>Issue To Type *</label><select name="recipientType" id="imsRecipientType" required onchange="imsUpdateRecipientPicker()">
                   <option value="equipment" ${m.recipientType==='equipment'?'selected':''}>🚜 Equipment (fuel, lubricants)</option>
+                  <option value="client" ${m.recipientType==='client'?'selected':''}>Client chargeable material</option>
                   <option value="site" ${m.recipientType==='site'?'selected':''}>🏗️ Site / Project Activity</option>
                   <option value="subcontractor" ${m.recipientType==='subcontractor'?'selected':''}>🤝 Subcontractor</option>
                   <option value="individual" ${m.recipientType==='individual'?'selected':''}>👤 Individual / Worker</option>
@@ -4190,6 +4255,19 @@
                 <div class="ims-field"><label>Issued To (free text fallback)</label><input name="issuedTo" value="${m.issuedTo||''}" placeholder="Optional · auto-filled from picker"></div>
               </div>`
           }
+          ${effType === 'OUT' ? `
+            <div class="card p-3" style="background:#fafaf6;border-left:3px solid #15803D">
+              <div class="text-xs font-mono font-bold mb-2" style="color:#15803D">CLIENT BILLING / RECOVERY</div>
+              <div class="ims-form-row-3">
+                <div class="ims-field"><label>Bill to Client?</label><select name="clientBillable"><option value="no" ${!m.clientBillable?'selected':''}>NO</option><option value="yes" ${m.clientBillable?'selected':''}>YES</option></select></div>
+                <div class="ims-field"><label>Client Name</label><input name="clientName" value="${esc(m.clientName || '')}" placeholder="Client / Employer"></div>
+                <div class="ims-field"><label>Margin % over FIFO</label><input type="number" name="clientMarginPct" min="0" step="0.01" value="${Number(m.clientMarginPct || 0)}"></div>
+              </div>
+              <div class="ims-form-row">
+                <div class="ims-field"><label>Send to Client Portal?</label><select name="submitClientApproval"><option value="no">NO</option><option value="yes" ${m.clientApprovalStatus && m.clientApprovalStatus !== 'draft' ? 'selected' : ''}>YES</option></select></div>
+                <div class="ims-field"><label>Billing Note</label><input name="clientBillDescription" value="${esc(m.clientBillDescription || '')}" placeholder="Material supplied to client / extra work"></div>
+              </div>
+            </div>` : ''}
           <div class="ims-field"><label>Notes (batch, lot, vehicle, etc.)</label><textarea name="notes" rows="2">${m.notes||''}</textarea></div>
         </form>
       `,
@@ -4217,6 +4295,7 @@
             subcontractor: 'Subcontractor: ' + obj.recipientId,
             individual: 'Worker: ' + obj.recipientId,
             gang:      'Gang: ' + obj.recipientId,
+            client:    'Client: ' + obj.recipientId,
             transfer:  'Transfer to: ' + obj.recipientId
           };
           obj.issuedTo = labels[obj.recipientType] || obj.recipientId;
@@ -4234,6 +4313,20 @@
           obj.unitRate = fifo.unitRate;
           obj.totalValue = fifo.total;
           obj.fifoShortQty = fifo.shortQty;
+          obj.clientBillable = obj.clientBillable === 'yes' || obj.recipientType === 'client';
+          obj.clientMarginPct = Number(obj.clientMarginPct || 0);
+          if (obj.clientBillable) {
+            const base = Number(obj.totalValue || 0);
+            obj.clientBillRate = Number(obj.unitRate || 0) * (1 + obj.clientMarginPct / 100);
+            obj.clientBillAmount = base * (1 + obj.clientMarginPct / 100);
+            obj.clientDeductions = 0;
+            obj.clientApprovalStatus = obj.clientApprovalStatus || 'draft';
+            if (!obj.clientName && obj.recipientType === 'client') obj.clientName = obj.recipientId || obj.issuedTo || '';
+          } else {
+            obj.clientBillAmount = 0;
+            obj.clientBillRate = 0;
+            obj.clientMarginPct = 0;
+          }
         }
         if (id) {
           Object.assign(m, obj);
@@ -4244,6 +4337,10 @@
           audit('create', 'Movement · ' + obj.refNo, effType + ' · ' + obj.qty + ' to ' + (obj.issuedTo||'site'));
         }
         saveState();
+        if (effType === 'OUT' && obj.clientBillable && obj.submitClientApproval === 'yes') {
+          submitStoreIssueToClient(obj, true);
+          saveState();
+        }
         toast(`Stock ${effType} ${id?'Updated':'Recorded'}`, obj.refNo + (obj.issuedTo ? ' → ' + obj.issuedTo.slice(0,30) : ''), 'ok');
         renderIMS();
       }
@@ -4260,6 +4357,8 @@
     let opts = [];
     if (t === 'equipment') {
       opts = (State.equipment || []).map(e => ({ value: e.id, label: e.id + ' · ' + e.name + ' · ' + e.brand + ' ' + e.model }));
+    } else if (t === 'client') {
+      opts = (State.projects || []).map(p => ({ value:p.client || p.id, label:(p.client || 'Client') + ' - ' + p.id + ' - ' + p.name }));
     } else if (t === 'site') {
       const pid = State.session?.projectId || State.activeProject;
       seedProjectSites();
@@ -5283,6 +5382,61 @@
   function getSite(id) { return State.eqSites.find(s => s.id === id); }
   function eqIco(name) { return (EQ_TYPES[name] || EQ_TYPES.Other).icon; }
   function eqExtras(name) { return (EQ_TYPES[name] || EQ_TYPES.Other).extras || []; }
+  function eqRatePerHour(e, basis, rate) {
+    const r = Number(rate ?? e.clientRentalRate ?? e.rentalRate ?? 0);
+    const b = String(basis || e.clientRateBasis || e.rentalBasis || 'hourly').toLowerCase();
+    if (b.includes('month')) return r / 240;
+    if (b.includes('day')) return r / 10;
+    return r;
+  }
+  function eqMonthlyMaterialIssues(equipmentId, monthKey) {
+    return (State.stockMovements || []).filter(m => m.type === 'OUT' && m.recipientType === 'equipment' && m.recipientId === equipmentId && new Date(m.date || Date.now()).toISOString().slice(0,7) === monthKey);
+  }
+  function eqLogDeductions(eq, log) {
+    const monthKey = String(log.date || new Date().toISOString()).slice(0,7);
+    const monthHrs = (State.equipLogs || [])
+      .filter(l => l.equipmentId === eq.id && String(l.date || '').slice(0,7) === monthKey)
+      .reduce((s,l) => s + Number(l.workingHours || 0), 0) || Number(log.workingHours || 0) || 1;
+    const share = Math.min(1, Number(log.workingHours || 0) / monthHrs);
+    const material = eqMonthlyMaterialIssues(eq.id, monthKey).reduce((s,m) => s + imsMovementValue(m), 0) * share;
+    const maintenance = (State.maintenance || [])
+      .filter(m => m.equipmentId === eq.id && String(m.date || '').slice(0,7) === monthKey)
+      .reduce((s,m) => s + Number(m.cost || 0), 0) * share;
+    const bank = Number(eq.bankInstallmentMonthly || 0) * share;
+    const operator = Number(eq.operatorExpenseMonthly || 0) * share;
+    const manpower = Number(log.manpowerDeduction || 0);
+    const other = Number(log.otherDeduction || 0);
+    return { bank, operator, maintenance, material, manpower, other, total:bank + operator + maintenance + material + manpower + other };
+  }
+  function eqLogClientBilling(eq, log) {
+    const hrs = Number(log.billableHours || log.workingHours || 0);
+    const rate = eqRatePerHour(eq, log.clientRateBasis, log.clientRate);
+    const gross = hrs * rate;
+    const d = eqLogDeductions(eq, log);
+    const deductionMode = log.deductCostsFromClient !== 'no';
+    return { hours:hrs, rate, gross, deductions:d, net:Math.max(0, gross - (deductionMode ? d.total : 0)) };
+  }
+  function submitEquipmentLogToClient(log, silent=false) {
+    const eq = (State.equipment || []).find(e => e.id === log.equipmentId);
+    if (!eq || !log) return null;
+    const bill = eqLogClientBilling(eq, log);
+    log.clientApprovalRequired = true;
+    log.clientApprovalStatus = log.clientApprovalStatus === 'approved' ? 'approved' : 'submitted';
+    log.clientBillAmount = bill.gross;
+    log.clientDeductions = bill.deductions.total;
+    log.netBillAmount = bill.net;
+    const s = createClientSubmission({
+      type:'Equipment Log',
+      recordId:log.id,
+      projectId:log.projectId || State.activeProject || '',
+      title:eq.id + ' - ' + eq.name + ' client use - ' + log.date + ' - ' + fmtINR(bill.net),
+      submittedBy:State.session?.user?.name || 'Plant team',
+      dueDate:''
+    });
+    audit('create','Client submission - Equipment Log', s.id + ' - ' + log.id);
+    if (!silent) toast('Client Approval Requested', eq.id + ' - ' + fmtINR(bill.net), 'ok');
+    return s;
+  }
 
   // ----- Main render -----
   function renderEquipmentView() {
@@ -5471,7 +5625,7 @@
   }
 
   function eqEditEquipment(id) {
-    const e = id ? State.equipment.find(x => x.id === id) : { id:'', name:'Excavator', brand:'', model:'', capacity:'', regNo:'', engineNo:'', chassisNo:'', purchaseDate:new Date().toISOString().slice(0,10), purchaseCost:0, ownership:'Owned', vendor:'', status:'Working', currentMeter:0, fuelTankCap:0, serviceIntervalHours:250, nextServiceDue:datePlus(30), insurancePolicyNo:'', insuranceExpiry:'', registrationExpiry:'', roadTaxExpiry:'', pollutionExpiry:'', fitnessExpiry:'', rentalContractExpiry:'' };
+    const e = id ? State.equipment.find(x => x.id === id) : { id:'', name:'Excavator', brand:'', model:'', capacity:'', regNo:'', engineNo:'', chassisNo:'', purchaseDate:new Date().toISOString().slice(0,10), purchaseCost:0, ownership:'Owned', vendor:'', status:'Working', currentMeter:0, fuelTankCap:0, bankInstallmentMonthly:0, operatorExpenseMonthly:0, clientRentalRate:0, clientRateBasis:'hourly', serviceIntervalHours:250, nextServiceDue:datePlus(30), insurancePolicyNo:'', insuranceExpiry:'', registrationExpiry:'', roadTaxExpiry:'', pollutionExpiry:'', fitnessExpiry:'', rentalContractExpiry:'' };
     if (!e) return;
     openModal({
       title: id ? 'Edit Equipment · ' + e.name : 'Add Equipment',
@@ -5506,6 +5660,16 @@
           <div class="ims-form-row">
             <div class="ims-field"><label>Current Meter (hrs)</label><input type="number" name="currentMeter" min="0" step="1" value="${e.currentMeter||0}"></div>
           </div>
+          <div class="text-xs font-mono font-bold mt-3 mb-2" style="color:#15803D">MONTHLY COST / CLIENT RENTAL SETUP</div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Bank Installment / Month</label><input type="number" name="bankInstallmentMonthly" min="0" step="100" value="${e.bankInstallmentMonthly||0}"></div>
+            <div class="ims-field"><label>Operator Expense / Month</label><input type="number" name="operatorExpenseMonthly" min="0" step="100" value="${e.operatorExpenseMonthly||0}"></div>
+            <div class="ims-field"><label>Client Rental Rate</label><input type="number" name="clientRentalRate" min="0" step="100" value="${e.clientRentalRate || e.rentalRate || 0}"></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Client Rate Basis</label><select name="clientRateBasis">${['hourly','daily','monthly'].map(x => `<option value="${x}" ${(e.clientRateBasis || e.rentalBasis || 'hourly')===x?'selected':''}>${x.toUpperCase()}</option>`).join('')}</select></div>
+            <div class="ims-field"><label>Monthly Cost Note</label><input name="monthlyCostNote" value="${esc(e.monthlyCostNote || '')}" placeholder="Installment bank, operator package, standing charges"></div>
+          </div>
           <div class="text-xs font-mono font-bold mt-3 mb-2" style="color:#E8742C">OWNED EQUIPMENT COMPLIANCE / RENEWALS</div>
           <div class="ims-form-row-3">
             <div class="ims-field"><label>Service Interval (hrs)</label><input type="number" name="serviceIntervalHours" min="0" value="${e.serviceIntervalHours||250}"></div>
@@ -5531,6 +5695,9 @@
         obj.purchaseCost = Number(obj.purchaseCost || 0);
         obj.currentMeter = Number(obj.currentMeter || 0);
         obj.fuelTankCap = Number(obj.fuelTankCap || 0);
+        obj.bankInstallmentMonthly = Number(obj.bankInstallmentMonthly || 0);
+        obj.operatorExpenseMonthly = Number(obj.operatorExpenseMonthly || 0);
+        obj.clientRentalRate = Number(obj.clientRentalRate || 0);
         obj.serviceIntervalHours = Number(obj.serviceIntervalHours || 0);
         if (id) {
           Object.assign(e, obj);
@@ -5654,10 +5821,10 @@
             <th class="text-right">Wrk Hrs</th><th class="text-right">Idle</th>
             <th class="text-right">Diesel</th><th class="text-right">Grease</th><th class="text-right">Hyd.Oil</th>
             ${extras.map(k => `<th class="text-right">${EX_LBL[k] || k}</th>`).join('')}
-            <th>Work Description</th><th>Remarks</th><th></th>
+            <th>Client Use</th><th class="text-right">Billable</th><th>Work Description</th><th>Remarks</th><th></th>
           </tr></thead>
           <tbody>
-            ${logs.map(l => { const site = getSite(l.siteId); return `<tr>
+            ${logs.map(l => { const site = getSite(l.siteId); const cb = l.usedByClient ? eqLogClientBilling(eq, l) : null; return `<tr>
               <td class="font-mono text-xs">${l.date}</td>
               <td class="text-xs">${site ? site.name.split('·')[0].trim() : '—'}</td>
               <td class="text-xs">${l.operatorName || '—'}</td>
@@ -5672,6 +5839,8 @@
               <td class="text-right font-mono text-xs">${l.grease || '—'}</td>
               <td class="text-right font-mono text-xs">${l.hydraulicOil || '—'}</td>
               ${extras.map(k => `<td class="text-right font-mono text-xs">${l[k] || '—'}</td>`).join('')}
+              <td class="text-xs">${l.usedByClient ? `<span class="badge badge-info">${esc(l.clientApprovalStatus || 'draft')}</span><div class="text-[10px] text-stone-500">${esc(l.clientName || 'Client')}</div>` : '—'}</td>
+              <td class="text-right font-mono text-xs">${cb ? `<b>${fmtINR(cb.net)}</b><div class="text-[10px] text-stone-500">gross ${fmtINR(cb.gross)} - ded ${fmtINR(cb.deductions.total)}</div>` : '—'}</td>
               <td class="text-xs" style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${l.workDescription || '—'}</td>
               <td class="text-xs" style="color:#B45309">${l.remarks || '—'}</td>
               <td><div class="ims-row-action"><button class="ims-icon-btn" data-eq-act="edit-log" data-id="${l.id}" title="Edit">✎</button><button class="ims-icon-btn danger" data-eq-act="del-log" data-id="${l.id}" title="Delete">🗑</button></div></td>
@@ -5752,6 +5921,27 @@
             </div>
           ` : ''}
 
+          <div class="text-xs font-mono font-bold mt-3 mb-2" style="color:#15803D">CLIENT USE / BILLING</div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Machine used by client?</label><select name="usedByClient"><option value="no" ${!l.usedByClient?'selected':''}>NO</option><option value="yes" ${l.usedByClient?'selected':''}>YES</option></select></div>
+            <div class="ims-field"><label>Client Name</label><input name="clientName" value="${esc(l.clientName || getSite(l.siteId)?.client || '')}" placeholder="Client / Employer"></div>
+            <div class="ims-field"><label>Project for Billing</label><select name="projectId">${(State.projects || []).map(p => `<option value="${p.id}" ${(l.projectId || State.activeProject)===p.id?'selected':''}>${p.id} - ${p.name}</option>`).join('')}</select></div>
+          </div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Billable Hours</label><input type="number" name="billableHours" min="0" step="0.25" value="${l.billableHours || l.workingHours || 0}"></div>
+            <div class="ims-field"><label>Client Rental Rate</label><input type="number" name="clientRate" min="0" step="100" value="${l.clientRate || eq.clientRentalRate || eq.rentalRate || 0}"></div>
+            <div class="ims-field"><label>Rate Basis</label><select name="clientRateBasis">${['hourly','daily','monthly'].map(x => `<option value="${x}" ${(l.clientRateBasis || eq.clientRateBasis || eq.rentalBasis || 'hourly')===x?'selected':''}>${x.toUpperCase()}</option>`).join('')}</select></div>
+          </div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Deduct cost from bill?</label><select name="deductCostsFromClient"><option value="yes" ${l.deductCostsFromClient!=='no'?'selected':''}>YES</option><option value="no" ${l.deductCostsFromClient==='no'?'selected':''}>NO</option></select></div>
+            <div class="ims-field"><label>Extra Manpower Deduction</label><input type="number" name="manpowerDeduction" min="0" step="100" value="${l.manpowerDeduction || 0}"></div>
+            <div class="ims-field"><label>Other Deduction</label><input type="number" name="otherDeduction" min="0" step="100" value="${l.otherDeduction || 0}"></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Send to Client Portal?</label><select name="submitClientApproval"><option value="no">NO</option><option value="yes" ${l.clientApprovalStatus && l.clientApprovalStatus !== 'draft' ? 'selected' : ''}>YES</option></select></div>
+            <div class="ims-field"><label>Deduction Note</label><input name="deductionNote" value="${esc(l.deductionNote || '')}" placeholder="Fuel, maintenance materials, manpower engaged, bank/operator monthly charge note"></div>
+          </div>
+
           <div class="text-xs font-mono font-bold mt-3 mb-2" style="color:#E8742C">📝 WORK DETAILS</div>
           <div class="ims-field"><label>Work Description</label><textarea name="workDescription" rows="2" placeholder="What was done, where, chainage / location reference">${l.workDescription||''}</textarea></div>
           <div class="ims-field"><label>Remarks</label><textarea name="remarks" rows="2" placeholder="Issues, observations, near-misses">${l.remarks||''}</textarea></div>
@@ -5762,9 +5952,21 @@
         const obj = id ? {...l} : { equipmentId: sel };
         fd.forEach((v,k) => obj[k] = v);
         // Coerce numeric fields
-        ['startMeter','endMeter','workingHours','idleHours','diesel','grease','hydraulicOil','engineOil'].forEach(k => obj[k] = Number(obj[k]||0));
+        ['startMeter','endMeter','workingHours','idleHours','diesel','grease','hydraulicOil','engineOil','billableHours','clientRate','manpowerDeduction','otherDeduction'].forEach(k => obj[k] = Number(obj[k]||0));
         // Auto working hours = max(0, endMeter - startMeter)
         obj.workingHours = Math.max(0, obj.endMeter - obj.startMeter);
+        obj.usedByClient = obj.usedByClient === 'yes';
+        if (obj.usedByClient) {
+          const billing = eqLogClientBilling(eq, obj);
+          obj.clientBillAmount = billing.gross;
+          obj.clientDeductions = billing.deductions.total;
+          obj.netBillAmount = billing.net;
+          obj.clientApprovalStatus = obj.clientApprovalStatus || 'draft';
+        } else {
+          obj.clientBillAmount = 0;
+          obj.clientDeductions = 0;
+          obj.netBillAmount = 0;
+        }
         if (id) {
           Object.assign(l, obj);
           audit('update','Equip Log · ' + l.id, eq.id + ' · ' + obj.date);
@@ -5776,6 +5978,10 @@
         // Update equipment's currentMeter
         eq.currentMeter = obj.endMeter;
         saveState();
+        if (obj.usedByClient && obj.submitClientApproval === 'yes') {
+          submitEquipmentLogToClient(obj, true);
+          saveState();
+        }
         toast(id ? 'Log Updated' : 'Log Saved', eq.name + ' · ' + obj.date + ' · ' + obj.workingHours + ' hrs', 'ok');
         renderEquipmentView();
       }
@@ -10201,6 +10407,36 @@
           const r = State.dprs.find(x => x.id === s.recordId);
           if (r) r.clientAck = 'acknowledged';
         }
+        if (s.type === 'Store Material Issue') {
+          const r = updateChargeableRecordStatus(s, 'approved');
+          if (r) {
+            const bill = createClientBillFromChargeable('Store Material Issue', r, {
+              projectId:r.projectId || r.chargeProject,
+              gross:r.clientBillAmount || 0,
+              net:r.clientBillAmount || 0,
+              deductions:0,
+              clientName:r.clientName || r.issuedTo || '',
+              description:(r.refNo || 'Material issue') + ' - FIFO ' + fmtINR(r.unitRate || 0) + ' + ' + Number(r.clientMarginPct || 0) + '% margin'
+            });
+            r.clientBillNo = bill.id;
+          }
+        }
+        if (s.type === 'Equipment Log') {
+          const r = updateChargeableRecordStatus(s, 'approved');
+          const eq = r ? (State.equipment || []).find(e => e.id === r.equipmentId) : null;
+          if (r && eq) {
+            const b = eqLogClientBilling(eq, r);
+            const bill = createClientBillFromChargeable('Equipment Log', r, {
+              projectId:r.projectId || State.activeProject,
+              gross:b.gross,
+              net:b.net,
+              deductions:b.deductions.total,
+              clientName:r.clientName || '',
+              description:eq.id + ' - ' + eq.name + ' client use ' + r.date
+            });
+            r.clientBillNo = bill.id;
+          }
+        }
         audit('update','Client approved', s.id);
         saveState();
         toast('Approved', s.title, 'ok');
@@ -10227,6 +10463,9 @@
         if (s.type === 'DPR') {
           const r = State.dprs.find(x => x.id === s.recordId);
           if (r) r.clientAck = 'rejected';
+        }
+        if (s.type === 'Store Material Issue' || s.type === 'Equipment Log') {
+          updateChargeableRecordStatus(s, 'rejected');
         }
         audit('update','Client returned', s.id);
         saveState();
