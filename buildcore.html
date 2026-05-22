@@ -3528,7 +3528,7 @@
     return [it.category, ...(it.categories || [])].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i);
   }
   function itemUnits(it) {
-    return [it.unit, ...(it.units || [])].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i);
+    return [it.unit].filter(Boolean);
   }
   function itemVendors(it) {
     return [it.supplier, ...(it.vendorNames || []), ...(it.vendors || [])].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i);
@@ -3904,7 +3904,7 @@
               <td class="font-mono text-xs">${it.sku || '—'}</td>
               <td><b>${it.name}</b>${it.notes ? `<div class="text-[10px] text-stone-500">${it.notes}</div>` : ''}</td>
               <td class="text-xs">${itemCategories(it).map(esc).join('<br>') || '—'}</td>
-              <td class="text-xs">${itemUnits(it).map(esc).join('<br>') || '—'}</td>
+              <td class="text-xs">${esc(it.unit || '—')}</td>
               <td class="text-right font-mono" style="${low?'color:#B45309;font-weight:700':''}">${s.toLocaleString()}</td>
               <td class="text-right font-mono text-xs">${(it.reorderLevel||0).toLocaleString()}</td>
               <td class="text-xs"><b>${esc(it.supplier || 'Unassigned')}</b><div class="text-[10px] text-stone-500">${esc(vendor.address || '')}${vendor.location ? '<br>' + esc(vendor.location) : ''}${vendor.phone ? '<br>' + esc(vendor.phone) : ''}</div></td>
@@ -4026,7 +4026,7 @@
 
   function imsEditItem(id) {
     seedVendorData();
-    const it = id ? State.items.find(x => String(x.id) === String(id)) : { sku:'', name:'', category:'', categories:[], unit:'pcs', units:[], reorderLevel:0, costPrice:0, supplier:'', vendorNames:[], dimensions:'', machineDetails:'', notes:'' };
+    const it = id ? State.items.find(x => String(x.id) === String(id)) : { sku:'', name:'', category:'', categories:[], unit:'', reorderLevel:0, costPrice:0, supplier:'', vendorNames:[], dimensions:'', machineDetails:'', notes:'' };
     if (!it) return;
     openModal({
       title: id ? `Edit Item · ${it.name}` : 'New Item',
@@ -4042,21 +4042,25 @@
             <div class="ims-field"><label>Primary Category</label><input name="category" list="imsCats" value="${it.category||''}" placeholder="e.g. Cement">
               <datalist id="imsCats"><option>Cement</option><option>Steel & Rebar</option><option>Aggregates</option><option>Bricks & Blocks</option><option>Lumber</option><option>Electrical</option><option>Plumbing</option><option>Finishes</option><option>Tools</option><option>Safety</option><option>Consumables</option></datalist>
             </div>
-            <div class="ims-field"><label>Primary Unit *</label><input name="unit" list="imsUnits" value="${it.unit||'pcs'}" required>
+            <div class="ims-field"><label>Unit *</label><input name="unit" list="imsUnits" value="${it.unit||''}" required placeholder="bag / kg / MT / nos">
               <datalist id="imsUnits"><option>pcs</option><option>bag</option><option>kg</option><option>MT</option><option>m</option><option>sqm</option><option>cum</option><option>cft</option><option>L</option><option>sht</option><option>nos</option><option>pair</option><option>roll</option><option>box</option></datalist>
             </div>
           </div>
           <div class="ims-form-row">
             <div class="ims-field"><label>Additional Categories</label><input name="categories" value="${itemCategories(it).filter(v=>v!==it.category).join(', ')}" placeholder="Comma separated: Consumables, Equipment Spares"></div>
-            <div class="ims-field"><label>Additional Units</label><input name="units" value="${itemUnits(it).filter(v=>v!==it.unit).join(', ')}" placeholder="Comma separated: bag, kg, MT, nos"></div>
-          </div>
-          <div class="ims-form-row">
             <div class="ims-field"><label>Reorder Level</label><input type="number" name="reorderLevel" min="0" step="1" value="${it.reorderLevel||0}"></div>
-            <div class="ims-field"><label>Primary Vendor</label><input name="supplier" list="imsVendors" value="${it.supplier||''}"><datalist id="imsVendors">${(State.vendors||[]).map(v=>`<option>${esc(v.name)}</option>`).join('')}</datalist></div>
           </div>
           <div class="ims-form-row">
-            <div class="ims-field"><label>Approved Vendors</label><textarea name="vendorNames" rows="2" placeholder="Comma, semicolon, or one vendor per line">${itemVendors(it).filter(v=>v!==it.supplier).join('\n')}</textarea></div>
-            <div class="ims-field"><label>Vendor Contact Quick Add</label><textarea name="vendorQuick" rows="2" placeholder="One per line: Name | address | location | phone"></textarea></div>
+            <div class="ims-field"><label>Primary Vendor</label><input name="supplier" list="imsVendors" value="${it.supplier||''}"><datalist id="imsVendors">${(State.vendors||[]).map(v=>`<option>${esc(v.name)}</option>`).join('')}</datalist></div>
+            <div class="ims-field"><label>Add Vendor 2</label><input name="vendor2" list="imsVendors" value="${itemVendors(it).filter(v=>v!==it.supplier)[0] || ''}" placeholder="Approved vendor"></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Add Vendor 3</label><input name="vendor3" list="imsVendors" value="${itemVendors(it).filter(v=>v!==it.supplier)[1] || ''}" placeholder="Approved vendor"></div>
+            <div class="ims-field"><label>Add Vendor 4</label><input name="vendor4" list="imsVendors" value="${itemVendors(it).filter(v=>v!==it.supplier)[2] || ''}" placeholder="Approved vendor"></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>More Vendors</label><textarea name="vendorNames" rows="2" placeholder="More than 4? comma, semicolon, or one vendor per line">${itemVendors(it).filter(v=>v!==it.supplier).slice(3).join('\n')}</textarea></div>
+            <div class="ims-field"><label>Quick Add New Vendors</label><textarea name="vendorQuick" rows="2" placeholder="One per line: Name | address | location | phone"></textarea></div>
           </div>
           <div class="ims-form-row">
             <div class="ims-field"><label>Dimensions / Size</label><input name="dimensions" value="${it.dimensions||''}" placeholder="L x W x H, dia, capacity, etc."></div>
@@ -4073,8 +4077,9 @@
         obj.reorderLevel = Number(obj.reorderLevel||0);
         obj.costPrice = Number(it.costPrice || obj.costPrice || 0);
         obj.categories = [obj.category, ...splitListText(obj.categories)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-        obj.units = [obj.unit, ...splitListText(obj.units)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
-        obj.vendorNames = [obj.supplier, ...splitListText(obj.vendorNames)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+        delete obj.units;
+        obj.vendorNames = [obj.supplier, obj.vendor2, obj.vendor3, obj.vendor4, ...splitListText(obj.vendorNames)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+        delete obj.vendor2; delete obj.vendor3; delete obj.vendor4;
         if (obj.vendorQuick) {
           String(obj.vendorQuick).split('\n').map(x => x.trim()).filter(Boolean).forEach(line => {
             const [name, address, location, phone] = line.split('|').map(x => (x || '').trim());
@@ -13536,7 +13541,8 @@ Available Actions:
 
   // -------- ACTION HANDLERS --------
   function projectTypeOptionsHTML(selected='') {
-    return PROJECT_TYPE_OPTIONS.map(t => `<option value="${esc(t)}" ${selected===t?'selected':''}>${esc(t)}</option>`).join('')
+    return `<option value="" ${!selected?'selected':''}>Select project type</option>`
+      + PROJECT_TYPE_OPTIONS.map(t => `<option value="${esc(t)}" ${selected===t?'selected':''}>${esc(t)}</option>`).join('')
       + `<option value="__custom__">Custom project type...</option>`;
   }
 
@@ -13546,7 +13552,7 @@ Available Actions:
       body: `
         <div class="form-grid-2">
           <div class="form-row"><label>Project Name</label><input name="name" placeholder="e.g. Kalanki Underpass"></div>
-          <div class="form-row"><label>Project Code</label><input name="code" value="${uid('PRJ')}"></div>
+          <div class="form-row"><label>Project Code</label><input name="code" placeholder="e.g. PRJ-001"></div>
           <div class="form-row"><label>Client</label><input name="client" placeholder="Client / Employer name"></div>
           <div class="form-row"><label>Type</label><select name="typePreset" onchange="document.getElementById('newProjectCustomTypeWrap').style.display=this.value==='__custom__'?'block':'none'">${projectTypeOptionsHTML()}</select></div>
           <div class="form-row" id="newProjectCustomTypeWrap" style="display:none"><label>Custom Type</label><input name="typeCustom" placeholder="e.g. Data center, dry port, stadium"></div>
@@ -13559,9 +13565,10 @@ Available Actions:
       `,
       submitLabel: 'Create Project',
       onSubmit: (d) => {
-        const code = (d.code || uid('PRJ')).trim();
+        const code = (d.code || '').trim();
         const type = d.typePreset === '__custom__' ? (d.typeCustom || '').trim() : (d.typePreset || '').trim();
         if (!d.name) { toast('Validation', 'Project name is required', 'bad'); return false; }
+        if (!code) { toast('Validation', 'Project code is required', 'bad'); return false; }
         if (!type) { toast('Validation', 'Choose a project type or enter a custom type', 'bad'); return false; }
         if ((State.projects || []).some(p => String(p.id).toLowerCase() === code.toLowerCase())) { toast('Validation', 'Project code already exists', 'bad'); return false; }
         const p = {
