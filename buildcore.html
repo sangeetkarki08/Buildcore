@@ -3445,6 +3445,78 @@
     });
     return map;
   }
+  function imsMovementUnitRate(m) {
+    const item = State.items.find(i => Number(i.id) === Number(m.itemId)) || {};
+    return Number(m.unitRate ?? m.rate ?? m.purchaseRate ?? m.costPrice ?? item.lastPurchaseRate ?? item.costPrice ?? 0);
+  }
+  function imsMovementValue(m) {
+    if (m.totalValue != null) return Number(m.totalValue || 0);
+    if (m.total != null) return Number(m.total || 0);
+    return Number(m.qty || 0) * imsMovementUnitRate(m);
+  }
+  function imsSortedMovements(excludeId) {
+    return (State.stockMovements || [])
+      .filter(m => String(m.id) !== String(excludeId || ''))
+      .slice()
+      .sort((a,b) => (Number(a.date || 0) - Number(b.date || 0)) || (Number(a.id || 0) - Number(b.id || 0)));
+  }
+  function imsFifoLayers(itemId, opts = {}) {
+    const layers = [];
+    const before = opts.beforeDate ? Number(opts.beforeDate) : null;
+    imsSortedMovements(opts.excludeId).forEach(m => {
+      if (Number(m.itemId) !== Number(itemId)) return;
+      if (before && Number(m.date || 0) > before) return;
+      if (opts.siteId && Number(m.siteId || 0) !== Number(opts.siteId)) return;
+      if (m.type === 'IN') {
+        layers.push({
+          refNo:m.refNo || '',
+          supplier:m.supplier || '',
+          date:m.date || 0,
+          qty:Number(m.qty || 0),
+          remaining:Number(m.qty || 0),
+          unitRate:imsMovementUnitRate(m)
+        });
+        return;
+      }
+      let need = Number(m.qty || 0);
+      for (const layer of layers) {
+        if (need <= 0) break;
+        const take = Math.min(layer.remaining, need);
+        layer.remaining -= take;
+        need -= take;
+      }
+    });
+    return layers.filter(l => l.remaining > 0.000001);
+  }
+  function imsFifoIssue(itemId, qty, date, excludeId) {
+    let need = Number(qty || 0);
+    const lots = [];
+    let total = 0;
+    const layers = imsFifoLayers(itemId, { beforeDate:date, excludeId });
+    const available = layers.reduce((s,l) => s + l.remaining, 0);
+    for (const layer of layers) {
+      if (need <= 0) break;
+      const take = Math.min(layer.remaining, need);
+      lots.push({ refNo:layer.refNo, supplier:layer.supplier, date:layer.date, qty:take, unitRate:layer.unitRate, value:take * layer.unitRate });
+      total += take * layer.unitRate;
+      need -= take;
+    }
+    const issued = Number(qty || 0) - Math.max(0, need);
+    const unitRate = issued ? total / issued : 0;
+    return { lots, total, unitRate, available, shortQty:Math.max(0, need) };
+  }
+  function stockValueOf(itemId) {
+    return imsFifoLayers(itemId).reduce((s,l) => s + l.remaining * l.unitRate, 0);
+  }
+  function stockAvgRateOf(itemId) {
+    const stock = stockOf(itemId);
+    return stock > 0 ? stockValueOf(itemId) / stock : 0;
+  }
+  function stockValueMap() {
+    const map = new Map();
+    State.items.forEach(it => map.set(it.id, stockValueOf(it.id)));
+    return map;
+  }
   function imsActiveProjectId() {
     const pid = State.session?.projectId || State.activeProject;
     return pid && pid !== 'ALL' ? pid : '';
@@ -3477,6 +3549,15 @@
       if (!m.chargeProject) m.chargeProject = pid;
       if (!m.projectId) m.projectId = pid;
       if (!m.flowStage) m.flowStage = m.type === 'IN' ? 'received' : (m.recipientType === 'transfer' ? 'transfer' : 'issued');
+      if (m.type === 'IN' && m.unitRate == null) m.unitRate = imsMovementUnitRate(m);
+      if (m.type === 'IN' && m.totalValue == null) m.totalValue = Number(m.qty || 0) * imsMovementUnitRate(m);
+      if (m.type === 'OUT' && (!Array.isArray(m.fifoLots) || m.unitRate == null || m.totalValue == null)) {
+        const fifo = imsFifoIssue(m.itemId, m.qty, m.date || Date.now(), m.id);
+        m.fifoLots = fifo.lots;
+        m.unitRate = fifo.unitRate;
+        m.totalValue = fifo.total;
+        m.fifoShortQty = fifo.shortQty;
+      }
     });
   }
   function projectStockMap(pid) {
@@ -3614,7 +3695,8 @@
 
   function renderIMSKPIs() {
     const m = stockMap();
-    const totalValue = State.items.reduce((sum, it) => sum + (m.get(it.id) || 0) * (it.costPrice || 0), 0);
+    const v = stockValueMap();
+    const totalValue = State.items.reduce((sum, it) => sum + (v.get(it.id) || 0), 0);
     const lowStock = State.items.filter(it => (m.get(it.id) || 0) <= (it.reorderLevel || 0)).length;
     const negStock = State.items.filter(it => (m.get(it.id) || 0) < 0).length;
     const toolsOut = State.toolIssues.filter(t => t.status === 'ISSUED').length;
@@ -3624,7 +3706,7 @@
 
     $('#imsKpis').innerHTML = `
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">SKUs TRACKED</div><div class="font-display font-black text-2xl tabular">${State.items.length}</div></div>
-      <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">STOCK VALUE</div><div class="font-display font-black text-2xl tabular">${fmtINR(totalValue)}</div></div>
+      <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">FIFO STOCK VALUE</div><div class="font-display font-black text-2xl tabular">${fmtINR(totalValue)}</div></div>
       <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">BELOW REORDER</div><div class="font-display font-black text-2xl tabular">${lowStock}</div><div class="text-xs text-stone-500 mt-1">${negStock} negative</div></div>
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">MOVEMENTS · 24h</div><div class="font-display font-black text-2xl tabular">${movToday}</div></div>
       <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">TOOLS CHECKED OUT</div><div class="font-display font-black text-2xl tabular">${toolsOut}</div></div>
@@ -3649,7 +3731,7 @@
   // ----- TAB 1: STOCK OVERVIEW (live stock with status colors) -----
   function renderIMSOverview(c) {
     const m = stockMap();
-    const rows = State.items.map(it => ({ it, stock: m.get(it.id) || 0, value: (m.get(it.id) || 0) * (it.costPrice || 0) }));
+    const rows = State.items.map(it => ({ it, stock: m.get(it.id) || 0, avgRate: stockAvgRateOf(it.id), value: stockValueOf(it.id) }));
     const categories = ['All', ...new Set(State.items.map(i => i.category).filter(Boolean))];
     c.innerHTML = `
       <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
@@ -3664,9 +3746,9 @@
         </div>
       </div>
       <table class="data" id="imsOvTable">
-        <thead><tr><th class="sortable">SKU</th><th class="sortable">Name</th><th class="sortable">Category</th><th>Unit</th><th class="text-right sortable">In Stock</th><th class="text-right">Reorder</th><th class="text-right">Cost</th><th class="text-right sortable">Value</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th class="sortable">SKU</th><th class="sortable">Name</th><th class="sortable">Category</th><th>Unit</th><th class="text-right sortable">In Stock</th><th class="text-right">Reorder</th><th class="text-right">FIFO Avg</th><th class="text-right sortable">FIFO Value</th><th>Status</th><th></th></tr></thead>
         <tbody id="imsOvBody">
-          ${rows.map(({it, stock, value}) => {
+          ${rows.map(({it, stock, avgRate, value}) => {
             const low = stock <= (it.reorderLevel || 0);
             const neg = stock < 0;
             const statusBadge = neg ? '<span class="badge badge-bad">NEGATIVE</span>' : low ? '<span class="badge badge-warn">LOW</span>' : '<span class="badge badge-ok">OK</span>';
@@ -3678,7 +3760,7 @@
               <td class="text-xs">${it.unit || '—'}</td>
               <td class="text-right font-mono" style="${stockColor}">${stock.toLocaleString()}</td>
               <td class="text-right font-mono text-xs">${(it.reorderLevel||0).toLocaleString()}</td>
-              <td class="text-right font-mono text-xs">${fmtINR(it.costPrice||0)}</td>
+              <td class="text-right font-mono text-xs">${fmtINR(avgRate||0)}</td>
               <td class="text-right font-mono"><b>${fmtINR(value)}</b></td>
               <td>${statusBadge}</td>
               <td><div class="ims-row-action">
@@ -3724,7 +3806,7 @@
       <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
         <div>
           <div class="font-display font-bold text-lg">Item Master</div>
-          <div class="text-xs text-stone-500">Catalog of all SKUs · ${State.items.length} item${State.items.length!==1?'s':''} · add new, edit specs, delete obsolete</div>
+          <div class="text-xs text-stone-500">Catalog of all SKUs · ${State.items.length} item${State.items.length!==1?'s':''} · vendors live here, rates live on GRN/PO receipts</div>
         </div>
         <div class="flex gap-2">
           <input id="imsItemSearch" type="text" placeholder="Search…" class="border border-stone-200 px-2 py-1 text-xs" style="min-width:200px">
@@ -3732,20 +3814,21 @@
         </div>
       </div>
       <table class="data" id="imsItemsTable">
-        <thead><tr><th class="sortable">SKU</th><th class="sortable">Name</th><th class="sortable">Category</th><th>Unit</th><th class="text-right">Stock</th><th class="text-right">Reorder</th><th class="text-right">Cost</th><th>Vendors</th><th>Equipment Info</th><th></th></tr></thead>
+        <thead><tr><th class="sortable">SKU</th><th class="sortable">Name</th><th class="sortable">Category</th><th>Unit</th><th class="text-right">Stock</th><th class="text-right">Reorder</th><th>Primary Vendor Detail</th><th>Approved Vendors</th><th>Equipment Info</th><th></th></tr></thead>
         <tbody id="imsItemsBody">
           ${State.items.map(it => {
             const s = m.get(it.id) || 0;
             const low = s <= (it.reorderLevel || 0);
-            return `<tr data-search="${(it.sku+' '+it.name+' '+(it.category||'')).toLowerCase()}">
+            const vendor = vendorByName(it.supplier) || {};
+            return `<tr data-search="${(it.sku+' '+it.name+' '+(it.category||'')+' '+(it.supplier||'')+' '+(it.vendorNames||[]).join(' ')).toLowerCase()}">
               <td class="font-mono text-xs">${it.sku || '—'}</td>
               <td><b>${it.name}</b>${it.notes ? `<div class="text-[10px] text-stone-500">${it.notes}</div>` : ''}</td>
               <td class="text-xs">${it.category || '—'}</td>
               <td class="text-xs">${it.unit || '—'}</td>
               <td class="text-right font-mono" style="${low?'color:#B45309;font-weight:700':''}">${s.toLocaleString()}</td>
               <td class="text-right font-mono text-xs">${(it.reorderLevel||0).toLocaleString()}</td>
-              <td class="text-right font-mono text-xs">${fmtINR(it.costPrice||0)}</td>
-              <td class="text-xs">${[it.supplier, ...(it.vendorNames || [])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join('<br>') || '—'}</td>
+              <td class="text-xs"><b>${esc(it.supplier || 'Unassigned')}</b><div class="text-[10px] text-stone-500">${esc(vendor.address || '')}${vendor.location ? '<br>' + esc(vendor.location) : ''}${vendor.phone ? '<br>' + esc(vendor.phone) : ''}</div></td>
+              <td class="text-xs">${[it.supplier, ...(it.vendorNames || [])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).map(esc).join('<br>') || '—'}</td>
               <td class="text-xs">${it.dimensions || it.machineDetails ? `${esc(it.dimensions || '')}${it.dimensions && it.machineDetails ? '<br>' : ''}${esc(it.machineDetails || '')}` : '—'}</td>
               <td><div class="ims-row-action">
                 <button class="ims-icon-btn" data-ims-act="edit-item" data-id="${it.id}" title="Edit">✎</button>
@@ -3777,15 +3860,15 @@
     const movs = (State.stockMovements || [])
       .filter(m => !pid || imsMovementProject(m) === pid)
       .sort((a,b) => (b.date||0) - (a.date||0));
-    const inValue = movs.filter(m => m.type === 'IN').reduce((s,m) => s + Number(m.qty||0) * ((itemById[m.itemId] || {}).costPrice || 0), 0);
-    const outValue = movs.filter(m => m.type === 'OUT').reduce((s,m) => s + Number(m.qty||0) * ((itemById[m.itemId] || {}).costPrice || 0), 0);
+    const inValue = movs.filter(m => m.type === 'IN').reduce((s,m) => s + imsMovementValue(m), 0);
+    const outValue = movs.filter(m => m.type === 'OUT').reduce((s,m) => s + imsMovementValue(m), 0);
     const transfers = movs.filter(m => m.recipientType === 'transfer').length;
     const pStock = projectStockMap(pid);
     const stockRows = State.items.map(it => {
       const stock = pStock.get(it.id) || 0;
       const inQty = movs.filter(m => m.itemId === it.id && m.type === 'IN').reduce((s,m) => s + Number(m.qty||0), 0);
       const outQty = movs.filter(m => m.itemId === it.id && m.type === 'OUT').reduce((s,m) => s + Number(m.qty||0), 0);
-      return { it, stock, inQty, outQty, value: stock * (it.costPrice || 0) };
+      return { it, stock, inQty, outQty, value: stock * stockAvgRateOf(it.id) };
     }).filter(r => r.inQty || r.outQty || r.stock).sort((a,b) => Math.abs(b.outQty) - Math.abs(a.outQty));
     c.innerHTML = `
       <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
@@ -3883,9 +3966,8 @@
               <datalist id="imsUnits"><option>pcs</option><option>bag</option><option>kg</option><option>MT</option><option>m</option><option>sqm</option><option>cum</option><option>cft</option><option>L</option><option>sht</option><option>nos</option><option>pair</option><option>roll</option><option>box</option></datalist>
             </div>
           </div>
-          <div class="ims-form-row-3">
+          <div class="ims-form-row">
             <div class="ims-field"><label>Reorder Level</label><input type="number" name="reorderLevel" min="0" step="1" value="${it.reorderLevel||0}"></div>
-            <div class="ims-field"><label>Cost Price (NPR)</label><input type="number" name="costPrice" min="0" step="0.01" value="${it.costPrice||0}"></div>
             <div class="ims-field"><label>Default Supplier</label><input name="supplier" list="imsVendors" value="${it.supplier||''}"><datalist id="imsVendors">${(State.vendors||[]).map(v=>`<option>${esc(v.name)}</option>`).join('')}</datalist></div>
           </div>
           <div class="ims-form-row">
@@ -3905,7 +3987,7 @@
         const obj = id ? { ...it } : {};
         fd.forEach((v,k) => obj[k] = v);
         obj.reorderLevel = Number(obj.reorderLevel||0);
-        obj.costPrice = Number(obj.costPrice||0);
+        obj.costPrice = Number(it.costPrice || obj.costPrice || 0);
         obj.vendorNames = [obj.supplier, ...String(obj.vendorNames || '').split(',').map(v => v.trim()).filter(Boolean)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
         if (obj.vendorQuick) {
           const [name, address, location, phone] = String(obj.vendorQuick).split('|').map(x => (x || '').trim());
@@ -3961,20 +4043,22 @@
         <div class="grid grid-cols-3 gap-2 mb-4">
           <div class="ims-stat" style="border-color:#15803D"><div class="lbl">Current Stock</div><div class="val">${(stockOf(itemId)).toLocaleString()} ${it.unit||''}</div></div>
           <div class="ims-stat" style="border-color:#1E3A4C"><div class="lbl">Reorder Level</div><div class="val">${(it.reorderLevel||0).toLocaleString()}</div></div>
-          <div class="ims-stat" style="border-color:#E8742C"><div class="lbl">Stock Value</div><div class="val">${fmtINR(stockOf(itemId) * (it.costPrice||0))}</div></div>
+          <div class="ims-stat" style="border-color:#E8742C"><div class="lbl">FIFO Stock Value</div><div class="val">${fmtINR(stockValueOf(itemId))}</div></div>
         </div>
         <table class="data">
-          <thead><tr><th>Date</th><th>Type</th><th>Ref</th><th>Qty</th><th>Site</th><th>Party / Purpose</th><th>Balance</th></tr></thead>
+          <thead><tr><th>Date</th><th>Type</th><th>Ref</th><th>Qty</th><th>Rate</th><th>Value</th><th>Site</th><th>Party / Purpose</th><th>Balance</th></tr></thead>
           <tbody>
             ${movs.map(m => `<tr>
               <td class="font-mono text-xs">${fmtDateShort(m.date)}</td>
               <td><span class="badge badge-${m.type==='IN'?'ok':'bad'}">${m.type}</span></td>
               <td class="font-mono text-xs">${m.refNo||'—'}</td>
               <td class="font-mono text-xs" style="color:${m.type==='IN'?'#15803D':'#C0383B'}">${m.type==='IN'?'+':'−'}${m.qty}</td>
+              <td class="font-mono text-xs">${fmtINR(imsMovementUnitRate(m))}</td>
+              <td class="font-mono text-xs">${fmtINR(imsMovementValue(m))}</td>
               <td class="text-xs">${(State.sites.find(s=>s.id===m.siteId)||{}).name?.split('·')[0]||'—'}</td>
               <td class="text-xs">${m.supplier || m.issuedTo || '—'}${m.purpose?` <span class="text-[10px] text-stone-500">(${m.purpose})</span>`:''}</td>
               <td class="font-mono text-xs"><b>${m._bal.toLocaleString()}</b></td>
-            </tr>`).join('') || '<tr><td colspan="7" class="text-center text-stone-400 py-4">No movements yet</td></tr>'}
+            </tr>`).join('') || '<tr><td colspan="9" class="text-center text-stone-400 py-4">No movements yet</td></tr>'}
           </tbody>
         </table>
       `
@@ -4006,7 +4090,7 @@
         <thead><tr>
           <th class="sortable">Date</th><th>Ref No</th><th>Project</th><th>Item</th><th class="text-right">Qty</th><th>Site</th>
           ${type === 'IN' ? '<th>Supplier</th>' : '<th>Issued To</th><th>Purpose</th>'}
-          <th>Notes</th><th></th>
+          <th class="text-right">Rate</th><th class="text-right">Value</th><th>Notes</th><th></th>
         </tr></thead>
         <tbody id="imsMovBody">
           ${movs.map(m => {
@@ -4026,13 +4110,15 @@
                 ? `<td class="text-xs">${m.supplier || '—'}</td>`
                 : `<td class="text-xs">${m.issuedTo || '—'}</td><td class="text-xs">${m.purpose || '—'}</td>`
               }
+              <td class="text-right font-mono text-xs">${fmtINR(imsMovementUnitRate(m))}</td>
+              <td class="text-right font-mono text-xs"><b>${fmtINR(imsMovementValue(m))}</b>${m.type==='OUT' && Array.isArray(m.fifoLots) && m.fifoLots.length ? `<div class="text-[10px] text-stone-500">${m.fifoLots.length} FIFO lot${m.fifoLots.length!==1?'s':''}</div>` : ''}</td>
               <td class="text-xs text-stone-600">${m.notes || ''}</td>
               <td><div class="ims-row-action">
                 <button class="ims-icon-btn" data-ims-act="edit-mov" data-id="${m.id}" title="Edit">✎</button>
                 <button class="ims-icon-btn danger" data-ims-act="del-mov" data-id="${m.id}" title="Delete">🗑</button>
               </div></td>
             </tr>`;
-          }).join('') || `<tr><td colspan="${type==='IN'?9:10}" class="text-center text-stone-400 py-4">No ${type==='IN'?'receipts':'issues'} yet · click "New ${type==='IN'?'GRN':'Issue'}" to record one</td></tr>`}
+          }).join('') || `<tr><td colspan="${type==='IN'?11:12}" class="text-center text-stone-400 py-4">No ${type==='IN'?'receipts':'issues'} yet · click "New ${type==='IN'?'GRN':'Issue'}" to record one</td></tr>`}
         </tbody>
       </table>
     `;
@@ -4074,6 +4160,12 @@
             <div class="ims-field"><label>Item *</label><select name="itemId" required>${State.items.map(i => `<option value="${i.id}" ${m.itemId===i.id?'selected':''}>${i.sku ? i.sku + ' · ' : ''}${i.name} (${i.unit||'pcs'})</option>`).join('')}</select></div>
             <div class="ims-field"><label>Quantity *</label><input type="number" name="qty" min="0.01" step="0.01" value="${m.qty}" required></div>
           </div>
+          <div class="ims-form-row">
+            ${effType === 'IN'
+              ? `<div class="ims-field"><label>Actual Purchase Rate (NPR / unit) *</label><input type="number" name="unitRate" min="0" step="0.01" value="${imsMovementUnitRate(m)}" required></div><div class="ims-field"><label>Invoice / Challan Value</label><input type="number" name="totalValue" min="0" step="0.01" value="${m.totalValue ?? (Number(m.qty||0) * imsMovementUnitRate(m))}"></div>`
+              : `<div class="ims-field"><label>FIFO Rate</label><input value="${fmtINR(imsMovementUnitRate(m))}" readonly></div><div class="ims-field"><label>FIFO Issue Value</label><input value="${fmtINR(imsMovementValue(m))}" readonly></div>`
+            }
+          </div>
           <div class="ims-field"><label>Warehouse / Site *</label><select name="siteId" required>${State.sites.map(s => `<option value="${s.id}" ${m.siteId===s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
           ${effType === 'IN' 
             ? `<div class="ims-form-row">
@@ -4110,6 +4202,10 @@
         obj.siteId = Number(obj.siteId);
         obj.qty = Number(obj.qty);
         obj.date = new Date(obj.date).getTime();
+        if (effType === 'IN') {
+          obj.unitRate = Number(obj.unitRate || 0);
+          obj.totalValue = Number(obj.totalValue || (obj.qty * obj.unitRate));
+        }
         if (!obj.chargeProject && imsActiveProjectId()) obj.chargeProject = imsActiveProjectId();
         obj.projectId = obj.chargeProject || obj.projectId || '';
         obj.flowStage = effType === 'IN' ? 'received' : (obj.recipientType === 'transfer' ? 'transfer' : 'issued');
@@ -4133,6 +4229,11 @@
           if (obj.qty > effective) {
             if (!confirm(`⚠ Stock will go negative.\nAvailable: ${effective}\nIssuing: ${obj.qty}\n\nProceed anyway?`)) return false;
           }
+          const fifo = imsFifoIssue(obj.itemId, obj.qty, obj.date || Date.now(), id);
+          obj.fifoLots = fifo.lots;
+          obj.unitRate = fifo.unitRate;
+          obj.totalValue = fifo.total;
+          obj.fifoShortQty = fifo.shortQty;
         }
         if (id) {
           Object.assign(m, obj);
@@ -4220,7 +4321,7 @@
         <div class="ims-stat" style="border-color:#15803D"><div class="lbl">Returned (total)</div><div class="val">${returned.length}</div></div>
       </div>
       <table class="data">
-        <thead><tr><th>Issue Date</th><th>Tool</th><th>Qty</th><th>Serial / Asset</th><th>Issued To</th><th>Expected Return</th><th>Return Date</th><th>Status</th><th>Notes</th><th></th></tr></thead>
+        <thead><tr><th>Issue Date</th><th>Tool</th><th>Qty</th><th>Serial / Asset</th><th>Issued To</th><th>Issue Condition</th><th>Expected Return</th><th>Return Date</th><th>Return Condition</th><th>Status</th><th>Notes</th><th></th></tr></thead>
         <tbody>
           ${issues.map(t => {
             const it = itemById[t.itemId] || { name:'(deleted)' };
@@ -4234,16 +4335,19 @@
               <td class="font-mono text-xs">${t.qty}</td>
               <td class="font-mono text-xs">${t.serialNo || '—'}</td>
               <td class="text-xs">${t.issuedTo || '—'}</td>
+              <td class="text-xs">${esc(t.issueCondition || 'Good')}</td>
               <td class="font-mono text-xs" style="${isOverdue?'color:#C0383B;font-weight:700':''}">${t.expectedReturn || '—'}</td>
               <td class="font-mono text-xs">${t.returnDate ? fmtDateShort(t.returnDate) : '—'}</td>
+              <td class="text-xs">${esc(t.returnCondition || '—')}${t.damageNotes ? `<div class="text-[10px] text-red-700">${esc(t.damageNotes)}</div>` : ''}</td>
               <td>${statusBadge}</td>
               <td class="text-xs text-stone-600">${t.notes || ''}</td>
               <td><div class="ims-row-action">
                 ${t.status === 'ISSUED' ? `<button class="ims-icon-btn" style="border-color:#15803D;color:#15803D" data-ims-act="return-tool" data-id="${t.id}" title="Mark returned">↩</button>` : ''}
+                <button class="ims-icon-btn" data-ims-act="edit-tool" data-id="${t.id}" title="Edit">✎</button>
                 <button class="ims-icon-btn danger" data-ims-act="del-tool" data-id="${t.id}" title="Delete">🗑</button>
               </div></td>
             </tr>`;
-          }).join('') || '<tr><td colspan="10" class="text-center text-stone-400 py-4">No tools issued yet</td></tr>'}
+          }).join('') || '<tr><td colspan="12" class="text-center text-stone-400 py-4">No tools issued yet</td></tr>'}
         </tbody>
       </table>
     `;
@@ -4251,47 +4355,53 @@
       const btn = e.target.closest('[data-ims-act]');
       if (!btn) return;
       if (btn.dataset.imsAct === 'new-tool') imsIssueTool();
+      if (btn.dataset.imsAct === 'edit-tool') imsIssueTool(+btn.dataset.id);
       if (btn.dataset.imsAct === 'return-tool') imsReturnTool(+btn.dataset.id);
       if (btn.dataset.imsAct === 'del-tool') imsDeleteTool(+btn.dataset.id);
     });
   }
 
-  function imsIssueTool() {
+  function imsIssueTool(id) {
     const tools = State.items.filter(i => (i.category||'').toLowerCase().includes('tool') || (i.category||'').toLowerCase().includes('equipment'));
     const list = tools.length ? tools : State.items;
     if (!list.length) { toast('No Items','Create an item first','warn'); return; }
+    const rec = id ? State.toolIssues.find(x => Number(x.id) === Number(id)) : null;
     const today = new Date().toISOString().slice(0,10);
     openModal({
-      title: 'Issue Tool',
+      title: rec ? 'Edit Tool Issue' : 'Issue Tool',
       wide: true,
-      submitLabel: 'Issue Tool',
+      submitLabel: rec ? 'Save Tool Record' : 'Issue Tool',
       body: `
         <form id="imsToolForm" class="ims-form">
           <div class="ims-form-row">
-            <div class="ims-field"><label>Tool / Item *</label><select name="itemId" required>${list.map(i => `<option value="${i.id}">${i.name}</option>`).join('')}</select></div>
-            <div class="ims-field"><label>Quantity *</label><input type="number" name="qty" min="1" value="1" required></div>
+            <div class="ims-field"><label>Tool / Item *</label><select name="itemId" required>${list.map(i => `<option value="${i.id}" ${rec?.itemId===i.id?'selected':''}>${i.name}</option>`).join('')}</select></div>
+            <div class="ims-field"><label>Quantity *</label><input type="number" name="qty" min="1" value="${rec?.qty || 1}" required></div>
           </div>
           <div class="ims-form-row">
-            <div class="ims-field"><label>Issue Date *</label><input type="date" name="issueDate" value="${today}" required></div>
-            <div class="ims-field"><label>Expected Return</label><input type="date" name="expectedReturn"></div>
+            <div class="ims-field"><label>Issue Date *</label><input type="date" name="issueDate" value="${rec?.issueDate ? new Date(rec.issueDate).toISOString().slice(0,10) : today}" required></div>
+            <div class="ims-field"><label>Expected Return</label><input type="date" name="expectedReturn" value="${rec?.expectedReturn || ''}"></div>
           </div>
           <div class="ims-form-row">
-            <div class="ims-field"><label>Issued To *</label><input name="issuedTo" required placeholder="Worker name / ID / gang"></div>
-            <div class="ims-field"><label>Serial / Asset No</label><input name="serialNo" placeholder="DRL-001, HMR-002…"></div>
+            <div class="ims-field"><label>Issued To *</label><input name="issuedTo" value="${esc(rec?.issuedTo || '')}" required placeholder="Worker name / ID / gang"></div>
+            <div class="ims-field"><label>Serial / Asset No</label><input name="serialNo" value="${esc(rec?.serialNo || '')}" placeholder="DRL-001, HMR-002..."></div>
           </div>
-          <div class="ims-field"><label>Notes</label><textarea name="notes" rows="2" placeholder="Condition, accessories, etc."></textarea></div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Issue Condition</label><select name="issueCondition">${['Good','Fair','Needs service','Damaged'].map(x=>`<option ${rec?.issueCondition===x?'selected':''}>${x}</option>`).join('')}</select></div>
+            <div class="ims-field"><label>Accessories / Attachments</label><input name="accessories" value="${esc(rec?.accessories || '')}" placeholder="Battery, charger, blade, box"></div>
+          </div>
+          <div class="ims-field"><label>Notes</label><textarea name="notes" rows="2" placeholder="Condition, accessories, etc.">${esc(rec?.notes || '')}</textarea></div>
         </form>
       `,
       onSubmit: () => {
         const fd = new FormData($('#imsToolForm'));
-        const obj = { status:'ISSUED' };
+        const obj = rec ? { ...rec } : { status:'ISSUED' };
         fd.forEach((v,k) => obj[k] = v);
         obj.itemId = Number(obj.itemId);
         obj.qty = Number(obj.qty);
         obj.issueDate = new Date(obj.issueDate).getTime();
-        obj.id = State.imsNextId.tool++;
-        State.toolIssues.push(obj);
-        audit('create', 'Tool Issue', obj.issuedTo + ' · qty ' + obj.qty);
+        if (rec) Object.assign(rec, obj);
+        else { obj.id = State.imsNextId.tool++; State.toolIssues.push(obj); }
+        audit(rec ? 'update' : 'create', 'Tool Issue', obj.issuedTo + ' · qty ' + obj.qty);
         saveState();
         toast('Tool Issued','Issued to ' + obj.issuedTo,'ok');
         renderIMS();
@@ -4301,12 +4411,29 @@
   function imsReturnTool(id) {
     const t = State.toolIssues.find(x => x.id === id);
     if (!t) return;
-    t.status = 'RETURNED';
-    t.returnDate = Date.now();
-    audit('update','Tool Return', t.issuedTo + ' · qty ' + t.qty);
-    saveState();
-    toast('Tool Returned', t.issuedTo, 'ok');
-    renderIMS();
+    openModal({
+      title:'Return Tool',
+      submitLabel:'Mark Returned',
+      body:`
+        <form id="imsToolReturnForm" class="ims-form">
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Return Date</label><input type="date" name="returnDate" value="${new Date().toISOString().slice(0,10)}"></div>
+            <div class="ims-field"><label>Return Condition</label><select name="returnCondition">${['Good','Fair','Needs service','Damaged','Lost'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+          </div>
+          <div class="ims-field"><label>Damage / service notes</label><textarea name="damageNotes" rows="2" placeholder="Damage, missing accessories, service required"></textarea></div>
+        </form>`,
+      onSubmit: () => {
+        const fd = new FormData($('#imsToolReturnForm'));
+        t.status = 'RETURNED';
+        t.returnDate = new Date(fd.get('returnDate') || new Date()).getTime();
+        t.returnCondition = fd.get('returnCondition') || 'Good';
+        t.damageNotes = fd.get('damageNotes') || '';
+        audit('update','Tool Return', t.issuedTo + ' · qty ' + t.qty + ' · ' + t.returnCondition);
+        saveState();
+        toast('Tool Returned', t.issuedTo, 'ok');
+        renderIMS();
+      }
+    });
   }
   function imsDeleteTool(id) {
     const t = State.toolIssues.find(x => x.id === id);
@@ -4344,7 +4471,7 @@
       ${low.length === 0 
         ? `<div class="ims-empty"><div class="ico">✅</div><h3 class="font-display font-bold text-lg">Everything in stock</h3><p class="text-sm text-stone-500 mt-2">No items are below their reorder levels right now.</p></div>`
         : Object.entries(grouped).map(([supplier, rows], idx) => {
-          const total = rows.reduce((s, r) => s + r.deficit * (r.it.costPrice || 0), 0);
+          const total = rows.reduce((s, r) => s + r.deficit * (stockAvgRateOf(r.it.id) || r.it.costPrice || 0), 0);
           return `
             <div class="card mb-4">
               <div class="px-4 py-3 border-b border-stone-100 flex justify-between items-center" style="background:#fafaf6">
@@ -4362,8 +4489,8 @@
                   <td class="text-right font-mono" style="color:${stock<=0?'#C0383B':'#B45309'}">${stock} ${it.unit||''}</td>
                   <td class="text-right font-mono text-xs">${it.reorderLevel||0}</td>
                   <td class="text-right font-mono"><b>${deficit}</b> ${it.unit||''}</td>
-                  <td class="text-right font-mono text-xs">${fmtINR(it.costPrice||0)}</td>
-                  <td class="text-right font-mono"><b>${fmtINR(deficit * (it.costPrice||0))}</b></td>
+                  <td class="text-right font-mono text-xs">${fmtINR(stockAvgRateOf(it.id) || it.costPrice || 0)}</td>
+                  <td class="text-right font-mono"><b>${fmtINR(deficit * (stockAvgRateOf(it.id) || it.costPrice || 0))}</b></td>
                 </tr>`).join('')}</tbody>
               </table>
             </div>
@@ -4379,7 +4506,7 @@
       if (btn.dataset.imsAct === 'gen-po') {
         const supplier = Object.keys(c._imsPOGenGroups)[Number(btn.dataset.supplierIdx)];
         const rows = c._imsPOGenGroups[supplier];
-        const lines = rows.map(r => ({ itemId:r.it.id, name:r.it.name, unit:r.it.unit||'', qty:r.deficit, rate:r.it.costPrice||0, total:r.deficit*(r.it.costPrice||0), dimensions:r.it.dimensions||'', machineDetails:r.it.machineDetails||'', receivedQty:0 }));
+        const lines = rows.map(r => { const rate = stockAvgRateOf(r.it.id) || r.it.costPrice || 0; return { itemId:r.it.id, name:r.it.name, unit:r.it.unit||'', qty:r.deficit, rate, total:r.deficit*rate, dimensions:r.it.dimensions||'', machineDetails:r.it.machineDetails||'', receivedQty:0 }; });
         imsCreatePO(supplier, lines);
       }
       if (btn.dataset.imsAct === 'gen-all-po') imsGenerateAllPOs(c._imsPOGenGroups);
@@ -4406,7 +4533,7 @@
   function imsGenerateAllPOs(groups) {
     let count = 0;
     Object.entries(groups).forEach(([supplier, rows]) => {
-      const lines = rows.map(r => ({ itemId:r.it.id, name:r.it.name, unit:r.it.unit||'', qty:r.deficit, rate:r.it.costPrice||0, total:r.deficit*(r.it.costPrice||0), dimensions:r.it.dimensions||'', machineDetails:r.it.machineDetails||'', receivedQty:0 }));
+      const lines = rows.map(r => { const rate = stockAvgRateOf(r.it.id) || r.it.costPrice || 0; return { itemId:r.it.id, name:r.it.name, unit:r.it.unit||'', qty:r.deficit, rate, total:r.deficit*rate, dimensions:r.it.dimensions||'', machineDetails:r.it.machineDetails||'', receivedQty:0 }; });
       const total = lines.reduce((s,l) => s + l.total, 0);
       const poNo = 'PO-' + String(2451 + (State.pos?.length || 0) + count).padStart(4,'0');
       const vendor = vendorByName(supplier);
@@ -4520,8 +4647,8 @@
       body: `
         <form id="imsReceivePOForm" class="ims-form">
           <div class="text-sm mb-3">Receive <b>${poNo(p)}</b> into <b>${State.sites[0].name}</b>. Enter actual received quantity; any short quantity stays visible in PO Track.</div>
-          <table class="data"><thead><tr><th>Item</th><th class="text-right">Ordered</th><th class="text-right">Already Received</th><th class="text-right">Receive Now</th></tr></thead><tbody>
-            ${lines.map((l,i) => { const bal = Math.max(0, Number(l.qty || 0) - Number(l.receivedQty || 0)); return `<tr><td><b>${esc(l.name || 'Item')}</b><div class="text-[10px] text-stone-500">${esc(l.dimensions || l.machineDetails || '')}</div></td><td class="text-right font-mono">${l.qty || ''} ${esc(l.unit||'')}</td><td class="text-right font-mono">${l.receivedQty || 0}</td><td class="text-right"><input name="recv_${i}" type="number" min="0" step="0.01" value="${bal}" class="border border-stone-200 px-2 py-1 text-xs text-right" style="width:110px"></td></tr>`; }).join('')}
+          <table class="data"><thead><tr><th>Item</th><th class="text-right">Ordered</th><th class="text-right">Already Received</th><th class="text-right">Receive Now</th><th class="text-right">Actual Rate</th></tr></thead><tbody>
+            ${lines.map((l,i) => { const bal = Math.max(0, Number(l.qty || 0) - Number(l.receivedQty || 0)); return `<tr><td><b>${esc(l.name || 'Item')}</b><div class="text-[10px] text-stone-500">${esc(l.dimensions || l.machineDetails || '')}</div></td><td class="text-right font-mono">${l.qty || ''} ${esc(l.unit||'')}</td><td class="text-right font-mono">${l.receivedQty || 0}</td><td class="text-right"><input name="recv_${i}" type="number" min="0" step="0.01" value="${bal}" class="border border-stone-200 px-2 py-1 text-xs text-right" style="width:110px"></td><td class="text-right"><input name="rate_${i}" type="number" min="0" step="0.01" value="${Number(l.rate || 0)}" class="border border-stone-200 px-2 py-1 text-xs text-right" style="width:120px"></td></tr>`; }).join('')}
           </tbody></table>
           <div class="ims-field mt-3"><label>GRN / receiving note</label><textarea name="receiveNote" rows="2" placeholder="Gate entry, challan, damage / shortage remarks"></textarea></div>
         </form>`,
@@ -4531,17 +4658,22 @@
         lines.forEach((line, i) => {
           const recv = Number(fd.get('recv_' + i) || 0);
           if (!recv || !line.itemId) return;
+          const unitRate = Number(fd.get('rate_' + i) || line.rate || 0);
+          line.rate = unitRate;
+          line.total = Number(line.qty || 0) * unitRate;
           line.receivedQty = Number(line.receivedQty || 0) + recv;
           State.stockMovements.push({
             id: State.imsNextId.mov++,
             type:'IN', itemId: line.itemId, siteId, qty: recv,
             date: Date.now(), refNo: poNo(p), supplier: poVendor(p),
+            unitRate, totalValue: recv * unitRate,
             notes: (fd.get('receiveNote') || 'Auto-received from PO ' + poNo(p)), poId: p.id,
             projectId: poProject(p), chargeProject: poProject(p), flowStage:'received'
           });
           receivedLines++;
         });
         const allDone = lines.every(line => Number(line.qty || 0) <= Number(line.receivedQty || 0));
+        p.total = lines.reduce((s,line) => s + Number(line.total || (Number(line.qty || 0) * Number(line.rate || 0))), 0);
         p.status = allDone ? 'RECEIVED' : 'PARTIAL';
         p.receivedAt = allDone ? Date.now() : p.receivedAt;
         p.receiveNote = fd.get('receiveNote') || p.receiveNote || '';
@@ -4624,12 +4756,12 @@
   }
   function imsRStock() {
     const m = stockMap();
-    const rows = State.items.map(it => ({ it, stock: m.get(it.id) || 0, value: (m.get(it.id) || 0) * (it.costPrice || 0) }));
+    const rows = State.items.map(it => ({ it, stock: m.get(it.id) || 0, avgRate: stockAvgRateOf(it.id), value: stockValueOf(it.id) }));
     const total = rows.reduce((s,r) => s + r.value, 0);
     $('#imsReportBody').innerHTML = `
       <div class="flex justify-between items-center mb-3"><div class="font-display font-bold">Stock Levels Report</div><div class="text-xs text-stone-500">${State.items.length} items · total value <b>${fmtINR(total)}</b></div></div>
-      <table class="data"><thead><tr><th>SKU</th><th>Name</th><th>Category</th><th class="text-right">Stock</th><th class="text-right">Reorder</th><th class="text-right">Cost</th><th class="text-right">Value</th></tr></thead><tbody>
-        ${rows.map(({it,stock,value}) => `<tr><td class="font-mono text-xs">${it.sku||'—'}</td><td>${it.name}</td><td class="text-xs">${it.category||'—'}</td><td class="text-right font-mono" style="${stock<0?'color:#C0383B':stock<=(it.reorderLevel||0)?'color:#B45309':''}">${stock} <span class="text-[10px] text-stone-500">${it.unit||''}</span></td><td class="text-right font-mono text-xs">${it.reorderLevel||0}</td><td class="text-right font-mono text-xs">${fmtINR(it.costPrice||0)}</td><td class="text-right font-mono"><b>${fmtINR(value)}</b></td></tr>`).join('')}
+      <table class="data"><thead><tr><th>SKU</th><th>Name</th><th>Category</th><th class="text-right">Stock</th><th class="text-right">Reorder</th><th class="text-right">FIFO Avg</th><th class="text-right">FIFO Value</th></tr></thead><tbody>
+        ${rows.map(({it,stock,avgRate,value}) => `<tr><td class="font-mono text-xs">${it.sku||'—'}</td><td>${it.name}</td><td class="text-xs">${it.category||'—'}</td><td class="text-right font-mono" style="${stock<0?'color:#C0383B':stock<=(it.reorderLevel||0)?'color:#B45309':''}">${stock} <span class="text-[10px] text-stone-500">${it.unit||''}</span></td><td class="text-right font-mono text-xs">${it.reorderLevel||0}</td><td class="text-right font-mono text-xs">${fmtINR(avgRate||0)}</td><td class="text-right font-mono"><b>${fmtINR(value)}</b></td></tr>`).join('')}
         <tr style="background:#fafaf6;font-weight:700"><td colspan="6" class="text-right">Grand Total</td><td class="text-right font-mono">${fmtINR(total)}</td></tr>
       </tbody></table>`;
   }
@@ -4687,10 +4819,10 @@
   // ----- CSV EXPORT -----
   function imsExportCSV() {
     const m = stockMap();
-    const headers = ['SKU','Name','Category','Unit','Stock','Reorder','Cost','Value','Supplier'];
+    const headers = ['SKU','Name','Category','Unit','Stock','Reorder','FIFO Avg Rate','FIFO Value','Primary Supplier','Approved Vendors'];
     const rows = State.items.map(it => {
       const stock = m.get(it.id) || 0;
-      return [it.sku||'', it.name, it.category||'', it.unit||'', stock, it.reorderLevel||0, it.costPrice||0, stock * (it.costPrice||0), it.supplier||''];
+      return [it.sku||'', it.name, it.category||'', it.unit||'', stock, it.reorderLevel||0, stockAvgRateOf(it.id), stockValueOf(it.id), it.supplier||'', (it.vendorNames||[]).join('; ')];
     });
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type:'text/csv' });
