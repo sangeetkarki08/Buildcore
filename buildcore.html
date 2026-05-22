@@ -856,7 +856,7 @@
               <div class="text-xs text-stone-500 mt-1">Click any date to edit · variance computed live · negative = slipping right</div>
             </div>
             <div class="flex gap-2">
-              <button class="btn btn-ghost text-xs"><i data-lucide="plus" class="w-3 h-3"></i>Add Activity</button>
+            <button class="btn btn-ghost text-xs" onclick="scheduleActivityModal()"><i data-lucide="plus" class="w-3 h-3"></i>Add Activity</button>
               <button class="btn btn-ghost text-xs"><i data-lucide="git-compare" class="w-3 h-3"></i>Save Revision</button>
               <button class="btn btn-ghost text-xs"><i data-lucide="download" class="w-3 h-3"></i>Export</button>
             </div>
@@ -866,7 +866,11 @@
               <th class="sortable">WBS</th>
               <th class="sortable">Activity</th>
               <th class="sortable">Resp.</th>
+              <th class="sortable">Resources</th>
               <th class="sortable">Dur (d)</th>
+              <th>Pred.</th>
+              <th>Succ.</th>
+              <th>Critical</th>
               <th colspan="2" class="text-center" style="border-bottom:2px solid #1E3A4C; color:#1E3A4C">BASELINE</th>
               <th colspan="2" class="text-center" style="border-bottom:2px solid #B45309; color:#B45309">REVISED</th>
               <th colspan="2" class="text-center" style="border-bottom:2px solid #E8742C; color:#E8742C">ACTUAL</th>
@@ -876,7 +880,7 @@
               <th>Milestone</th>
             </tr>
             <tr class="text-[10px] text-stone-500 uppercase">
-              <th></th><th></th><th></th><th></th>
+              <th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th>
               <th>Start</th><th>Finish</th>
               <th>Start</th><th>Finish</th>
               <th>Start</th><th>Finish</th>
@@ -3201,6 +3205,7 @@
       projects: State.projects, tenders: State.tenders, materials: State.materials,
       items: State.items, stockMovements: State.stockMovements, toolIssues: State.toolIssues,
       sites: State.sites, imsCurrentTab: State.imsCurrentTab, imsNextId: State.imsNextId,
+      scheduleActivities: State.scheduleActivities,
       equipment: State.equipment, equipLogs: State.equipLogs, operators: State.operators,
       maintenance: State.maintenance, eqSites: State.eqSites, eqCurrentTab: State.eqCurrentTab,
       eqSelectedEquip: State.eqSelectedEquip, eqNextId: State.eqNextId,
@@ -3262,7 +3267,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','toolIssues','sites','imsCurrentTab','imsNextId','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -14293,6 +14298,32 @@ Available Actions:
     { wbs:'8.0', name:'Finishing · flooring · paint', resp:'BJ Paint', dur:160, bs:'01-Aug-26', bf:'07-Jan-27', rs:'08-Aug-26', rf:'14-Jan-27', as:'—', af:'—', pct:0 },
     { wbs:'9.0', name:'Testing, commissioning, handover', resp:'PM', dur:30, bs:'08-Jan-27', bf:'06-Feb-27', rs:'15-Jan-27', rf:'13-Feb-27', as:'—', af:'—', pct:0 }
   ];
+  ScheduleData.forEach((r, i) => {
+    if (!r.resources) r.resources = r.resp || '';
+    if (!r.pred) r.pred = i > 0 ? ScheduleData[i-1].wbs : '';
+    if (!r.succ) r.succ = ScheduleData[i+1]?.wbs || '';
+    if (r.critical == null) r.critical = ['4.2','4.3','4.4','7.1','9.0'].includes(r.wbs);
+  });
+
+  function scheduleProjectId() {
+    const pid = State.session?.projectId || State.activeProject;
+    return pid && pid !== 'ALL' ? pid : 'PRJ-017';
+  }
+  function scheduleIsSampleProject(pid=scheduleProjectId()) {
+    return ['PRJ-017','PRJ-021','PRJ-019','PRJ-024','PRJ-013','PRJ-030'].includes(pid);
+  }
+  function scheduleRows(pid=scheduleProjectId()) {
+    State.scheduleActivities = State.scheduleActivities || {};
+    if (!State.scheduleActivities[pid]) State.scheduleActivities[pid] = scheduleIsSampleProject(pid) ? ScheduleData.map(r => ({...r})) : [];
+    return State.scheduleActivities[pid];
+  }
+  function scheduleBlankDate(v='') { return v || '—'; }
+  function scheduleActivityByWbs(wbs, pid=scheduleProjectId()) {
+    return scheduleRows(pid).find(r => String(r.wbs) === String(wbs));
+  }
+  function scheduleSuccessors(wbs, pid=scheduleProjectId()) {
+    return scheduleRows(pid).filter(r => splitListText(r.pred).includes(String(wbs))).map(r => r.wbs);
+  }
 
   function daysBetween(d1, d2) {
     if (!d1 || !d2 || d1 === '—' || d2 === '—') return null;
@@ -14334,14 +14365,15 @@ Available Actions:
     return (State.bccMilestones || []).filter(m => m.projectId === projectId && (m.linkedScheduleWbs || m.scheduleActivity));
   }
   function scheduleMilestoneForWbs(wbs) {
-    return (State.bccMilestones || []).find(m => m.linkedScheduleWbs === wbs);
+    return (State.bccMilestones || []).find(m => m.projectId === scheduleProjectId() && m.linkedScheduleWbs === wbs);
   }
   function scheduleCreateMilestone(idx, silent=false) {
     seedBCCData();
     State.bccMilestones = State.bccMilestones || [];
     State.bccNextId = State.bccNextId || { milestone:1 };
     State.bccNextId.milestone = State.bccNextId.milestone || ((State.bccMilestones.length || 0) + 1);
-    const t = ScheduleData[idx];
+    const rows = scheduleRows();
+    const t = rows[idx];
     if (!t) return null;
     const existing = scheduleMilestoneForWbs(t.wbs);
     const actualFinish = t.af !== 'â€”' && t.af !== '—' ? t.af : '';
@@ -14350,8 +14382,8 @@ Available Actions:
     const payload = {
       title:t.name,
       category:/testing|commissioning|handover/i.test(t.name) ? 'Commissioning' : /MEP|facade|façade|glazing/i.test(t.name) ? 'Subcontractor' : 'Physical Progress',
-      projectId:'PRJ-017',
-      location:'Skyline Towers Block A',
+      projectId:scheduleProjectId(),
+      location:projectNameById(scheduleProjectId()),
       boqId:'',
       package:t.wbs,
       plannedFinish:scheduleDateISO(t.bf),
@@ -14387,7 +14419,7 @@ Available Actions:
   function scheduleGenerateMilestones() {
     seedBCCData();
     let count = 0;
-    ScheduleData.forEach((t,i) => {
+    scheduleRows().forEach((t,i) => {
       if (t.wbs.endsWith('.0') || (+t.pct || 0) < 100) { scheduleCreateMilestone(i, true); count++; }
     });
     saveState();
@@ -14397,7 +14429,7 @@ Available Actions:
   function renderScheduleMilestoneMarkers() {
     const wrap = $('#scheduleMilestoneMarkers');
     if (!wrap) return;
-    const milestones = scheduleMilestones('PRJ-017').slice().sort((a,b) => String(a.revisedFinish || a.plannedFinish).localeCompare(String(b.revisedFinish || b.plannedFinish)));
+    const milestones = scheduleMilestones(scheduleProjectId()).slice().sort((a,b) => String(a.revisedFinish || a.plannedFinish).localeCompare(String(b.revisedFinish || b.plannedFinish)));
     const start = new Date('2024-01-01'), end = new Date('2026-12-31'), span = end - start;
     const pos = (m) => {
       const d = new Date((m.revisedFinish || m.plannedFinish || '2026-01-01') + 'T00:00:00');
@@ -14415,7 +14447,7 @@ Available Actions:
   function renderScheduleMilestonePanel() {
     const panel = $('#scheduleMilestonePanel');
     if (!panel) return;
-    const milestones = scheduleMilestones('PRJ-017');
+    const milestones = scheduleMilestones(scheduleProjectId());
     const delayed = milestones.filter(m => m.delayStatus === 'Delayed').length;
     const due = milestones.filter(m => ['At Risk','Upcoming'].includes(m.delayStatus)).length;
     const complete = milestones.filter(m => m.delayStatus === 'Completed').length;
@@ -14435,10 +14467,85 @@ Available Actions:
     if (window.lucide) lucide.createIcons();
   }
 
+  function renderScheduleSummary(rows=scheduleRows()) {
+    const kpi = $('#view-schedule .grid.grid-cols-4.gap-4.mb-5');
+    const gantt = $('#view-schedule .card.p-5.overflow-x-auto');
+    const lookahead = $('#view-schedule .grid.grid-cols-2.gap-4.mt-5 .card:first-child');
+    if (kpi) {
+      const critical = rows.filter(r => r.critical).length;
+      const atRisk = rows.filter(r => scheduleMilestoneStatus(r) === 'At Risk' || scheduleMilestoneStatus(r) === 'Delayed').length;
+      const complete = rows.length ? rows.reduce((s,r) => s + Number(r.pct || 0), 0) / rows.length : 0;
+      const twoWeek = scheduleTwoWeekRows(rows);
+      kpi.innerHTML = `
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">ACTIVITIES</div><div class="font-display font-black text-2xl tabular">${rows.length}</div><div class="text-xs text-stone-500 mt-1">${complete.toFixed(1)}% average progress</div></div>
+        <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">CRITICAL PATH</div><div class="font-display font-black text-2xl tabular">${critical}</div><div class="text-xs text-stone-500 mt-1">${atRisk} risk / delayed</div></div>
+        <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">DURATION</div><div class="font-display font-black text-2xl tabular">${rows.reduce((s,r)=>s+Number(r.dur||0),0)}</div><div class="text-xs text-stone-500 mt-1">activity days total</div></div>
+        <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">2-WEEK LOOKAHEAD</div><div class="font-display font-black text-2xl tabular">${twoWeek.length}</div><div class="text-xs text-stone-500 mt-1">editable plan window</div></div>`;
+    }
+    if (gantt) {
+      gantt.innerHTML = `<div class="flex items-center justify-between mb-3"><div class="font-display font-bold text-lg">Project Programme · ${esc(projectNameById(scheduleProjectId()))}</div><button class="btn btn-amber text-xs" onclick="scheduleActivityModal()"><i data-lucide="plus" class="w-3 h-3"></i>Add Activity</button></div>
+        ${rows.length ? rows.map(r => `<div class="gantt-row"><div class="px-3 py-2 text-sm"><b>${esc(r.wbs)}</b> ${esc(r.name)}${r.critical ? ' <span class="badge badge-bad">Critical</span>' : ''}<div class="text-[10px] text-stone-500">${esc(r.resources || r.resp || '')} · Pred ${esc(r.pred || '-')} · Succ ${esc(r.succ || scheduleSuccessors(r.wbs).join(', ') || '-')}</div></div><div class="relative py-2 px-1"><div class="gantt-bar" style="width:${Math.max(4, Math.min(100, Number(r.pct || 0)))}%; background:${r.critical ? '#C0383B' : Number(r.pct||0) >= 100 ? '#15803D' : '#E8742C'}; height:14px;"></div></div></div>`).join('') : '<div class="ims-empty"><h3 class="font-display font-bold text-lg">No Schedule Yet</h3><p class="text-sm text-stone-500 mt-2">Create activities with resources, duration, predecessors, successors and critical path marking.</p><button class="btn btn-amber mt-4" onclick="scheduleActivityModal()">Add First Activity</button></div>'}
+        <div id="scheduleMilestoneMarkers" class="mt-4"></div>`;
+    }
+    if (lookahead) {
+      const rows2 = scheduleTwoWeekRows(rows);
+      lookahead.innerHTML = `<div class="stamp mb-2"><i data-lucide="calendar-days" class="w-3 h-3"></i>2-WEEK LOOK-AHEAD</div><div class="font-display font-bold mb-3">Activities planned in the next 14 days</div><table class="data"><thead><tr><th>WBS</th><th>Activity</th><th>Resource</th><th>Pred/Succ</th><th>Status</th></tr></thead><tbody>${rows2.map(r => `<tr><td class="font-mono text-xs">${esc(r.wbs)}</td><td class="text-xs">${esc(r.name)}</td><td class="text-xs">${esc(r.resources || r.resp || '-')}</td><td class="font-mono text-xs">${esc(r.pred || '-')} → ${esc(r.succ || scheduleSuccessors(r.wbs).join(', ') || '-')}</td><td><span class="badge badge-${r.critical ? 'bad' : 'info'}">${r.critical ? 'CRITICAL' : scheduleMilestoneStatus(r)}</span></td></tr>`).join('') || '<tr><td colspan="5" class="text-center text-stone-400 py-4">No activities in the next two weeks.</td></tr>'}</tbody></table>`;
+    }
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+  function scheduleTwoWeekRows(rows=scheduleRows()) {
+    return rows.filter(r => {
+      const d = parseScheduleDate(r.rs || r.bs || r.as);
+      if (!d) return false;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diff = Math.round((d - today) / 86400000);
+      return diff >= 0 && diff <= 14;
+    });
+  }
+  function scheduleToggleCritical(idx) {
+    const rows = scheduleRows();
+    if (!rows[idx]) return;
+    rows[idx].critical = !rows[idx].critical;
+    saveState();
+    renderScheduleTable();
+  }
+  window.scheduleToggleCritical = scheduleToggleCritical;
+  function scheduleActivityModal(id=null) {
+    const rows = scheduleRows();
+    const r = id != null ? rows[id] : { wbs:'', name:'', resp:'', resources:'', dur:0, pred:'', succ:'', bs:'', bf:'', rs:'', rf:'', as:'', af:'', pct:0, critical:false };
+    openModal({ title:id != null ? 'Edit Schedule Activity' : 'Add Schedule Activity', wide:true, submitLabel:id != null ? 'Save Activity' : 'Add Activity', body:`
+      <div class="form-grid-3">
+        <div class="form-row"><label>WBS</label><input name="wbs" value="${esc(r.wbs || '')}" required></div>
+        <div class="form-row"><label>Activity</label><input name="name" value="${esc(r.name || '')}" required></div>
+        <div class="form-row"><label>Responsible</label><input name="resp" value="${esc(r.resp || '')}"></div>
+        <div class="form-row"><label>Resources</label><input name="resources" value="${esc(r.resources || '')}" placeholder="Crew, equipment, subcontractor"></div>
+        <div class="form-row"><label>Duration (days)</label><input type="number" name="dur" value="${Number(r.dur || 0)}"></div>
+        <div class="form-row"><label>Critical Path</label><select name="critical"><option value="no" ${!r.critical?'selected':''}>NO</option><option value="yes" ${r.critical?'selected':''}>YES</option></select></div>
+        <div class="form-row"><label>Predecessor WBS</label><input name="pred" value="${esc(r.pred || '')}" placeholder="1.0, 2.1"></div>
+        <div class="form-row"><label>Successor WBS</label><input name="succ" value="${esc(r.succ || '')}" placeholder="2.0, 3.1"></div>
+        <div class="form-row"><label>% Complete</label><input type="number" name="pct" min="0" max="100" value="${Number(r.pct || 0)}"></div>
+        <div class="form-row"><label>Baseline Start</label><input name="bs" value="${esc(r.bs || '')}" placeholder="YYYY-MM-DD or DD-Mon-YY"></div>
+        <div class="form-row"><label>Baseline Finish</label><input name="bf" value="${esc(r.bf || '')}"></div>
+        <div class="form-row"><label>Revised Start</label><input name="rs" value="${esc(r.rs || '')}"></div>
+        <div class="form-row"><label>Revised Finish</label><input name="rf" value="${esc(r.rf || '')}"></div>
+        <div class="form-row"><label>Actual Start</label><input name="as" value="${esc(r.as || '')}"></div>
+        <div class="form-row"><label>Actual Finish</label><input name="af" value="${esc(r.af || '')}"></div>
+      </div>`, onSubmit:(d) => {
+        const obj = {...r, ...d, dur:Number(d.dur || 0), pct:Number(d.pct || 0), critical:d.critical === 'yes'};
+        ['bs','bf','rs','rf','as','af'].forEach(k => obj[k] = scheduleBlankDate(obj[k]));
+        if (id != null) rows[id] = obj; else rows.push(obj);
+        saveState(); audit(id != null ? 'update' : 'create','Schedule Activity', obj.wbs + ' · ' + obj.name);
+        renderScheduleTable(); toast(id != null ? 'Activity Updated' : 'Activity Added', obj.wbs + ' · ' + obj.name, 'ok');
+      }});
+  }
+  window.scheduleActivityModal = scheduleActivityModal;
+
   function renderScheduleTable() {
     const tbody = $('#schedTbody');
     if (!tbody) return;
-    tbody.innerHTML = ScheduleData.map((t,i) => {
+    const rows = scheduleRows();
+    renderScheduleSummary(rows);
+    tbody.innerHTML = rows.map((t,i) => {
       const variance = daysBetween(t.bf, t.af !== '—' ? t.af : t.rf);
       const varColor = variance == null ? '' : variance <= 0 ? 'text-green-700' : 'text-red-700';
       const varStr = variance == null ? '—' : (variance > 0 ? '+' : '') + variance;
@@ -14446,11 +14553,16 @@ Available Actions:
                           t.pct > 0 ? '<span class="badge badge-info">In Progress</span>' :
                           '<span class="badge badge-neutral">Future</span>';
       const ms = scheduleMilestoneForWbs(t.wbs);
+      const succ = t.succ || scheduleSuccessors(t.wbs).join(', ');
       return `<tr data-sched-idx="${i}">
-        <td class="font-mono text-xs">${t.wbs}</td>
-        <td class="text-xs">${t.name}</td>
-        <td class="text-xs">${t.resp}</td>
-        <td class="text-right font-mono text-xs">${t.dur}</td>
+        <td class="font-mono text-xs editable" contenteditable="true" data-sched-field="wbs">${t.wbs}</td>
+        <td class="text-xs editable" contenteditable="true" data-sched-field="name">${t.name}</td>
+        <td class="text-xs editable" contenteditable="true" data-sched-field="resp">${t.resp || ''}</td>
+        <td class="text-xs editable" contenteditable="true" data-sched-field="resources">${t.resources || ''}</td>
+        <td class="text-right font-mono text-xs editable" contenteditable="true" data-sched-field="dur">${t.dur || 0}</td>
+        <td class="font-mono text-xs editable" contenteditable="true" data-sched-field="pred">${t.pred || ''}</td>
+        <td class="font-mono text-xs editable" contenteditable="true" data-sched-field="succ">${succ}</td>
+        <td><button class="badge ${t.critical ? 'badge-bad' : 'badge-neutral'}" onclick="scheduleToggleCritical(${i})">${t.critical ? 'CRITICAL' : 'NORMAL'}</button></td>
         <td class="font-mono text-xs editable" contenteditable="true" data-sched-field="bs">${t.bs}</td>
         <td class="font-mono text-xs editable" contenteditable="true" data-sched-field="bf">${t.bf}</td>
         <td class="font-mono text-xs editable" contenteditable="true" data-sched-field="rs">${t.rs}</td>
@@ -14462,7 +14574,7 @@ Available Actions:
         <td>${statusBadge}</td>
         <td><button class="btn btn-ghost text-xs" onclick="scheduleCreateMilestone(${i})"><i data-lucide="flag" class="w-3 h-3"></i>${ms ? 'Update' : 'Set'}</button>${ms ? `<div class="text-[10px] mt-1"><span class="badge badge-${milestoneColor(ms.delayStatus)}">${esc(ms.delayStatus)}</span></div>` : ''}</td>
       </tr>`;
-    }).join('');
+    }).join('') || '<tr><td colspan="18" class="text-center text-stone-400 py-5">No schedule activities yet. Click Add Activity to build this project schedule from user data.</td></tr>';
     renderScheduleMilestoneMarkers();
     renderScheduleMilestonePanel();
     if (window.lucide) lucide.createIcons();
@@ -14478,9 +14590,11 @@ Available Actions:
       const row = cell.closest('[data-sched-idx]');
       const idx = +row.dataset.schedIdx;
       const field = cell.dataset.schedField;
-      ScheduleData[idx][field] = cell.textContent.trim();
+      const rows = scheduleRows();
+      rows[idx][field] = ['dur','pct'].includes(field) ? Number(cell.textContent.trim() || 0) : cell.textContent.trim();
+      saveState();
       renderScheduleTable();
-      toast('Schedule Updated', ScheduleData[idx].wbs + ' · ' + field.toUpperCase() + ' = ' + cell.textContent.trim(), 'ok', 1800);
+      toast('Schedule Updated', rows[idx].wbs + ' · ' + field.toUpperCase() + ' = ' + cell.textContent.trim(), 'ok', 1800);
     }, true);
   }
 
@@ -14753,6 +14867,7 @@ Available Actions:
       return;
     }
     if (t === 'add activity') {
+      return scheduleActivityModal();
       openModal({ title:'Add Schedule Activity', wide:true, submitLabel:'Add to Programme', body:`
         <div class="grid grid-cols-2 gap-3">
           <label><div class="text-xs text-stone-500 mb-1">WBS Code</div><input class="w-full border border-stone-200 px-2 py-1 text-sm" placeholder="4.5"></label>
