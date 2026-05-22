@@ -3201,6 +3201,10 @@
       projects: State.projects, tenders: State.tenders, materials: State.materials,
       items: State.items, stockMovements: State.stockMovements, toolIssues: State.toolIssues,
       sites: State.sites, imsCurrentTab: State.imsCurrentTab, imsNextId: State.imsNextId,
+      equipment: State.equipment, equipLogs: State.equipLogs, operators: State.operators,
+      maintenance: State.maintenance, eqSites: State.eqSites, eqCurrentTab: State.eqCurrentTab,
+      eqSelectedEquip: State.eqSelectedEquip, eqNextId: State.eqNextId,
+      projectSites: State.projectSites, psNextId: State.psNextId,
       ncrs: State.ncrs, raBills: State.raBills, pos: State.pos, vendors: State.vendors, automations: State.automations,
       dprs: State.dprs, dprTemplates: State.dprTemplates, dprNextTemplateId: State.dprNextTemplateId,
       labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
@@ -3258,7 +3262,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','toolIssues','sites','imsCurrentTab','imsNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','toolIssues','sites','imsCurrentTab','imsNextId','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3516,6 +3520,18 @@
     const map = new Map();
     State.items.forEach(it => map.set(it.id, stockValueOf(it.id)));
     return map;
+  }
+  function splitListText(text) {
+    return String(text || '').split(/[,;\n]/).map(v => v.trim()).filter(Boolean).filter((v,i,a) => a.indexOf(v) === i);
+  }
+  function itemCategories(it) {
+    return [it.category, ...(it.categories || [])].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i);
+  }
+  function itemUnits(it) {
+    return [it.unit, ...(it.units || [])].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i);
+  }
+  function itemVendors(it) {
+    return [it.supplier, ...(it.vendorNames || []), ...(it.vendors || [])].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i);
   }
   function projectNameById(pid) {
     const p = (State.projects || []).find(x => x.id === pid);
@@ -3884,15 +3900,15 @@
             const s = m.get(it.id) || 0;
             const low = s <= (it.reorderLevel || 0);
             const vendor = vendorByName(it.supplier) || {};
-            return `<tr data-search="${(it.sku+' '+it.name+' '+(it.category||'')+' '+(it.supplier||'')+' '+(it.vendorNames||[]).join(' ')).toLowerCase()}">
+            return `<tr data-search="${(it.sku+' '+it.name+' '+itemCategories(it).join(' ')+' '+itemUnits(it).join(' ')+' '+itemVendors(it).join(' ')).toLowerCase()}">
               <td class="font-mono text-xs">${it.sku || '—'}</td>
               <td><b>${it.name}</b>${it.notes ? `<div class="text-[10px] text-stone-500">${it.notes}</div>` : ''}</td>
-              <td class="text-xs">${it.category || '—'}</td>
-              <td class="text-xs">${it.unit || '—'}</td>
+              <td class="text-xs">${itemCategories(it).map(esc).join('<br>') || '—'}</td>
+              <td class="text-xs">${itemUnits(it).map(esc).join('<br>') || '—'}</td>
               <td class="text-right font-mono" style="${low?'color:#B45309;font-weight:700':''}">${s.toLocaleString()}</td>
               <td class="text-right font-mono text-xs">${(it.reorderLevel||0).toLocaleString()}</td>
               <td class="text-xs"><b>${esc(it.supplier || 'Unassigned')}</b><div class="text-[10px] text-stone-500">${esc(vendor.address || '')}${vendor.location ? '<br>' + esc(vendor.location) : ''}${vendor.phone ? '<br>' + esc(vendor.phone) : ''}</div></td>
-              <td class="text-xs">${[it.supplier, ...(it.vendorNames || [])].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).map(esc).join('<br>') || '—'}</td>
+              <td class="text-xs">${itemVendors(it).map(esc).join('<br>') || '—'}</td>
               <td class="text-xs">${it.dimensions || it.machineDetails ? `${esc(it.dimensions || '')}${it.dimensions && it.machineDetails ? '<br>' : ''}${esc(it.machineDetails || '')}` : '—'}</td>
               <td><div class="ims-row-action">
                 <button class="ims-icon-btn" data-ims-act="edit-item" data-id="${it.id}" title="Edit">✎</button>
@@ -4010,7 +4026,7 @@
 
   function imsEditItem(id) {
     seedVendorData();
-    const it = id ? State.items.find(x => String(x.id) === String(id)) : { sku:'', name:'', category:'', unit:'pcs', reorderLevel:0, costPrice:0, supplier:'', vendorNames:[], dimensions:'', machineDetails:'', notes:'' };
+    const it = id ? State.items.find(x => String(x.id) === String(id)) : { sku:'', name:'', category:'', categories:[], unit:'pcs', units:[], reorderLevel:0, costPrice:0, supplier:'', vendorNames:[], dimensions:'', machineDetails:'', notes:'' };
     if (!it) return;
     openModal({
       title: id ? `Edit Item · ${it.name}` : 'New Item',
@@ -4023,20 +4039,24 @@
             <div class="ims-field"><label>Name *</label><input name="name" value="${it.name||''}" required></div>
           </div>
           <div class="ims-form-row">
-            <div class="ims-field"><label>Category</label><input name="category" list="imsCats" value="${it.category||''}" placeholder="e.g. Cement">
+            <div class="ims-field"><label>Primary Category</label><input name="category" list="imsCats" value="${it.category||''}" placeholder="e.g. Cement">
               <datalist id="imsCats"><option>Cement</option><option>Steel & Rebar</option><option>Aggregates</option><option>Bricks & Blocks</option><option>Lumber</option><option>Electrical</option><option>Plumbing</option><option>Finishes</option><option>Tools</option><option>Safety</option><option>Consumables</option></datalist>
             </div>
-            <div class="ims-field"><label>Unit *</label><input name="unit" list="imsUnits" value="${it.unit||'pcs'}" required>
+            <div class="ims-field"><label>Primary Unit *</label><input name="unit" list="imsUnits" value="${it.unit||'pcs'}" required>
               <datalist id="imsUnits"><option>pcs</option><option>bag</option><option>kg</option><option>MT</option><option>m</option><option>sqm</option><option>cum</option><option>cft</option><option>L</option><option>sht</option><option>nos</option><option>pair</option><option>roll</option><option>box</option></datalist>
             </div>
           </div>
           <div class="ims-form-row">
-            <div class="ims-field"><label>Reorder Level</label><input type="number" name="reorderLevel" min="0" step="1" value="${it.reorderLevel||0}"></div>
-            <div class="ims-field"><label>Default Supplier</label><input name="supplier" list="imsVendors" value="${it.supplier||''}"><datalist id="imsVendors">${(State.vendors||[]).map(v=>`<option>${esc(v.name)}</option>`).join('')}</datalist></div>
+            <div class="ims-field"><label>Additional Categories</label><input name="categories" value="${itemCategories(it).filter(v=>v!==it.category).join(', ')}" placeholder="Comma separated: Consumables, Equipment Spares"></div>
+            <div class="ims-field"><label>Additional Units</label><input name="units" value="${itemUnits(it).filter(v=>v!==it.unit).join(', ')}" placeholder="Comma separated: bag, kg, MT, nos"></div>
           </div>
           <div class="ims-form-row">
-            <div class="ims-field"><label>Other Approved Vendors</label><input name="vendorNames" value="${(it.vendorNames||[]).filter(v=>v!==it.supplier).join(', ')}" placeholder="Comma separated vendor names"></div>
-            <div class="ims-field"><label>Vendor Contact Quick Add</label><input name="vendorQuick" placeholder="Name | address | location | phone"></div>
+            <div class="ims-field"><label>Reorder Level</label><input type="number" name="reorderLevel" min="0" step="1" value="${it.reorderLevel||0}"></div>
+            <div class="ims-field"><label>Primary Vendor</label><input name="supplier" list="imsVendors" value="${it.supplier||''}"><datalist id="imsVendors">${(State.vendors||[]).map(v=>`<option>${esc(v.name)}</option>`).join('')}</datalist></div>
+          </div>
+          <div class="ims-form-row">
+            <div class="ims-field"><label>Approved Vendors</label><textarea name="vendorNames" rows="2" placeholder="Comma, semicolon, or one vendor per line">${itemVendors(it).filter(v=>v!==it.supplier).join('\n')}</textarea></div>
+            <div class="ims-field"><label>Vendor Contact Quick Add</label><textarea name="vendorQuick" rows="2" placeholder="One per line: Name | address | location | phone"></textarea></div>
           </div>
           <div class="ims-form-row">
             <div class="ims-field"><label>Dimensions / Size</label><input name="dimensions" value="${it.dimensions||''}" placeholder="L x W x H, dia, capacity, etc."></div>
@@ -4052,13 +4072,17 @@
         fd.forEach((v,k) => obj[k] = v);
         obj.reorderLevel = Number(obj.reorderLevel||0);
         obj.costPrice = Number(it.costPrice || obj.costPrice || 0);
-        obj.vendorNames = [obj.supplier, ...String(obj.vendorNames || '').split(',').map(v => v.trim()).filter(Boolean)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+        obj.categories = [obj.category, ...splitListText(obj.categories)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+        obj.units = [obj.unit, ...splitListText(obj.units)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+        obj.vendorNames = [obj.supplier, ...splitListText(obj.vendorNames)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
         if (obj.vendorQuick) {
-          const [name, address, location, phone] = String(obj.vendorQuick).split('|').map(x => (x || '').trim());
-          if (name && !State.vendors.some(v => (v.name || '').toLowerCase() === name.toLowerCase())) {
-            State.vendors.push({ id:'VND-' + String(80 + State.vendors.length + 1).padStart(3,'0'), name, legalName:name, category:obj.category || 'General', contact:'', phone:phone || '', email:'', address:address || '', location:location || '', pan:'', terms:'30 days', score:75 });
-          }
-          if (name && !obj.vendorNames.includes(name)) obj.vendorNames.push(name);
+          String(obj.vendorQuick).split('\n').map(x => x.trim()).filter(Boolean).forEach(line => {
+            const [name, address, location, phone] = line.split('|').map(x => (x || '').trim());
+            if (name && !State.vendors.some(v => (v.name || '').toLowerCase() === name.toLowerCase())) {
+              State.vendors.push({ id:'VND-' + String(80 + State.vendors.length + 1).padStart(3,'0'), name, legalName:name, category:obj.category || 'General', contact:'', phone:phone || '', email:'', address:address || '', location:location || '', pan:'', terms:'30 days', score:75 });
+            }
+            if (name && !obj.vendorNames.includes(name)) obj.vendorNames.push(name);
+          });
           delete obj.vendorQuick;
         }
         if (id) {
@@ -15065,7 +15089,7 @@ Available Actions:
   });
 
   // -------- INITIAL SEED & RENDERS --------
-  const _hadStored = STARTER_MODE ? false : loadState();
+  const _hadStored = STARTER_MODE ? loadStarterTrialWorkspace(trialWorkspaceId()) : loadState();
   if (STARTER_MODE && !_hadStored) applyStarterWorkspace();
   ensureHydropowerProjects();
   const now = new Date();
