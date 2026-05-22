@@ -1407,6 +1407,7 @@
             <button class="ims-tab" data-imstab="project-flow"><i data-lucide="route" class="w-3 h-3"></i>Project Flow</button>
             <button class="ims-tab" data-imstab="stock-in"><i data-lucide="package-plus" class="w-3 h-3"></i>Stock IN (GRN)</button>
             <button class="ims-tab" data-imstab="stock-out"><i data-lucide="package-minus" class="w-3 h-3"></i>Stock OUT</button>
+            <button class="ims-tab" data-imstab="subcontract"><i data-lucide="handshake" class="w-3 h-3"></i>Subcontract Issue</button>
             <button class="ims-tab" data-imstab="tools"><i data-lucide="hammer" class="w-3 h-3"></i>Tool Tracker</button>
             <button class="ims-tab" data-imstab="po-gen"><i data-lucide="zap" class="w-3 h-3"></i>PO Generator</button>
             <button class="ims-tab" data-imstab="po-list"><i data-lucide="file-text" class="w-3 h-3"></i>Purchase Orders</button>
@@ -3029,6 +3030,7 @@
     // ============== IMS DATA STORES ==============
     items: [],        // item master catalog
     stockMovements: [], // every IN/OUT
+    subcontractors: [],
     toolIssues: [],   // tool tracker (issued / returned)
     sites: [          // sites available for stock storage
       { id:1, name:'WH-A · Main yard · Lalitpur' },
@@ -3136,6 +3138,7 @@
     State.aiDocAnswerHistory = [];
     State.items = [];
     State.stockMovements = [];
+    State.subcontractors = [];
     State.toolIssues = [];
     State.sites = [];
     State.imsNextId = { items:1, mov:1, tool:1, po:1 };
@@ -3203,7 +3206,7 @@
       currentView: State.currentView,
       session: State.session,
       projects: State.projects, tenders: State.tenders, materials: State.materials,
-      items: State.items, stockMovements: State.stockMovements, toolIssues: State.toolIssues,
+      items: State.items, stockMovements: State.stockMovements, subcontractors: State.subcontractors, toolIssues: State.toolIssues,
       sites: State.sites, imsCurrentTab: State.imsCurrentTab, imsNextId: State.imsNextId,
       scheduleActivities: State.scheduleActivities,
       equipment: State.equipment, equipLogs: State.equipLogs, operators: State.operators,
@@ -3267,7 +3270,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3287,7 +3290,7 @@
     const data = JSON.stringify({
       meta: { app:'BuildCore', exportedAt: new Date().toISOString(), version:1 },
       state: { projects:State.projects, tenders:State.tenders, materials:State.materials,
-        items:State.items, stockMovements:State.stockMovements, toolIssues:State.toolIssues,
+        items:State.items, stockMovements:State.stockMovements, subcontractors:State.subcontractors, toolIssues:State.toolIssues,
         sites:State.sites, imsCurrentTab:State.imsCurrentTab, imsNextId:State.imsNextId,
         ncrs:State.ncrs, raBills:State.raBills, pos:State.pos, vendors:State.vendors, automations:State.automations,
         dprs:State.dprs, dprTemplates:State.dprTemplates, dprNextTemplateId:State.dprNextTemplateId,
@@ -3341,8 +3344,56 @@
   //                  INVENTORY MANAGEMENT SYSTEM (IMS)
   // =====================================================================
 
+  function ensureIMSSites() {
+    if (!Array.isArray(State.sites)) State.sites = [];
+    if (State.sites.length) return;
+    State.sites = [
+      { id:1, name:'WH-A - Main yard - Lalitpur' },
+      { id:2, name:'WH-B - Covered shed - Lalitpur' },
+      { id:3, name:'WH-C - Tool store - Lalitpur' }
+    ];
+  }
+  function imsNextPOCode(offset = 0) {
+    const nums = (State.pos || []).map(p => String(p.poNo || p.id || '').match(/PO-(\d+)/i)).filter(Boolean).map(m => Number(m[1]));
+    return 'PO-' + String((nums.length ? Math.max(...nums) + 1 : 2451) + offset).padStart(4,'0');
+  }
+  function imsSkuPrefix(category, name) {
+    const src = String(category || name || 'ITEM').toUpperCase();
+    const map = { CEMENT:'CEM', STEEL:'STL', REBAR:'STL', AGGREGATE:'AGG', SAND:'SND', BRICK:'BRK', BLOCK:'BLK', PLYWOOD:'PLY', LUMBER:'LBR', ELECTRICAL:'ELE', PLUMBING:'PLB', FINISH:'FIN', PAINT:'PNT', TOOL:'TOL', SAFETY:'PPE', CONSUMABLE:'CON' };
+    const key = Object.keys(map).find(k => src.includes(k));
+    return key ? map[key] : src.replace(/[^A-Z0-9]/g,'').slice(0,3).padEnd(3,'X');
+  }
+  function imsGenerateSku(category, name, currentId) {
+    const prefix = imsSkuPrefix(category, name);
+    const used = new Set((State.items || []).filter(i => String(i.id) !== String(currentId || '')).map(i => String(i.sku || '').toUpperCase()));
+    let n = 1, sku = '';
+    do { sku = prefix + '-' + String(n++).padStart(3,'0'); } while (used.has(sku));
+    return sku;
+  }
+  window.imsFillSku = function(currentId) {
+    const form = document.getElementById('imsItemForm');
+    if (!form) return;
+    form.elements.sku.value = imsGenerateSku(form.elements.category?.value, form.elements.name?.value, currentId);
+  };
+  function seedSubcontractors() {
+    State.subcontractors = Array.isArray(State.subcontractors) ? State.subcontractors : [];
+    const base = [
+      { id:'SC-001', name:'Sigma MEP', type:'MEP', projectId:'PRJ-017', contact:'Anil Karki', phone:'9811000005', status:'Active' },
+      { id:'SC-002', name:'Apex Aluminium', type:'Facade', projectId:'PRJ-017', contact:'Nabin Shrestha', phone:'9801000003', status:'Active' },
+      { id:'SC-003', name:'BJ Painting', type:'Finishes', projectId:'PRJ-017', contact:'B. Joshi', phone:'9801000011', status:'Active' },
+      { id:'SC-004', name:'Krishna Tiles', type:'Tiling', projectId:'PRJ-019', contact:'K. Shrestha', phone:'9801000012', status:'Active' }
+    ];
+    base.forEach(s => {
+      const found = State.subcontractors.find(x => x.id === s.id || (x.name || '').toLowerCase() === s.name.toLowerCase());
+      if (found) Object.assign(found, { ...s, ...found });
+      else State.subcontractors.push(s);
+    });
+  }
+
   // ----- Seed data (only on first load) -----
   function seedIMSData() {
+    ensureIMSSites();
+    seedSubcontractors();
     if (STARTER_MODE) { normalizeStockMovements(); return; }
     if (State.items.length > 0) { seedVendorData(); normalizeStockMovements(); return; }
     State.items = [
@@ -3636,6 +3687,11 @@
       if (!m.flowStage) m.flowStage = m.type === 'IN' ? 'received' : (m.recipientType === 'transfer' ? 'transfer' : 'issued');
       if (m.type === 'IN' && m.unitRate == null) m.unitRate = imsMovementUnitRate(m);
       if (m.type === 'IN' && m.totalValue == null) m.totalValue = Number(m.qty || 0) * imsMovementUnitRate(m);
+      if (m.type === 'IN') {
+        m.vatPct = Number(m.vatPct || 0);
+        m.vatAmount = Number(m.vatAmount || 0);
+        m.grossValue = Number(m.grossValue || (Number(m.totalValue || 0) + m.vatAmount));
+      }
       if (m.type === 'OUT' && (!Array.isArray(m.fifoLots) || m.unitRate == null || m.totalValue == null)) {
         const fifo = imsFifoIssue(m.itemId, m.qty, m.date || Date.now(), m.id);
         m.fifoLots = fifo.lots;
@@ -3807,6 +3863,7 @@
     if (tab === 'project-flow') return renderIMSProjectFlow(container);
     if (tab === 'stock-in')  return renderIMSMovements(container, 'IN');
     if (tab === 'stock-out') return renderIMSMovements(container, 'OUT');
+    if (tab === 'subcontract') return renderIMSSubcontract(container);
     if (tab === 'tools')     return renderIMSTools(container);
     if (tab === 'po-gen')    return renderIMSPOGen(container);
     if (tab === 'po-list')   return renderIMSPOList(container);
@@ -3831,7 +3888,7 @@
         </div>
       </div>
       <table class="data" id="imsOvTable">
-        <thead><tr><th class="sortable">SKU</th><th class="sortable">Name</th><th class="sortable">Category</th><th>Unit</th><th class="text-right sortable">In Stock</th><th class="text-right">Reorder</th><th class="text-right">FIFO Avg</th><th class="text-right sortable">FIFO Value</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th class="sortable">SKU</th><th class="sortable">Name</th><th class="sortable">Category</th><th>Unit</th><th class="text-right sortable">Balance Stock</th><th class="text-right">Reorder</th><th class="text-right">FIFO Avg</th><th class="text-right sortable">FIFO Value</th><th>Status</th><th></th></tr></thead>
         <tbody id="imsOvBody">
           ${rows.map(({it, stock, avgRate, value}) => {
             const low = stock <= (it.reorderLevel || 0);
@@ -3887,6 +3944,8 @@
   // ----- TAB 2: ITEM MASTER (CRUD) -----
   function renderIMSItems(c) {
     const m = stockMap();
+    const categories = ['All', ...new Set(State.items.map(i => i.category).filter(Boolean))];
+    const vendors = ['All', ...new Set(State.items.flatMap(i => itemVendors(i)).filter(Boolean))];
     c.innerHTML = `
       <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
         <div>
@@ -3895,6 +3954,8 @@
         </div>
         <div class="flex gap-2">
           <input id="imsItemSearch" type="text" placeholder="Search…" class="border border-stone-200 px-2 py-1 text-xs" style="min-width:200px">
+          <select id="imsItemCatFilter" class="border border-stone-200 px-2 py-1 text-xs">${categories.map(x=>`<option>${esc(x)}</option>`).join('')}</select>
+          <select id="imsItemVendorFilter" class="border border-stone-200 px-2 py-1 text-xs">${vendors.map(x=>`<option>${esc(x)}</option>`).join('')}</select>
           <button class="btn btn-amber" data-ims-act="new-item"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Item</button>
         </div>
       </div>
@@ -3905,7 +3966,7 @@
             const s = m.get(it.id) || 0;
             const low = s <= (it.reorderLevel || 0);
             const vendor = vendorByName(it.supplier) || {};
-            return `<tr data-search="${(it.sku+' '+it.name+' '+itemCategories(it).join(' ')+' '+itemUnits(it).join(' ')+' '+itemVendors(it).join(' ')).toLowerCase()}">
+            return `<tr data-search="${(it.sku+' '+it.name+' '+itemCategories(it).join(' ')+' '+itemUnits(it).join(' ')+' '+itemVendors(it).join(' ')).toLowerCase()}" data-cat="${esc(it.category || '')}" data-vendors="${esc(itemVendors(it).join('|'))}">
               <td class="font-mono text-xs">${it.sku || '—'}</td>
               <td><b>${it.name}</b>${it.notes ? `<div class="text-[10px] text-stone-500">${it.notes}</div>` : ''}</td>
               <td class="text-xs">${itemCategories(it).map(esc).join('<br>') || '—'}</td>
@@ -3924,10 +3985,18 @@
         </tbody>
       </table>
     `;
-    $('#imsItemSearch').addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase();
-      document.querySelectorAll('#imsItemsBody tr').forEach(tr => tr.style.display = tr.dataset.search.includes(q) ? '' : 'none');
-    });
+    const applyItemFilters = () => {
+      const q = ($('#imsItemSearch')?.value || '').toLowerCase();
+      const cat = $('#imsItemCatFilter')?.value || 'All';
+      const vendor = $('#imsItemVendorFilter')?.value || 'All';
+      document.querySelectorAll('#imsItemsBody tr').forEach(tr => {
+        const show = (!q || tr.dataset.search.includes(q)) && (cat === 'All' || tr.dataset.cat === cat) && (vendor === 'All' || (tr.dataset.vendors || '').split('|').includes(vendor));
+        tr.style.display = show ? '' : 'none';
+      });
+    };
+    $('#imsItemSearch')?.addEventListener('input', applyItemFilters);
+    $('#imsItemCatFilter')?.addEventListener('change', applyItemFilters);
+    $('#imsItemVendorFilter')?.addEventListener('change', applyItemFilters);
     c.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-ims-act]');
       if (!btn) return;
@@ -4040,7 +4109,7 @@
       body: `
         <form id="imsItemForm" class="ims-form">
           <div class="ims-form-row">
-            <div class="ims-field"><label>SKU / Code</label><input name="sku" value="${it.sku||''}" placeholder="e.g. CEM-001"></div>
+            <div class="ims-field"><label>SKU / Code</label><div class="flex gap-2"><input name="sku" value="${it.sku||''}" placeholder="Auto generated if blank"><button type="button" class="btn btn-ghost text-xs" onclick="imsFillSku(${id || 0})">Auto</button></div></div>
             <div class="ims-field"><label>Name *</label><input name="name" value="${it.name||''}" required></div>
           </div>
           <div class="ims-form-row">
@@ -4079,6 +4148,7 @@
         const fd = new FormData(form);
         const obj = id ? { ...it } : {};
         fd.forEach((v,k) => obj[k] = v);
+        if (!obj.sku) obj.sku = imsGenerateSku(obj.category, obj.name, id);
         obj.reorderLevel = Number(obj.reorderLevel||0);
         obj.costPrice = Number(it.costPrice || obj.costPrice || 0);
         obj.categories = [obj.category, ...splitListText(obj.categories)].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
@@ -4181,6 +4251,8 @@
         </div>
         <div class="flex gap-2">
           <input id="imsMovSearch" type="text" placeholder="Search by ref, item, party…" class="border border-stone-200 px-2 py-1 text-xs" style="min-width:240px">
+          <select id="imsMovProjectFilter" class="border border-stone-200 px-2 py-1 text-xs"><option value="">All projects</option>${State.projects.map(p=>`<option value="${p.id}">${p.id}</option>`).join('')}</select>
+          <select id="imsMovItemFilter" class="border border-stone-200 px-2 py-1 text-xs"><option value="">All items</option>${State.items.map(i=>`<option value="${i.id}">${esc(i.sku || i.name)}</option>`).join('')}</select>
           <button class="btn ${type==='IN' ? 'btn-amber' : 'btn-amber'}" data-ims-act="new-mov" data-type="${type}"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New ${type === 'IN' ? 'GRN' : 'Issue'}</button>
         </div>
       </div>
@@ -4197,7 +4269,7 @@
             const mpid = imsMovementProject(m);
             const searchBlob = ((m.refNo||'') + ' ' + mpid + ' ' + it.name + ' ' + (m.supplier||m.issuedTo||'') + ' ' + (m.purpose||'')).toLowerCase();
             const projectCell = `<td><span class="badge badge-neutral">${mpid || 'UNASSIGNED'}</span></td>`;
-            return `<tr data-search="${searchBlob}">
+            return `<tr data-search="${searchBlob}" data-project="${esc(mpid)}" data-item="${m.itemId}">
               <td class="font-mono text-xs">${fmtDateShort(m.date)}</td>
               <td class="font-mono text-xs">${m.refNo || '—'}</td>
               ${projectCell}
@@ -4210,7 +4282,7 @@
               }
               <td class="text-right font-mono text-xs">${fmtINR(imsMovementUnitRate(m))}</td>
               <td class="text-right font-mono text-xs"><b>${fmtINR(imsMovementValue(m))}</b>${m.type==='OUT' && Array.isArray(m.fifoLots) && m.fifoLots.length ? `<div class="text-[10px] text-stone-500">${m.fifoLots.length} FIFO lot${m.fifoLots.length!==1?'s':''}</div>` : ''}</td>
-              <td class="text-xs text-stone-600">${m.notes || ''}</td>
+              <td class="text-xs text-stone-600">${type === 'IN' ? `${m.billNo ? '<b>Bill:</b> ' + esc(m.billNo) + '<br>' : ''}${m.vatAmount ? '<b>VAT:</b> ' + fmtINR(m.vatAmount) + '<br>' : ''}` : ''}${esc(m.notes || '')}</td>
               <td><div class="ims-row-action">
                 <button class="ims-icon-btn" data-ims-act="edit-mov" data-id="${m.id}" title="Edit">✎</button>
                 <button class="ims-icon-btn danger" data-ims-act="del-mov" data-id="${m.id}" title="Delete">🗑</button>
@@ -4220,10 +4292,18 @@
         </tbody>
       </table>
     `;
-    $('#imsMovSearch').addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase();
-      document.querySelectorAll('#imsMovBody tr').forEach(tr => tr.style.display = tr.dataset.search?.includes(q) ? '' : 'none');
-    });
+    const applyMovementFilters = () => {
+      const q = ($('#imsMovSearch')?.value || '').toLowerCase();
+      const project = $('#imsMovProjectFilter')?.value || '';
+      const item = $('#imsMovItemFilter')?.value || '';
+      document.querySelectorAll('#imsMovBody tr').forEach(tr => {
+        const show = (!q || tr.dataset.search?.includes(q)) && (!project || tr.dataset.project === project) && (!item || tr.dataset.item === item);
+        tr.style.display = show ? '' : 'none';
+      });
+    };
+    $('#imsMovSearch')?.addEventListener('input', applyMovementFilters);
+    $('#imsMovProjectFilter')?.addEventListener('change', applyMovementFilters);
+    $('#imsMovItemFilter')?.addEventListener('change', applyMovementFilters);
     c.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-ims-act]');
       if (!btn) return;
@@ -4234,13 +4314,16 @@
   }
 
   function imsEditMovement(type, id) {
+    ensureIMSSites();
     if (State.items.length === 0) { toast('No Items', 'Create at least one item first', 'warn'); return; }
     // For new OUT, ensure sites exist
     if (!id && type === 'OUT') {
       if (!ensureSitesExistOrRedirect()) return;
     }
     const activePid = imsActiveProjectId();
-    const m = id ? State.stockMovements.find(x => x.id === id) : { type, itemId: State.items[0].id, siteId: State.sites[0].id, qty: 1, date: Date.now(), refNo: type === 'IN' ? 'GRN-' + (1843 + State.stockMovements.filter(x=>x.type==='IN').length) : 'MIN-' + (943 + State.stockMovements.filter(x=>x.type==='OUT').length), supplier:'', issuedTo:'', purpose:'', notes:'', recipientType:'site', chargeProject: activePid || 'PRJ-017', projectId: activePid || 'PRJ-017' };
+    const defaultRecipient = State._imsDefaultRecipientType || 'site';
+    State._imsDefaultRecipientType = '';
+    const m = id ? State.stockMovements.find(x => x.id === id) : { type, itemId: State.items[0].id, siteId: State.sites[0].id, qty: 1, date: Date.now(), refNo: type === 'IN' ? 'GRN-' + (1843 + State.stockMovements.filter(x=>x.type==='IN').length) : 'MIN-' + (943 + State.stockMovements.filter(x=>x.type==='OUT').length), supplier:'', issuedTo:'', purpose:'', notes:'', recipientType:defaultRecipient, chargeProject: activePid || 'PRJ-017', projectId: activePid || 'PRJ-017' };
     if (!m) return;
     const effType = m.type;
     const dateStr = m.date ? new Date(m.date).toISOString().slice(0,10) : new Date().toISOString().slice(0,10);
@@ -4260,7 +4343,7 @@
           </div>
           <div class="ims-form-row">
             ${effType === 'IN'
-              ? `<div class="ims-field"><label>Actual Purchase Rate (NPR / unit) *</label><input type="number" name="unitRate" min="0" step="0.01" value="${imsMovementUnitRate(m)}" required></div><div class="ims-field"><label>Invoice / Challan Value</label><input type="number" name="totalValue" min="0" step="0.01" value="${m.totalValue ?? (Number(m.qty||0) * imsMovementUnitRate(m))}"></div>`
+              ? `<div class="ims-field"><label>Actual Purchase Rate (NPR / unit) *</label><input type="number" name="unitRate" min="0" step="0.01" value="${imsMovementUnitRate(m)}" required></div><div class="ims-field"><label>Basic Amount</label><input type="number" name="totalValue" min="0" step="0.01" value="${m.totalValue ?? (Number(m.qty||0) * imsMovementUnitRate(m))}"></div>`
               : `<div class="ims-field"><label>FIFO Rate</label><input value="${fmtINR(imsMovementUnitRate(m))}" readonly></div><div class="ims-field"><label>FIFO Issue Value</label><input value="${fmtINR(imsMovementValue(m))}" readonly></div>`
             }
           </div>
@@ -4269,6 +4352,11 @@
             ? `<div class="ims-form-row">
                 <div class="ims-field"><label>Supplier</label><input name="supplier" value="${m.supplier||''}" placeholder="Vendor name"></div>
                 <div class="ims-field"><label>Project (received for)</label><select name="chargeProject">${State.projects.map(p => `<option value="${p.id}" ${(m.chargeProject||m.projectId)===p.id?'selected':''}>${p.id} · ${p.name}</option>`).join('')}</select></div>
+              </div>
+              <div class="ims-form-row-3">
+                <div class="ims-field"><label>Vendor Bill / Invoice No *</label><input name="billNo" value="${esc(m.billNo || '')}" placeholder="Supplier bill no." required></div>
+                <div class="ims-field"><label>VAT %</label><input type="number" name="vatPct" min="0" step="0.01" value="${Number(m.vatPct || 13)}"></div>
+                <div class="ims-field"><label>VAT Amount</label><input type="number" name="vatAmount" min="0" step="0.01" value="${Number(m.vatAmount || 0)}"></div>
               </div>`
             : `
               <div class="ims-form-row-3">
@@ -4317,6 +4405,9 @@
         if (effType === 'IN') {
           obj.unitRate = Number(obj.unitRate || 0);
           obj.totalValue = Number(obj.totalValue || (obj.qty * obj.unitRate));
+          obj.vatPct = Number(obj.vatPct || 0);
+          obj.vatAmount = Number(obj.vatAmount || (obj.totalValue * obj.vatPct / 100));
+          obj.grossValue = obj.totalValue + obj.vatAmount;
         }
         if (!obj.chargeProject && imsActiveProjectId()) obj.chargeProject = imsActiveProjectId();
         obj.projectId = obj.chargeProject || obj.projectId || '';
@@ -4404,6 +4495,8 @@
       }
     } else if (t === 'subcontractor') {
       opts = ['Sigma MEP','Apex Aluminium','BJ Painting','Krishna Tiles','Hetauda Plumbing','Roshan Electricals'].map(s => ({ value: s, label: '🤝 ' + s }));
+      seedSubcontractors();
+      opts = (State.subcontractors || []).map(s => ({ value: s.name, label: (s.id || '') + ' - ' + s.name + ' - ' + (s.type || 'General') }));
     } else if (t === 'individual') {
       opts = ['W-1041 · Ram Bahadur Tamang','W-1042 · Krishna Lama','W-1043 · Bishnu Magar','W-1052 · Dipak Rai','W-1071 · Suresh Sunar','W-1082 · Manoj Khadka','W-1094 · Pawan Yadav','W-1102 · Surya Bohara'].map(s => ({ value: s.split(' ·')[0], label: s }));
     } else if (t === 'gang') {
@@ -4427,6 +4520,93 @@
         audit('delete', 'Movement · ' + m.refNo, m.type + ' · ' + m.qty);
         saveState();
         toast('Movement Deleted', m.refNo, 'warn');
+        renderIMS();
+      }
+    });
+  }
+
+  function renderIMSSubcontract(c) {
+    seedSubcontractors();
+    normalizeStockMovements();
+    const itemById = Object.fromEntries(State.items.map(i => [i.id, i]));
+    const issues = (State.stockMovements || [])
+      .filter(m => m.type === 'OUT' && m.recipientType === 'subcontractor')
+      .sort((a,b) => (b.date || 0) - (a.date || 0));
+    const issueValue = issues.reduce((s,m) => s + imsMovementValue(m), 0);
+    c.innerHTML = `
+      <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
+        <div>
+          <div class="font-display font-bold text-lg">Subcontractor Material Issue</div>
+          <div class="text-xs text-stone-500">Create subcontractors by type, issue stock to them, and view all subcontract material directly from this ledger</div>
+        </div>
+        <div class="flex gap-2">
+          <input id="imsSubSearch" type="text" placeholder="Search subcontractor, type, item..." class="border border-stone-200 px-2 py-1 text-xs" style="min-width:240px">
+          <button class="btn btn-ghost" data-ims-act="new-sub"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i>Add Subcontractor</button>
+          <button class="btn btn-amber" data-ims-act="issue-sub"><i data-lucide="package-minus" class="w-3.5 h-3.5"></i>Issue Stock</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-4 gap-3 mb-4">
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">SUBCONTRACTORS</div><div class="font-display font-black text-xl tabular">${State.subcontractors.length}</div></div>
+        <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">ISSUES</div><div class="font-display font-black text-xl tabular">${issues.length}</div></div>
+        <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">MATERIAL VALUE</div><div class="font-display font-black text-xl tabular">${fmtINR(issueValue)}</div></div>
+        <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">ACTIVE TYPES</div><div class="font-display font-black text-xl tabular">${new Set(State.subcontractors.map(s => s.type || 'General')).size}</div></div>
+      </div>
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-5 card overflow-hidden">
+          <div class="px-4 py-3 border-b border-stone-100" style="background:#fafaf6"><div class="font-display font-bold">Subcontractor Master</div></div>
+          <table class="data"><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Project</th><th>Phone</th></tr></thead><tbody>
+            ${State.subcontractors.map(s => `<tr data-sub-search="${esc((s.id+' '+s.name+' '+s.type+' '+s.projectId+' '+s.phone).toLowerCase())}"><td class="font-mono text-xs">${esc(s.id)}</td><td><b>${esc(s.name)}</b><div class="text-[10px] text-stone-500">${esc(s.contact || '')}</div></td><td class="text-xs">${esc(s.type || 'General')}</td><td class="text-xs">${esc(s.projectId || '')}</td><td class="text-xs">${esc(s.phone || '')}</td></tr>`).join('')}
+          </tbody></table>
+        </div>
+        <div class="col-span-7 card overflow-hidden">
+          <div class="px-4 py-3 border-b border-stone-100" style="background:#fafaf6"><div class="font-display font-bold">Material Issued to Subcontractors</div></div>
+          <table class="data"><thead><tr><th>Date</th><th>MIN</th><th>Subcontractor</th><th>Item</th><th class="text-right">Qty</th><th class="text-right">FIFO Value</th><th>Purpose</th></tr></thead><tbody id="imsSubIssueBody">
+            ${issues.map(m => {
+              const it = itemById[m.itemId] || { name:'Deleted item', unit:'' };
+              return `<tr data-search="${esc(((m.refNo||'')+' '+(m.issuedTo||m.recipientId||'')+' '+it.name+' '+(m.purpose||'')).toLowerCase())}">
+                <td class="font-mono text-xs">${fmtDateShort(m.date)}</td><td class="font-mono text-xs">${esc(m.refNo || '')}</td><td><b>${esc(m.issuedTo || m.recipientId || '')}</b></td><td>${esc(it.name)}</td><td class="text-right font-mono">${m.qty} ${esc(it.unit || '')}</td><td class="text-right font-mono"><b>${fmtINR(imsMovementValue(m))}</b></td><td class="text-xs">${esc(m.purpose || m.notes || '')}</td>
+              </tr>`;
+            }).join('') || '<tr><td colspan="7" class="text-center text-stone-400 py-4">No subcontractor issues yet.</td></tr>'}
+          </tbody></table>
+        </div>
+      </div>
+    `;
+    $('#imsSubSearch')?.addEventListener('input', e => {
+      const q = e.target.value.toLowerCase();
+      c.querySelectorAll('[data-sub-search], #imsSubIssueBody tr').forEach(tr => {
+        const blob = tr.dataset.subSearch || tr.dataset.search || '';
+        tr.style.display = blob.includes(q) ? '' : 'none';
+      });
+    });
+    c.addEventListener('click', e => {
+      const btn = e.target.closest('[data-ims-act]');
+      if (!btn) return;
+      if (btn.dataset.imsAct === 'new-sub') return imsEditSubcontractor();
+      if (btn.dataset.imsAct === 'issue-sub') { State._imsDefaultRecipientType = 'subcontractor'; return imsEditMovement('OUT'); }
+    });
+    if (window.lucide) lucide.createIcons();
+  }
+  function imsEditSubcontractor() {
+    seedSubcontractors();
+    const nextNo = State.subcontractors.length + 1;
+    openModal({
+      title:'Create Subcontractor',
+      submitLabel:'Save Subcontractor',
+      body:`
+        <form id="imsSubForm" class="ims-form">
+          <div class="ims-form-row"><div class="ims-field"><label>Code</label><input name="id" value="SC-${String(nextNo).padStart(3,'0')}" required></div><div class="ims-field"><label>Name *</label><input name="name" required></div></div>
+          <div class="ims-form-row"><div class="ims-field"><label>Type *</label><input name="type" list="imsSubTypes" required placeholder="MEP / Facade / Labour / Tiling"><datalist id="imsSubTypes"><option>MEP</option><option>Facade</option><option>Labour</option><option>Tiling</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Finishes</option></datalist></div><div class="ims-field"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${p.id===(imsActiveProjectId() || State.activeProject)?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div></div>
+          <div class="ims-form-row"><div class="ims-field"><label>Contact Person</label><input name="contact"></div><div class="ims-field"><label>Phone</label><input name="phone"></div></div>
+          <div class="ims-field"><label>Scope / Notes</label><textarea name="scope" rows="2"></textarea></div>
+        </form>`,
+      onSubmit:() => {
+        const fd = new FormData($('#imsSubForm'));
+        const sub = {}; fd.forEach((v,k)=>sub[k]=v);
+        sub.status = 'Active';
+        const existing = State.subcontractors.find(s => s.id === sub.id || (s.name || '').toLowerCase() === String(sub.name || '').toLowerCase());
+        if (existing) Object.assign(existing, sub); else State.subcontractors.push(sub);
+        saveState();
+        toast('Subcontractor Saved', sub.name + ' - ready for stock issue', 'ok');
         renderIMS();
       }
     });
@@ -4649,7 +4829,7 @@
   function imsCreatePO(supplier, lines) {
     seedVendorData();
     const total = lines.reduce((s,l) => s + l.total, 0);
-    const poNo = 'PO-' + String(2451 + (State.pos?.length || 0)).padStart(4,'0');
+    const poNo = imsNextPOCode();
     const vendor = vendorByName(supplier);
     const po = { id: State.imsNextId.po++, poNo, supplier, vendor:supplier, vendorDetail:vendor || null, projectId:imsActiveProjectId() || State.activeProject || 'PRJ-017', date:Date.now(), expectedDelivery:'', items:lines, total, status:'DRAFT', notes:'Auto-generated from low stock', source:'inventory' };
     if (!State.pos) State.pos = [];
@@ -4668,7 +4848,7 @@
     Object.entries(groups).forEach(([supplier, rows]) => {
       const lines = rows.map(r => { const rate = stockAvgRateOf(r.it.id) || r.it.costPrice || 0; return { itemId:r.it.id, name:r.it.name, unit:r.it.unit||'', qty:r.deficit, rate, total:r.deficit*rate, dimensions:r.it.dimensions||'', machineDetails:r.it.machineDetails||'', receivedQty:0 }; });
       const total = lines.reduce((s,l) => s + l.total, 0);
-      const poNo = 'PO-' + String(2451 + (State.pos?.length || 0) + count).padStart(4,'0');
+      const poNo = imsNextPOCode(count);
       const vendor = vendorByName(supplier);
       State.pos.unshift({ id: State.imsNextId.po++, poNo, supplier, vendor:supplier, vendorDetail:vendor || null, projectId:imsActiveProjectId() || State.activeProject || 'PRJ-017', date:Date.now(), expectedDelivery:'', items:lines, total, status:'DRAFT', notes:'Auto-generated from low stock', source:'inventory' });
       count++;
@@ -4692,11 +4872,15 @@
           <div class="font-display font-bold text-lg">Purchase Orders</div>
           <div class="text-xs text-stone-500">${pos.length} PO${pos.length!==1?'s':''} on record · lifecycle: DRAFT → SENT → RECEIVED (auto-creates stock IN on receive)</div>
         </div>
-        <button class="btn btn-amber" data-ims-act="new-po"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New PO</button>
+        <div class="flex gap-2">
+          <input id="imsPOSearch" type="text" placeholder="Search PO, supplier, project..." class="border border-stone-200 px-2 py-1 text-xs" style="min-width:220px">
+          <select id="imsPOStatus" class="border border-stone-200 px-2 py-1 text-xs"><option value="">All status</option><option>DRAFT</option><option>SENT</option><option>PARTIAL</option><option>RECEIVED</option><option>OVERDUE</option></select>
+          <button class="btn btn-amber" data-ims-act="new-po"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New PO</button>
+        </div>
       </div>
       <table class="data">
         <thead><tr><th class="sortable">PO #</th><th>Date</th><th>Supplier</th><th>Lines</th><th class="text-right">Total</th><th>Status</th><th>Notes</th><th></th></tr></thead>
-        <tbody>${pos.map(p => `<tr>
+        <tbody id="imsPOBody">${pos.map(p => `<tr data-status="${poStatusKey(p)}" data-search="${esc((poNo(p)+' '+poVendor(p)+' '+poProject(p)+' '+poLineSummary(p).replace(/<[^>]+>/g,' ')+' '+(p.notes||'')).toLowerCase())}">
           <td class="font-mono"><b>${poNo(p)}</b></td>
           <td class="font-mono text-xs">${fmtDateShort(p.date)}</td>
           <td>${esc(poVendor(p))}<div class="text-[10px] text-stone-500">${esc((p.vendorDetail || vendorByName(poVendor(p)) || {}).phone || '')}</div></td>
@@ -4724,6 +4908,16 @@
       if (act === 'receive-po') return imsReceivePO(id);
       if (act === 'del-po') return imsDeletePO(id);
     });
+    const applyPOFilter = () => {
+      const q = ($('#imsPOSearch')?.value || '').toLowerCase();
+      const st = $('#imsPOStatus')?.value || '';
+      document.querySelectorAll('#imsPOBody tr').forEach(tr => {
+        const show = (!q || (tr.dataset.search || '').includes(q)) && (!st || tr.dataset.status === st);
+        tr.style.display = show ? '' : 'none';
+      });
+    };
+    $('#imsPOSearch')?.addEventListener('input', applyPOFilter);
+    $('#imsPOStatus')?.addEventListener('change', applyPOFilter);
   }
   function imsViewPO(id) {
     const p = State.pos.find(x => String(x.id) === String(id));
@@ -4783,6 +4977,11 @@
           <table class="data"><thead><tr><th>Item</th><th class="text-right">Ordered</th><th class="text-right">Already Received</th><th class="text-right">Receive Now</th><th class="text-right">Actual Rate</th></tr></thead><tbody>
             ${lines.map((l,i) => { const bal = Math.max(0, Number(l.qty || 0) - Number(l.receivedQty || 0)); return `<tr><td><b>${esc(l.name || 'Item')}</b><div class="text-[10px] text-stone-500">${esc(l.dimensions || l.machineDetails || '')}</div></td><td class="text-right font-mono">${l.qty || ''} ${esc(l.unit||'')}</td><td class="text-right font-mono">${l.receivedQty || 0}</td><td class="text-right"><input name="recv_${i}" type="number" min="0" step="0.01" value="${bal}" class="border border-stone-200 px-2 py-1 text-xs text-right" style="width:110px"></td><td class="text-right"><input name="rate_${i}" type="number" min="0" step="0.01" value="${Number(l.rate || 0)}" class="border border-stone-200 px-2 py-1 text-xs text-right" style="width:120px"></td></tr>`; }).join('')}
           </tbody></table>
+          <div class="ims-form-row-3 mt-3">
+            <div class="ims-field"><label>Vendor Bill / Invoice No</label><input name="billNo" placeholder="Supplier bill no."></div>
+            <div class="ims-field"><label>VAT %</label><input type="number" name="vatPct" min="0" step="0.01" value="13"></div>
+            <div class="ims-field"><label>VAT Amount</label><input type="number" name="vatAmount" min="0" step="0.01" value="0"></div>
+          </div>
           <div class="ims-field mt-3"><label>GRN / receiving note</label><textarea name="receiveNote" rows="2" placeholder="Gate entry, challan, damage / shortage remarks"></textarea></div>
         </form>`,
       onSubmit: () => {
@@ -4795,11 +4994,14 @@
           line.rate = unitRate;
           line.total = Number(line.qty || 0) * unitRate;
           line.receivedQty = Number(line.receivedQty || 0) + recv;
+          const lineValue = recv * unitRate;
+          const vatPct = Number(fd.get('vatPct') || 0);
+          const vatAmount = Number(fd.get('vatAmount') || 0);
           State.stockMovements.push({
             id: State.imsNextId.mov++,
             type:'IN', itemId: line.itemId, siteId, qty: recv,
             date: Date.now(), refNo: poNo(p), supplier: poVendor(p),
-            unitRate, totalValue: recv * unitRate,
+            unitRate, totalValue: lineValue, billNo: fd.get('billNo') || '', vatPct, vatAmount, grossValue: lineValue + vatAmount,
             notes: (fd.get('receiveNote') || 'Auto-received from PO ' + poNo(p)), poId: p.id,
             projectId: poProject(p), chargeProject: poProject(p), flowStage:'received'
           });
@@ -4826,9 +5028,17 @@
       onSubmit: () => { State.pos = State.pos.filter(x => String(x.id) !== String(id)); audit('delete','PO · ' + poNo(p),poVendor(p)); saveState(); toast('PO Deleted',poNo(p),'warn'); renderIMS(); renderProcurementView?.(); }
     });
   }
+  window.imsAddPoLine = function() {
+    const wrap = document.getElementById('imsPoExtraLines');
+    if (!wrap) return;
+    const row = document.createElement('div');
+    row.className = 'ims-form-row-3 ims-po-line';
+    row.innerHTML = `<div class="ims-field"><label>Additional Item</label><select name="extraItemId">${State.items.map(i => `<option value="${i.id}">${esc((i.sku ? i.sku + ' - ' : '') + i.name + ' (' + (i.unit || '') + ')')}</option>`).join('')}</select></div><div class="ims-field"><label>Qty</label><input type="number" name="extraQty" min="0" step="0.01" value="1"></div><div class="ims-field"><label>Rate</label><input type="number" name="extraRate" min="0" step="0.01" value="0"></div>`;
+    wrap.appendChild(row);
+  };
   function imsEditPO() {
     seedVendorData();
-    const poNo = 'PO-' + String(2451 + (State.pos?.length || 0)).padStart(4,'0');
+    const poNo = imsNextPOCode();
     openModal({
       title: 'New Purchase Order',
       wide: true,
@@ -4842,6 +5052,8 @@
           <div class="ims-field"><label>Supplier *</label><input name="supplier" list="imsPOVendors" required placeholder="Vendor name"><datalist id="imsPOVendors">${(State.vendors||[]).map(v=>`<option>${esc(v.name)}</option>`).join('')}</datalist></div>
           <div class="ims-field"><label>Item *</label><select name="itemId" required>${State.items.map(i => `<option value="${i.id}">${i.sku ? i.sku+' · ':''}${i.name} (${i.unit||''})</option>`).join('')}</select></div>
           <div class="ims-form-row"><div class="ims-field"><label>Qty *</label><input type="number" name="qty" min="0.01" step="0.01" value="1" required></div><div class="ims-field"><label>Rate (NPR)</label><input type="number" name="rate" min="0" step="0.01" value="0"></div></div>
+          <div id="imsPoExtraLines"></div>
+          <button type="button" class="btn btn-ghost text-xs" onclick="imsAddPoLine()"><i data-lucide="plus" class="w-3 h-3"></i>Add More Stock Line</button>
           <div class="ims-form-row"><div class="ims-field"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${p.id===(imsActiveProjectId() || State.activeProject)?'selected':''}>${p.id} · ${esc(p.name)}</option>`).join('')}</select></div><div class="ims-field"><label>Expected Delivery</label><input type="date" name="expectedDelivery"></div></div>
           <div class="ims-form-row"><div class="ims-field"><label>Dimensions / Size</label><input name="dimensions" placeholder="L x W x H, dia, capacity"></div><div class="ims-field"><label>Machine / Equipment Detail</label><input name="machineDetails" placeholder="Model, serial, HP/kVA, attachment"></div></div>
           <div class="ims-field"><label>Notes</label><textarea name="notes" rows="2"></textarea></div>
@@ -4854,7 +5066,15 @@
         const item = State.items.find(i => i.id === Number(obj.itemId));
         const qty = Number(obj.qty), rate = Number(obj.rate);
         const vendor = vendorByName(obj.supplier);
-        const po = { id: State.imsNextId.po++, poNo: obj.poNo, supplier: obj.supplier, vendor: obj.supplier, vendorDetail:vendor || null, projectId:obj.projectId, expectedDelivery:obj.expectedDelivery || '', date: new Date(obj.date).getTime(), items: [{ itemId: item.id, name: item.name, unit:item.unit||'', qty, rate, total: qty*rate, dimensions:obj.dimensions || item.dimensions || '', machineDetails:obj.machineDetails || item.machineDetails || '', receivedQty:0 }], total: qty*rate, status:'DRAFT', notes: obj.notes||'' };
+        const lines = [{ itemId: item.id, name: item.name, unit:item.unit||'', qty, rate, total: qty*rate, dimensions:obj.dimensions || item.dimensions || '', machineDetails:obj.machineDetails || item.machineDetails || '', receivedQty:0 }];
+        document.querySelectorAll('#imsPoExtraLines .ims-po-line').forEach(row => {
+          const extraItem = State.items.find(i => i.id === Number(row.querySelector('[name="extraItemId"]')?.value));
+          const extraQty = Number(row.querySelector('[name="extraQty"]')?.value || 0);
+          const extraRate = Number(row.querySelector('[name="extraRate"]')?.value || 0);
+          if (extraItem && extraQty > 0) lines.push({ itemId:extraItem.id, name:extraItem.name, unit:extraItem.unit||'', qty:extraQty, rate:extraRate, total:extraQty*extraRate, dimensions:extraItem.dimensions || '', machineDetails:extraItem.machineDetails || '', receivedQty:0 });
+        });
+        const total = lines.reduce((s,l) => s + Number(l.total || 0), 0);
+        const po = { id: State.imsNextId.po++, poNo: obj.poNo, supplier: obj.supplier, vendor: obj.supplier, vendorDetail:vendor || null, projectId:obj.projectId, expectedDelivery:obj.expectedDelivery || '', date: new Date(obj.date).getTime(), items: lines, total, status:'DRAFT', notes: obj.notes||'' };
         if (!State.pos) State.pos = [];
         State.pos.unshift(po);
         audit('create','PO · ' + po.poNo, po.supplier + ' · ' + fmtINR(po.total));
@@ -13754,7 +13974,7 @@ Available Actions:
   }
   function actNewPO() {
     seedIMSData();
-    const nextPoNo = 'PO-' + String(2451 + (State.pos?.length || 0)).padStart(4,'0');
+    const nextPoNo = imsNextPOCode();
     openModal({
       title: 'Purchase Order · New',
       body: `
