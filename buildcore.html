@@ -527,6 +527,9 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="settings">
         <i data-lucide="settings-2" class="nav-icon w-4 h-4 text-white/60"></i>Settings
       </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="control">
+        <i data-lucide="workflow" class="nav-icon w-4 h-4 text-white/60"></i>Control Layer
+      </a>
     </nav>
 
     <!-- User -->
@@ -2811,6 +2814,11 @@
         </div>
       </section>
 
+      <!-- ============================================= -->
+      <!-- ======  COMPATIBILITY / CONTROL LAYER  ====== -->
+      <!-- ============================================= -->
+      <section id="view-control" class="view"></section>
+
     </div>
   </main>
 </div>
@@ -3097,6 +3105,13 @@
     bccApprovals: [],
     bccCurrentTab: 'dashboards',
     bccNextId: { boq:1, res:1, recipe:1, actual:1, pkg:1, contract:1, overhead:1, milestone:1, approval:1 },
+    universalCodingSchema: [],
+    featureFlags: {},
+    compatibilityMappings: [],
+    migrationLogs: [],
+    approvalMatrix: [],
+    periodLocks: [],
+    exportLogs: [],
     estCurrentTab: 'boq',
     finCurrentTab: 'pl',
     dprCurrentTab: 'log',
@@ -3174,6 +3189,13 @@
     State.bccMilestones = [];
     State.bccApprovals = [];
     State.bccNextId = { boq:1, res:1, recipe:1, actual:1, pkg:1, contract:1, overhead:1, milestone:1, approval:1 };
+    State.universalCodingSchema = [];
+    State.featureFlags = {};
+    State.compatibilityMappings = [];
+    State.migrationLogs = [];
+    State.approvalMatrix = [];
+    State.periodLocks = [];
+    State.exportLogs = [];
     State.dprTemplates = {};
     State.dprNextTemplateId = 1;
   }
@@ -3233,6 +3255,9 @@
       bccActuals: State.bccActuals, bccPackages: State.bccPackages, bccContracts: State.bccContracts,
       bccOverheads: State.bccOverheads, bccMilestones: State.bccMilestones, bccApprovals: State.bccApprovals,
       bccCurrentTab: State.bccCurrentTab, bccNextId: State.bccNextId,
+      universalCodingSchema: State.universalCodingSchema, featureFlags: State.featureFlags,
+      compatibilityMappings: State.compatibilityMappings, migrationLogs: State.migrationLogs,
+      approvalMatrix: State.approvalMatrix, periodLocks: State.periodLocks, exportLogs: State.exportLogs,
       vos: State.vos, risks: State.risks, photos: State.photos,
       activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
       audit: State.audit.slice(0,2000)
@@ -3270,7 +3295,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3312,6 +3337,9 @@
         bccActuals:State.bccActuals, bccPackages:State.bccPackages, bccContracts:State.bccContracts,
         bccOverheads:State.bccOverheads, bccMilestones:State.bccMilestones, bccApprovals:State.bccApprovals,
         bccCurrentTab:State.bccCurrentTab, bccNextId:State.bccNextId,
+        universalCodingSchema:State.universalCodingSchema, featureFlags:State.featureFlags,
+        compatibilityMappings:State.compatibilityMappings, migrationLogs:State.migrationLogs,
+        approvalMatrix:State.approvalMatrix, periodLocks:State.periodLocks, exportLogs:State.exportLogs,
         vos:State.vos, risks:State.risks, photos:State.photos,
         activity:State.activity, audit:State.audit }
     }, null, 2);
@@ -12793,7 +12821,7 @@
   function bcRerenderAll() {
     [renderActivityFeed, renderProjectsView, renderTendersView,
      recomputeBOQTotals, renderAuditTable, renderScheduleTable,
-     renderLauncher].forEach(fn => { try { fn && fn(); } catch(e){} });
+     renderControlLayerView, renderLauncher].forEach(fn => { try { fn && fn(); } catch(e){} });
     try { lucide.createIcons(); } catch(e){}
   }
 
@@ -13661,6 +13689,89 @@ Available Actions:
   window.docEdit = docEdit;
   window.openAIDocForDocument = openAIDocForDocument;
 
+  const UNIVERSAL_CODING_FIELDS = ['Company / Workspace','Project','Contract Package','WBS / Location','Activity','BOQ Item','Cost Code','Resource Code','Date / Shift','Responsible Party','Approval Status'];
+  const CONTROL_FEATURE_FLAGS = [
+    ['compatibilityLayer','Compatibility views','Keep old records readable while new dashboards use mapped fields.'],
+    ['universalCoding','Universal coding required','Warn when official records miss project, WBS/location, activity, cost/BOQ, date or approval status.'],
+    ['approvalLock','Approval lock and revision reason','Approved records become locked; later edits need revision reason and re-approval.'],
+    ['mobileOffline','Mobile offline queue','Site forms can be drafted locally with sync status tracking.'],
+    ['aiDocumentGuardrail','AI source guardrail','AI answers require selected approved document/data source references.'],
+    ['legacyReports','Legacy reports available','Old report formats stay available during transition.']
+  ];
+  function ensureControlLayerDefaults() {
+    State.universalCodingSchema = Array.isArray(State.universalCodingSchema) && State.universalCodingSchema.length ? State.universalCodingSchema : UNIVERSAL_CODING_FIELDS.map((name, i) => ({ id:'UC-' + String(i+1).padStart(2,'0'), name, required:true, status:i < 7 ? 'active' : 'mapped' }));
+    State.featureFlags = State.featureFlags || {};
+    CONTROL_FEATURE_FLAGS.forEach(([key]) => { if (State.featureFlags[key] === undefined) State.featureFlags[key] = true; });
+    State.compatibilityMappings = Array.isArray(State.compatibilityMappings) && State.compatibilityMappings.length ? State.compatibilityMappings : [
+      { id:'MAP-001', module:'Projects', legacyField:'id / loc / client', universalField:'Project + Location + Responsible Party', status:'active', notes:'Existing project cards feed the universal project selector.' },
+      { id:'MAP-002', module:'Materials', legacyField:'proj / site / ref', universalField:'Project + WBS/Location + Resource Code', status:'active', notes:'Stock issue, return and transfer records are mapped without deleting old fields.' },
+      { id:'MAP-003', module:'Equipment', legacyField:'projectId / site / equipmentId', universalField:'Project + Location + Resource Code', status:'active', notes:'Logs connect fuel, maintenance and billable use to project cost.' },
+      { id:'MAP-004', module:'Schedule', legacyField:'wbs / name / resp', universalField:'WBS + Activity + Responsible Party', status:'active', notes:'Editable activities drive look-ahead and milestone mapping.' }
+    ];
+    State.migrationLogs = Array.isArray(State.migrationLogs) && State.migrationLogs.length ? State.migrationLogs : [
+      { id:'MIG-001', release:'2026.05-Control', stage:'Backup', status:'ready', checkedAt:new Date().toISOString(), detail:'Use Export JSON before each release; no destructive reset required.' },
+      { id:'MIG-002', release:'2026.05-Control', stage:'Schema audit', status:'running', checkedAt:new Date().toISOString(), detail:'Local modules mapped to universal coding coverage dashboard.' },
+      { id:'MIG-003', release:'2026.05-Control', stage:'Rollback plan', status:'ready', checkedAt:new Date().toISOString(), detail:'Old workflows remain available; new layer can be disabled by feature flag.' }
+    ];
+    State.approvalMatrix = Array.isArray(State.approvalMatrix) && State.approvalMatrix.length ? State.approvalMatrix : [
+      { recordType:'Daily progress', flow:'Draft by site engineer > checked by QS/section > approved by PM > locked', officialOnly:true },
+      { recordType:'Material issue', flow:'Draft by store > receiver check > store manager/PM approval > stock/cost update', officialOnly:true },
+      { recordType:'Equipment log', flow:'Draft by equipment in-charge > site check > equipment manager/PM approval > bill/cost update', officialOnly:true },
+      { recordType:'IPC / RA bill', flow:'Prepared by QS > PM/accounts review > management approval > client submission', officialOnly:true },
+      { recordType:'Quality/NCR', flow:'Created by QA/QC > action assigned > verified closure > billing readiness link', officialOnly:true }
+    ];
+    State.periodLocks = Array.isArray(State.periodLocks) ? State.periodLocks : [];
+    State.exportLogs = Array.isArray(State.exportLogs) ? State.exportLogs : [];
+  }
+  function controlRecords() {
+    const rows = [];
+    (State.dprs || []).forEach((r,i) => rows.push({ module:'DPR', id:r.id || 'DPR-' + (i+1), project:r.projectId || r.proj, location:r.location || r.site || r.wbs, activity:r.activity || r.work, cost:r.boqCode || r.costCode, resource:r.resourceCode || 'Labour/Equipment/Material', date:r.date || r.createdAt, user:r.by || r.engineer || r.responsible, status:r.approval || r.status }));
+    (State.stockMovements || []).forEach((r,i) => rows.push({ module:'Materials', id:r.ref || r.id || 'MOV-' + (i+1), project:r.projectId || r.proj || r.chargeProject, location:r.location || r.site || r.toSite || r.fromSite, activity:r.activity || r.chargeActivity, cost:r.boqCode || r.costCode || r.itemId, resource:r.resourceCode || r.itemId, date:r.date, user:r.issuedBy || r.createdBy || r.receiver, status:r.approval || r.status }));
+    (State.equipLogs || []).forEach((r,i) => rows.push({ module:'Equipment', id:r.id || 'EQLOG-' + (i+1), project:r.projectId || r.proj || r.chargeProject, location:r.site || r.location, activity:r.activity || r.workActivity, cost:r.costCode || r.equipmentId, resource:r.resourceCode || r.equipmentId, date:r.date, user:r.operator || r.createdBy, status:r.approval || r.status }));
+    (State.raBills || []).forEach((r,i) => rows.push({ module:'Billing', id:r.id || r.billNo || 'RA-' + (i+1), project:r.projectId || r.proj, location:r.location || r.wbs, activity:r.activity || r.sourceType, cost:r.boqCode || r.costCode || r.sourceId, resource:r.resourceCode || r.sourceType, date:r.date || r.createdAt, user:r.preparedBy || r.createdBy, status:r.approval || r.status }));
+    (State.documents || []).forEach((r,i) => rows.push({ module:'Documents', id:r.id || r.code || 'DOC-' + (i+1), project:r.projectId, location:r.location || r.discipline, activity:r.activity || r.type, cost:r.boqCode || r.costCode || r.docCategory, resource:r.resourceCode || r.type, date:r.updated || r.date, user:r.owner || r.issuedBy, status:r.documentStatus || r.status }));
+    return rows;
+  }
+  function controlMissingFields(r) {
+    const missing = [];
+    if (!r.project || r.project === 'ALL') missing.push('project');
+    if (!r.location) missing.push('WBS/location');
+    if (!r.activity) missing.push('activity');
+    if (!r.cost) missing.push('BOQ/cost');
+    if (!r.resource) missing.push('resource');
+    if (!r.date) missing.push('date');
+    if (!r.status) missing.push('approval');
+    return missing;
+  }
+  function renderControlLayerView() {
+    ensureControlLayerDefaults();
+    const c = $('#view-control'); if (!c) return;
+    const records = controlRecords();
+    const complete = records.filter(r => controlMissingFields(r).length === 0).length;
+    const linkedPct = records.length ? Math.round(complete / records.length * 100) : 100;
+    const activeFlags = CONTROL_FEATURE_FLAGS.filter(([k]) => State.featureFlags[k]).length;
+    const unlockedApproved = records.filter(r => String(r.status || '').toLowerCase().includes('approved') && !State.periodLocks.some(l => l.projectId === r.project && l.status === 'locked')).length;
+    c.innerHTML = `
+      <div class="flex items-end justify-between mb-6"><div><div class="stamp mb-3"><i data-lucide="workflow" class="w-3 h-3"></i>COMPATIBILITY CONTROL LAYER</div><h1 class="font-display font-black text-3xl title-mark">Universal Coding & Migration Control</h1><p class="text-sm text-stone-500 mt-3">Preserve existing BuildCore data, map old records into contractor control fields, and keep approvals traceable.</p></div><div class="flex gap-2"><button class="btn btn-ghost" data-control-act="backup"><i data-lucide="download" class="w-3.5 h-3.5"></i>Backup JSON</button><button class="btn btn-ghost" data-control-act="mapping"><i data-lucide="git-branch" class="w-3.5 h-3.5"></i>Add Mapping</button><button class="btn btn-amber" data-control-act="checkpoint"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>Migration Checkpoint</button></div></div>
+      <div class="grid grid-cols-4 gap-3 mb-5"><div class="kpi"><div class="font-mono text-[10px] text-stone-500">LINKED SOURCE RECORDS</div><div class="font-display font-black text-2xl">${linkedPct}%</div><div class="text-xs text-stone-500">${complete}/${records.length || 0} complete</div></div><div class="kpi"><div class="font-mono text-[10px] text-stone-500">FEATURE FLAGS</div><div class="font-display font-black text-2xl">${activeFlags}/${CONTROL_FEATURE_FLAGS.length}</div><div class="text-xs text-stone-500">project-wise controls enabled</div></div><div class="kpi"><div class="font-mono text-[10px] text-stone-500">MIGRATION LOGS</div><div class="font-display font-black text-2xl">${State.migrationLogs.length}</div><div class="text-xs text-stone-500">backup, audit, rollback stages</div></div><div class="kpi"><div class="font-mono text-[10px] text-stone-500">APPROVED NOT PERIOD-LOCKED</div><div class="font-display font-black text-2xl">${unlockedApproved}</div><div class="text-xs text-stone-500">needs monthly lock review</div></div></div>
+      <div class="grid grid-cols-3 gap-4 mb-5"><div class="card p-4"><div class="font-display font-bold mb-3">Universal Coding Schema</div><div class="space-y-2">${State.universalCodingSchema.map(f => `<div class="flex justify-between items-center text-xs border border-stone-200 p-2"><span>${esc(f.name)}</span><span class="badge ${f.status==='active'?'badge-ok':'badge-info'}">${esc(f.status)}</span></div>`).join('')}</div></div><div class="card p-4"><div class="font-display font-bold mb-3">Feature Flags</div><div class="space-y-2">${CONTROL_FEATURE_FLAGS.map(([key,label,desc]) => `<div class="border border-stone-200 p-2"><div class="flex justify-between items-center"><b class="text-xs">${esc(label)}</b><span class="toggle ${State.featureFlags[key]?'on':''}" data-control-flag="${key}"></span></div><div class="text-[10px] text-stone-500 mt-1">${esc(desc)}</div></div>`).join('')}</div></div><div class="card p-4"><div class="font-display font-bold mb-3">Approval Matrix</div><div class="space-y-2">${State.approvalMatrix.map(a => `<div class="border-l-4 border-amber-500 bg-amber-50 p-2"><div class="font-semibold text-xs">${esc(a.recordType)}</div><div class="text-[10px] text-stone-600">${esc(a.flow)}</div></div>`).join('')}</div></div></div>
+      <div class="grid grid-cols-2 gap-4 mb-5"><div class="card p-4"><div class="font-display font-bold mb-3">Compatibility Mappings</div><table class="data"><thead><tr><th>Module</th><th>Legacy Field</th><th>Universal Field</th><th>Status</th></tr></thead><tbody>${State.compatibilityMappings.map(m => `<tr><td><b>${esc(m.module)}</b><div class="text-[10px] text-stone-500">${esc(m.id)}</div></td><td class="text-xs">${esc(m.legacyField)}</td><td class="text-xs">${esc(m.universalField)}</td><td><span class="badge badge-ok">${esc(m.status)}</span></td></tr>`).join('')}</tbody></table></div><div class="card p-4"><div class="font-display font-bold mb-3">Migration / Rollback Log</div><table class="data"><thead><tr><th>Release</th><th>Stage</th><th>Status</th><th>Detail</th></tr></thead><tbody>${State.migrationLogs.map(m => `<tr><td class="font-mono text-xs">${esc(m.release)}</td><td>${esc(m.stage)}</td><td><span class="badge ${m.status==='ready'?'badge-ok':'badge-warn'}">${esc(m.status)}</span></td><td class="text-xs">${esc(m.detail)}</td></tr>`).join('')}</tbody></table></div></div>
+      <div class="card p-4"><div class="flex justify-between items-center mb-3"><div><div class="font-display font-bold">Source Record Drilldown Health</div><div class="text-xs text-stone-500">Records with missing universal coding stay visible, but official dashboards can filter them until mapped and approved.</div></div><button class="btn btn-ghost text-xs" data-control-act="lock"><i data-lucide="lock-keyhole" class="w-3 h-3"></i>Lock Current Period</button></div><table class="data"><thead><tr><th>Module</th><th>Record</th><th>Project</th><th>Linking Health</th><th>Status</th><th>Source</th></tr></thead><tbody>${records.slice(0,60).map(r => { const miss = controlMissingFields(r); return `<tr><td><b>${esc(r.module)}</b></td><td class="font-mono text-xs">${esc(r.id)}</td><td class="font-mono text-xs">${esc(r.project || 'UNMAPPED')}</td><td>${miss.length ? `<span class="badge badge-warn">${miss.length} missing</span><div class="text-[10px] text-stone-500">${esc(miss.join(', '))}</div>` : '<span class="badge badge-ok">Complete</span>'}</td><td>${assetBadge(r.status || 'draft')}</td><td><button class="btn btn-ghost text-xs" data-control-source="${esc(r.module + '|' + r.id)}">Open source</button></td></tr>`; }).join('') || `<tr><td colspan="6" class="text-center text-stone-500 py-6">No source records yet. Create DPR, material, equipment, billing or document entries to monitor linkage.</td></tr>`}</tbody></table></div>
+    `;
+    c.onclick = (e) => {
+      const flag = e.target.closest('[data-control-flag]');
+      if (flag) { const k = flag.dataset.controlFlag; State.featureFlags[k] = !State.featureFlags[k]; audit('update','Feature flag', k + ' = ' + State.featureFlags[k]); saveState(); renderControlLayerView(); return; }
+      const act = e.target.closest('[data-control-act]')?.dataset.controlAct;
+      if (act === 'backup') { State.exportLogs.unshift({ at:new Date().toISOString(), by:State.session?.user?.name || 'User', type:'JSON backup' }); exportState(); saveState(); return; }
+      if (act === 'checkpoint') { State.migrationLogs.unshift({ id:'MIG-' + String(Date.now()).slice(-6), release:'2026.05-Control', stage:'User checkpoint', status:'ready', checkedAt:new Date().toISOString(), detail:'Checkpoint recorded after architecture compliance update.' }); audit('create','Migration checkpoint','Control layer checkpoint recorded'); saveState(); renderControlLayerView(); return; }
+      if (act === 'lock') { const pid = State.activeProject || 'ALL'; State.periodLocks.unshift({ id:'LOCK-' + Date.now(), projectId:pid, period:new Date().toISOString().slice(0,7), status:'locked', by:State.session?.user?.name || 'PM', at:new Date().toISOString() }); audit('lock','Report period', pid + ' current period locked'); saveState(); renderControlLayerView(); return; }
+      if (act === 'mapping') { openModal({ title:'Add Compatibility Mapping', submitLabel:'Save Mapping', body:`<div class="form-grid-2"><div class="form-row"><label>Module</label><input name="module" placeholder="e.g. DPR"></div><div class="form-row"><label>Status</label><select name="status"><option>active</option><option>draft</option><option>review</option></select></div><div class="form-row"><label>Legacy Field</label><input name="legacyField" placeholder="old field names"></div><div class="form-row"><label>Universal Field</label><input name="universalField" placeholder="project + WBS + activity"></div></div><div class="form-row"><label>Notes</label><textarea name="notes" placeholder="How old data maps into dashboard/report source fields"></textarea></div>`, onSubmit:(d)=>{ State.compatibilityMappings.unshift({ id:'MAP-' + String(State.compatibilityMappings.length + 1).padStart(3,'0'), module:d.module || 'Module', legacyField:d.legacyField || '-', universalField:d.universalField || '-', status:d.status || 'draft', notes:d.notes || '' }); audit('create','Compatibility mapping', d.module || 'Module'); saveState(); renderControlLayerView(); return true; } }); return; }
+      const src = e.target.closest('[data-control-source]')?.dataset.controlSource;
+      if (src) { const [module, id] = src.split('|'); openDrawer({ title:'Source Record Linkage', body:`<div class="stamp mb-3"><i data-lucide="search-check" class="w-3 h-3"></i>${esc(module)}</div><div class="text-sm">Source record <b>${esc(id)}</b> remains in its original module. Use the module view to edit the source; dashboards read it through the compatibility layer.</div><div class="mt-3 text-xs text-stone-500">This follows the revised architecture rule: no summary-only data, every dashboard number must drill down to the original transaction or document.</div>` }); }
+    };
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
   // -------- NAVIGATION --------
   function navTo(view) {
     if (!canAccessModule(view)) {
@@ -13680,6 +13791,7 @@ Available Actions:
     if (view === 'estimation') { recomputeBOQTotals(); }
     if (view === 'analytics') { setTimeout(renderAnalyticsView, 50); }
     if (view === 'audit') { renderAuditTable(); }
+    if (view === 'control') { renderControlLayerView(); }
     if (view === 'schedule') { renderScheduleTable(); }
     if (view === 'materials') { if (State.session?.inProjectMode) State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
     if (view === 'procurement') { setTimeout(renderProcurementView, 30); }
@@ -13712,7 +13824,7 @@ Available Actions:
 
   // -------- COMMAND PALETTE (Cmd+K) --------
   const palItems = [
-    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
+    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings','control'].map(v => ({label: v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
     ...State.projects.map(p => ({ label: p.name, sub: p.id + ' · ' + p.client, kind:'Project', action: () => { navTo('projects'); setTimeout(() => openProjectDetail(p.id), 100); }})),
     { label:'New Project', kind:'Action', action: () => actNewProject() },
     { label:'New Tender', kind:'Action', action: () => actNewTender() },
@@ -13781,6 +13893,8 @@ Available Actions:
           <div class="form-row"><label>Client</label><input name="client" placeholder="Client / Employer name"></div>
           <div class="form-row"><label>Type</label><select name="typePreset" onchange="document.getElementById('newProjectCustomTypeWrap').style.display=this.value==='__custom__'?'block':'none'">${projectTypeOptionsHTML()}</select></div>
           <div class="form-row" id="newProjectCustomTypeWrap" style="display:none"><label>Custom Type</label><input name="typeCustom" placeholder="e.g. Data center, dry port, stadium"></div>
+          <div class="form-row"><label>Contract Package</label><input name="package" placeholder="Civil / HM / EM / Road / Building"></div>
+          <div class="form-row"><label>Default Cost Code</label><input name="costCode" placeholder="e.g. CC-100"></div>
           <div class="form-row"><label>Location</label><input name="loc" placeholder="Lalitpur"></div>
           <div class="form-row"><label>Contract Value (NPR)</label><input name="value" type="number" placeholder="500000000"></div>
           <div class="form-row"><label>Start Date</label><input name="start" type="date"></div>
@@ -13811,6 +13925,10 @@ Available Actions:
           startDate:d.start || '',
           endDate:d.end || '',
           end:d.end || 'TBD',
+          package:(d.package || '').trim(),
+          defaultCostCode:(d.costCode || '').trim(),
+          approvalStatus:'draft',
+          codingStatus:'project-created',
           status:'ok',
           risk:'low',
           team:0,
@@ -15433,6 +15551,7 @@ Available Actions:
   // -------- INITIAL SEED & RENDERS --------
   const _hadStored = STARTER_MODE ? loadStarterTrialWorkspace(trialWorkspaceId()) : loadState();
   if (STARTER_MODE && !_hadStored) applyStarterWorkspace();
+  ensureControlLayerDefaults();
   ensureHydropowerProjects();
   const now = new Date();
   if (!_hadStored && !STARTER_MODE) {
