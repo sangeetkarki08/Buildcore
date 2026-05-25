@@ -11661,6 +11661,12 @@
       { view:'aidocs',    icon:'brain-circuit', title:'AI Docs',   sub:'Source-backed document answers', color:'#1E3A4C' },
       { view:'reports',   icon:'file-output',   title:'Reports',   sub:'PDF packs and client digests', color:'#B45309' },
       { view:'analytics', icon:'bar-chart-3',   title:'Analytics', sub:'Trends and forecasts', color:'#0EA5E9' }
+    ]},
+    { label:'Control', tiles:[
+      { view:'control', icon:'workflow', title:'Control Layer', sub:'Universal coding, migration, approvals', color:'#1E3A4C' },
+      { view:'audit', icon:'history', title:'Audit Trail', sub:'Hash chain, revisions, exports', color:'#6B7280' },
+      { view:'settings', icon:'settings-2', title:'Feature Flags', sub:'Preserve old flow, enable new modules', color:'#B45309' },
+      { view:'clientportal', icon:'file-check-2', title:'Approvals', sub:'Client review and billing triggers', color:'#15803D' }
     ]}
   ];
 
@@ -11682,6 +11688,7 @@
     if (view === 'budgetcontrol') { seedBCCData(); return State.bccBoq?.length || 0; }
     if (view === 'quality')   return State.labReports?.length || State.ncrs?.length || 0;
     if (view === 'clientportal') return (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status)).length;
+    if (view === 'control') { ensureControlLayerDefaults(); return State.compatibilityMappings?.length || 0; }
     return null;
   }
   function launcherTileAlert(view) {
@@ -11709,6 +11716,13 @@
     if (view === 'clientportal') {
       const pending = (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status)).length;
       return pending > 0 ? { txt: pending + ' pending', col:'#B45309' } : null;
+    }
+    if (view === 'control') {
+      try {
+        ensureControlLayerDefaults();
+        const missing = controlRecords().filter(r => controlMissingFields(r).length).length;
+        return missing > 0 ? { txt: missing + ' unmapped', col:'#C0383B' } : null;
+      } catch(e) { return null; }
     }
     return null;
   }
@@ -11761,6 +11775,12 @@
     const portfolioRisk = operationalPortfolio().filter(p => p.status === 'At Risk' || p.status === 'Delayed');
     if (portfolioRisk.length) add('bad', portfolioRisk.length + ' projects at risk', 'Use the dashboard rollup to review schedule, cost, and alert pressure.', 'projects', 'folder-kanban', 'Open projects');
 
+    try {
+      ensureControlLayerDefaults();
+      const unmapped = controlRecords().filter(r => controlMissingFields(r).length);
+      if (unmapped.length) add('bad', unmapped.length + ' records need coding', 'Map project, WBS/location, activity, BOQ/cost, resource, date and approval before official reporting.', 'control', 'workflow', 'Open control');
+    } catch(_) {}
+
     return list;
   }
 
@@ -11787,7 +11807,8 @@
       { view:'quality', icon:'badge-check', label:'QA/QC', value:(State.labReports || []).length || openNcrs, detail:'lab reports and NCRs', color:openNcrs ? '#C0383B' : '#15803D' },
       { view:'clientportal', icon:'file-check-2', label:'Client Portal', value:pendingClient, detail:'pending approvals', color:pendingClient ? '#B45309' : '#15803D' },
       { view:'billing', icon:'receipt', label:'Billing', value:(State.raBills || []).length, detail:'net billed ' + fmtNPR(billed), color:'#E8742C' },
-      { view:'finance', icon:'trending-up', label:'Finance', value:(State.revenues || []).length + (State.expenses || []).length, detail:'ledger records', color:'#1E3A4C' }
+      { view:'finance', icon:'trending-up', label:'Finance', value:(State.revenues || []).length + (State.expenses || []).length, detail:'ledger records', color:'#1E3A4C' },
+      { view:'control', icon:'workflow', label:'Control Layer', value:(State.compatibilityMappings || []).length, detail:'universal coding mappings', color:'#1E3A4C' }
     ];
   }
 
@@ -11878,6 +11899,12 @@
   function renderLauncher() {
     // Seed data so counts are accurate
     try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); } catch(e){}
+    ensureControlLayerDefaults();
+    const codingRecords = controlRecords();
+    const codingComplete = codingRecords.filter(r => controlMissingFields(r).length === 0).length;
+    const codingMissing = codingRecords.length - codingComplete;
+    const codingPct = codingRecords.length ? Math.round(codingComplete / codingRecords.length * 100) : 100;
+    const activeFlags = CONTROL_FEATURE_FLAGS.filter(([k]) => State.featureFlags[k]).length;
 
     // ===== Build new launcher HTML =====
     const inSampleProject = isSampleProject(State.session?.projectId);
@@ -12200,12 +12227,28 @@
       .slice()
       .sort((a,b) => (b.alerts * 10 + (b.status === 'Delayed' ? 40 : b.status === 'At Risk' ? 25 : 0)) - (a.alerts * 10 + (a.status === 'Delayed' ? 40 : a.status === 'At Risk' ? 25 : 0)));
     const nextActions = [
+      { view:'control', icon:'workflow', label:'Coding & Approval', value:codingMissing || 'OK', sub:'universal fields, migration, source drilldown', color:codingMissing ? '#C0383B' : '#15803D' },
       { view:'events', icon:'calendar-check', label:'Claims & EOT', value:(State.events || []).filter(e => e.status !== 'completed').length, sub:'notices, evidence, claim ageing', color:'#7C3AED' },
       { view:'finance', icon:'trending-up', label:'Cost Recovery', value:fcMargin.toFixed(1) + '%', sub:'margin, EAC, cash pressure', color:fcMargin >= 8 ? '#15803D' : '#C0383B' },
       { view:'todos', icon:'check-square', label:'Execution Blockers', value:(State.todos || []).filter(t => t.status !== 'completed').length, sub:'overdue tasks and owners', color:'#B45309' },
       { view:'materials', icon:'package', label:'Supply Readiness', value:(State.items || []).length, sub:'stock exceptions and POs', color:'#15803D' }
     ];
     const advancedDashboardHtml = `
+      <div class="dash-panel mb-6" style="border-left:4px solid ${codingMissing ? '#C0383B' : '#15803D'}">
+        <div class="dash-panel-head">
+          <div>
+            <div class="dash-panel-title">Revised Architecture Control Center</div>
+            <div class="text-[10px] text-stone-500 mt-1">Document requirement: preserve existing data, map every record to project/WBS/activity/BOQ/cost/resource/date/user/approval, and keep source drilldown.</div>
+          </div>
+          <button class="btn btn-amber text-xs" data-launch-view="control"><i data-lucide="workflow" class="w-3 h-3"></i>Open Control Layer</button>
+        </div>
+        <div class="grid grid-cols-4 gap-3 p-3">
+          <div class="module-summary-card" data-launch-view="control"><div class="font-mono text-[10px] text-stone-500">UNIVERSAL CODING</div><div class="font-display font-black text-2xl" style="color:${codingMissing ? '#C0383B' : '#15803D'}">${codingPct}%</div><div class="text-xs text-stone-500">${codingComplete}/${codingRecords.length || 0} source records complete</div></div>
+          <div class="module-summary-card" data-launch-view="control"><div class="font-mono text-[10px] text-stone-500">FEATURE FLAGS</div><div class="font-display font-black text-2xl">${activeFlags}/${CONTROL_FEATURE_FLAGS.length}</div><div class="text-xs text-stone-500">new modules controlled project-wise</div></div>
+          <div class="module-summary-card" data-launch-view="audit"><div class="font-mono text-[10px] text-stone-500">AUDIT / MIGRATION</div><div class="font-display font-black text-2xl">${(State.migrationLogs || []).length}</div><div class="text-xs text-stone-500">backup, validation and rollback logs</div></div>
+          <div class="module-summary-card" data-launch-view="reports"><div class="font-mono text-[10px] text-stone-500">OFFICIAL REPORT RULE</div><div class="font-display font-black text-2xl">${codingMissing ? codingMissing : 'OK'}</div><div class="text-xs text-stone-500">${codingMissing ? 'records need mapping before official use' : 'all visible source records mapped'}</div></div>
+        </div>
+      </div>
       <div class="dash-main-grid mb-6">
         <div class="dash-panel">
           <div class="dash-panel-head">
@@ -12326,12 +12369,12 @@
   // =====================================================================
   const ROLE_PERMS = {
     ceo:      { name:'Mr. Rajesh Tamang',     role:'CEO · Full Access',           avatar:'RT', projects:'ALL', modules:'ALL' },
-    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO · Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','analytics','audit','documents','aidocs','reports'] },
+    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO · Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','analytics','audit','control','documents','aidocs','reports'] },
     pm:       { name:'R. Tamang (PM)',        role:'Project Manager · Projects',  avatar:'RT', projects:['PRJ-017','PRJ-030'], modules:'ALL' },
-    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','safety','documents','aidocs','events','todos'] },
+    se:       { name:'S. Adhikari',           role:'Site Engineer · Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','safety','documents','aidocs','control','events','todos'] },
     qc:       { name:'M. Khatri (QC)',        role:'QC Officer · Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019','PRJ-030'], modules:['dashboard','projects','quality','safety','dpr','documents','aidocs','events','todos'] },
-    store:    { name:'Store Manager',          role:'Store · Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','assets','events','todos'] },
-    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','budgetcontrol','finance','documents','aidocs','events','todos'] },
+    store:    { name:'Store Manager',          role:'Store · Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','assets','control','events','todos'] },
+    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator · BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','budgetcontrol','finance','documents','aidocs','control','events','todos'] },
     client:   { name:'Client Reviewer',        role:'Client · Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','aidocs','reports'] }
   };
 
@@ -12726,6 +12769,7 @@
                 </div>
                 <div class="font-display font-black text-lg leading-tight">${p.name}</div>
                 <div class="text-xs text-stone-500 mt-1">${p.client} · ${p.type}</div>
+                <div class="text-[10px] text-stone-500 mt-1">Package: ${esc(p.package || 'Not mapped')} · Cost: ${esc(p.defaultCostCode || 'Not mapped')} · Approval: ${esc(p.approvalStatus || 'draft')}</div>
                 <div class="text-[10px] text-stone-400 mt-1">📍 ${p.location}</div>
               </div>
               <div class="px-4 pb-3">
