@@ -3027,6 +3027,14 @@
     vos: [],       // variation orders
     risks: [],     // risk register
     photos: [],    // photo metadata
+    projectPackages: [],
+    projectCalendars: [],
+    wbsActivities: [],
+    projectLocations: [],
+    projectMilestones: [],
+    approvalHistory: [],
+    measurements: [],
+    costRecords: [],
     aiDocSourceMode: '',
     aiDocSelectedProject: '',
     aiDocSelectedDocs: [],
@@ -3145,6 +3153,14 @@
     State.vos = [];
     State.risks = [];
     State.photos = [];
+    State.projectPackages = [];
+    State.projectCalendars = [];
+    State.wbsActivities = [];
+    State.projectLocations = [];
+    State.projectMilestones = [];
+    State.approvalHistory = [];
+    State.measurements = [];
+    State.costRecords = [];
     State.aiDocSourceMode = '';
     State.aiDocSelectedProject = '';
     State.aiDocSelectedDocs = [];
@@ -3227,7 +3243,11 @@
       activeProject: State.activeProject,
       currentView: State.currentView,
       session: State.session,
-      projects: State.projects, tenders: State.tenders, materials: State.materials,
+      projects: State.projects, tenders: State.tenders, materials: State.materials, boq: State.boq,
+      projectPackages: State.projectPackages, projectCalendars: State.projectCalendars,
+      wbsActivities: State.wbsActivities, projectLocations: State.projectLocations,
+      projectMilestones: State.projectMilestones, approvalHistory: State.approvalHistory,
+      measurements: State.measurements, costRecords: State.costRecords,
       items: State.items, stockMovements: State.stockMovements, subcontractors: State.subcontractors, toolIssues: State.toolIssues,
       sites: State.sites, imsCurrentTab: State.imsCurrentTab, imsNextId: State.imsNextId,
       scheduleActivities: State.scheduleActivities,
@@ -3295,7 +3315,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['activeProject','currentView','session','projects','tenders','materials','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','boq','projectPackages','projectCalendars','wbsActivities','projectLocations','projectMilestones','approvalHistory','measurements','costRecords','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3314,7 +3334,11 @@
   function exportState() {
     const data = JSON.stringify({
       meta: { app:'BuildCore', exportedAt: new Date().toISOString(), version:1 },
-      state: { projects:State.projects, tenders:State.tenders, materials:State.materials,
+      state: { projects:State.projects, tenders:State.tenders, materials:State.materials, boq:State.boq,
+        projectPackages:State.projectPackages, projectCalendars:State.projectCalendars,
+        wbsActivities:State.wbsActivities, projectLocations:State.projectLocations,
+        projectMilestones:State.projectMilestones, approvalHistory:State.approvalHistory,
+        measurements:State.measurements, costRecords:State.costRecords,
         items:State.items, stockMovements:State.stockMovements, subcontractors:State.subcontractors, toolIssues:State.toolIssues,
         sites:State.sites, imsCurrentTab:State.imsCurrentTab, imsNextId:State.imsNextId,
         ncrs:State.ncrs, raBills:State.raBills, pos:State.pos, vendors:State.vendors, automations:State.automations,
@@ -8620,6 +8644,7 @@
   let dprSelectedDate = null;
 
   function renderDPRView() {
+    ensureERPUpgradeDefaults();
     ensureDPRTemplateState();
     seedDPRData();
     renderDPRKPIs();
@@ -8632,7 +8657,7 @@
     });
     document.querySelectorAll('#view-dpr [data-dpr-act]').forEach(btn => {
       btn.onclick = () => {
-        if (btn.dataset.dprAct === 'new-dpr') dprEdit();
+        if (btn.dataset.dprAct === 'new-dpr') actSubmitDPR();
         if (btn.dataset.dprAct === 'export-csv') dprExportCSV();
       };
     });
@@ -8648,11 +8673,14 @@
     const machineHours = dprs.reduce((s,d) => s + dprMachineHours(d), 0);
     const today = new Date().toISOString().slice(0,10);
     const todayDPR = dprs.find(d => d.date === today);
+    const pendingApproval = dprs.filter(d => ['submitted','checked','returned'].includes(String(dprApprovalStatus(d)).toLowerCase())).length;
+    const approvedDprs = dprs.filter(d => String(dprApprovalStatus(d)).toLowerCase() === 'approved').length;
     const pendingAck = dprs.filter(d => d.clientAck === 'pending').length;
     const issues = dprs.filter(d => d.ncrIssued || d.safetyIncidents).length;
     $('#dprKpis').innerHTML = `
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">TOTAL DPRs</div><div class="font-display font-black text-2xl tabular">${dprs.length}</div></div>
       <div class="kpi ${todayDPR ? 'kpi-green' : 'kpi-red'}"><div class="font-mono text-[10px] text-stone-500">TODAY'S DPR</div><div class="font-display font-black text-2xl tabular">${todayDPR ? '✓' : '✗'}</div><div class="text-xs text-stone-500 mt-1">${todayDPR ? todayDPR.status.toUpperCase() : 'Not filed'}</div></div>
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">PENDING APPROVAL</div><div class="font-display font-black text-2xl tabular" style="color:#B45309">${pendingApproval}</div><div class="text-xs text-stone-500 mt-1">${approvedDprs} official</div></div>
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">AVG LABOUR · 7d</div><div class="font-display font-black text-2xl tabular">${avgLabour}</div></div>
       <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">MATERIAL LINES</div><div class="font-display font-black text-2xl tabular">${materialLines}</div></div>
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">MACHINE HRS</div><div class="font-display font-black text-2xl tabular" style="color:#B45309">${machineHours.toFixed(1)}</div></div>
@@ -8702,9 +8730,10 @@
               <td class="text-right font-mono" style="color:${(d.productivity||0) >= 0.9 ? '#15803D' : (d.productivity||0) >= 0.7 ? '#B45309' : '#C0383B'}"><b>${d.productivity || '0'}</b></td>
               <td class="text-xs" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(d.activitiesExecuted||'').slice(0,80)}</td>
               <td class="text-xs">${d.delays || d.ncrIssued || d.safetyIncidents ? `<span style="color:#C0383B">⚠️ ${[(d.delays?'delay':null), (d.ncrIssued?'ncr':null), (d.safetyIncidents?'safety':null)].filter(Boolean).join(', ')}</span>` : '—'}</td>
-              <td><span class="badge badge-${d.status==='submitted'?'ok':d.status==='draft'?'warn':'info'}">${(d.status||'draft').toUpperCase()}</span></td>
+              <td><span class="badge badge-${String(dprApprovalStatus(d)).toLowerCase()==='approved'?'ok':String(dprApprovalStatus(d)).toLowerCase()==='draft'?'warn':'info'}">${String(dprApprovalStatus(d)).toUpperCase()}</span></td>
               <td><span class="badge badge-${d.clientAck==='acknowledged'?'ok':'warn'}">${(d.clientAck||'pending').toUpperCase()}</span></td>
               <td onclick="event.stopPropagation()"><div class="ims-row-action">
+                ${String(dprApprovalStatus(d)).toLowerCase() !== 'approved' ? `<button class="ims-icon-btn" onclick="approveDPRRecord('${d.id}','approved')" title="Approve">✓</button>` : ''}
                 <button class="ims-icon-btn" onclick="dprEdit('${d.id}')" title="Edit">✎</button>
                 <button class="ims-icon-btn danger" onclick="dprDelete('${d.id}')" title="Delete">🗑</button>
               </div></td>
@@ -8730,7 +8759,7 @@
           <div style="font-size:48px">📋</div>
           <div class="font-display font-bold text-lg mt-3">No DPR filed for today</div>
           <div class="text-xs text-stone-500 mt-2 mb-4">${today} · ${pid}</div>
-          <button class="btn btn-amber" onclick="dprEdit()"><i data-lucide="plus" class="w-4 h-4"></i>Create Today's DPR</button>
+          <button class="btn btn-amber" onclick="actSubmitDPR()"><i data-lucide="plus" class="w-4 h-4"></i>Create Today's DPR</button>
         </div>`;
       return;
     }
@@ -11758,6 +11787,9 @@
     const pendingClient = (State.clientSubmissions || []).filter(s => !['approved','rejected'].includes(s.approval || s.status));
     if (pendingClient.length) add('warn', pendingClient.length + ' client approvals pending', 'DPRs, lab reports, or packages are waiting for client action.', 'clientportal', 'file-check-2', 'Open portal');
 
+    const pendingDprs = (State.dprs || []).filter(d => ['submitted','checked','returned'].includes(String(dprApprovalStatus(d)).toLowerCase()));
+    if (pendingDprs.length) add('warn', pendingDprs.length + ' DPRs awaiting approval', 'Unapproved DPR quantities are held from official progress, IPC and cost dashboards.', 'dpr', 'clipboard-check', 'Open DPR');
+
     try { seedBCCData(); } catch(_) {}
     const bccRisk = bccAlerts ? bccAlerts().length : 0;
     if (bccRisk) add('bad', bccRisk + ' budget / milestone risks', 'Review negative margin BOQ items, B2B package risks, overhead pressure and delayed milestones.', 'budgetcontrol', 'circle-dollar-sign', 'Open budget');
@@ -11899,6 +11931,7 @@
   function renderLauncher() {
     // Seed data so counts are accurate
     try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); } catch(e){}
+    ensureERPUpgradeDefaults();
     ensureControlLayerDefaults();
     const codingRecords = controlRecords();
     const codingComplete = codingRecords.filter(r => controlMissingFields(r).length === 0).length;
@@ -13767,9 +13800,93 @@ Available Actions:
     State.periodLocks = Array.isArray(State.periodLocks) ? State.periodLocks : [];
     State.exportLogs = Array.isArray(State.exportLogs) ? State.exportLogs : [];
   }
+  function ensureERPUpgradeDefaults() {
+    State.projectPackages = Array.isArray(State.projectPackages) ? State.projectPackages : [];
+    State.projectCalendars = Array.isArray(State.projectCalendars) ? State.projectCalendars : [];
+    State.wbsActivities = Array.isArray(State.wbsActivities) ? State.wbsActivities : [];
+    State.projectLocations = Array.isArray(State.projectLocations) ? State.projectLocations : [];
+    State.projectMilestones = Array.isArray(State.projectMilestones) ? State.projectMilestones : [];
+    State.approvalHistory = Array.isArray(State.approvalHistory) ? State.approvalHistory : [];
+    State.measurements = Array.isArray(State.measurements) ? State.measurements : [];
+    State.costRecords = Array.isArray(State.costRecords) ? State.costRecords : [];
+    const fallbackProject = (State.projects || [])[0]?.id || 'UNASSIGNED';
+    (State.projects || []).forEach(p => {
+      p.employer = p.employer || p.client || '';
+      p.contractor = p.contractor || COMPANY.name;
+      p.consultant = p.consultant || '';
+      p.contractType = p.contractType || (String(p.type || '').includes('EPC') ? 'EPC' : 'Item rate / BOQ');
+      p.baselineCompletionDate = p.baselineCompletionDate || p.endDate || '';
+      p.revisedCompletionDate = p.revisedCompletionDate || p.endDate || '';
+      p.calendarType = p.calendarType || '6-day working week';
+      p.workingDays = p.workingDays || 'Sunday, Monday, Tuesday, Wednesday, Thursday, Friday';
+      p.holidays = p.holidays || '';
+      p.approvalStatus = p.approvalStatus || 'draft';
+      p.codingStatus = p.codingStatus || 'legacy-mapped';
+      if (!State.projectPackages.some(x => x.projectId === p.id)) State.projectPackages.push({ id:'PKG-' + p.id + '-01', projectId:p.id, name:p.package || p.type || 'Main works', type:p.type || 'Construction', status:'active' });
+      if (!State.projectLocations.some(x => x.projectId === p.id)) State.projectLocations.push({ id:'LOC-' + p.id + '-01', projectId:p.id, code:'MAIN', name:p.location || p.loc || 'Main site', type:'Project location', chainage:'', status:'active' });
+      if (!State.projectCalendars.some(x => x.projectId === p.id)) State.projectCalendars.push({ id:'CAL-' + p.id, projectId:p.id, type:p.calendarType, workingDays:p.workingDays, holidays:p.holidays, status:'active' });
+      if (!State.wbsActivities.some(x => x.projectId === p.id)) {
+        ['Mobilization','Earthwork / excavation','Concrete works','Finishing / installation'].forEach((name, i) => State.wbsActivities.push({ id:'WBS-' + p.id + '-' + (i+1), projectId:p.id, wbs:String(i+1) + '.0', name, packageId:'PKG-' + p.id + '-01', plannedQty:0, unit:'LS', status:'planned', approvalStatus:'draft' }));
+      }
+      if (!State.projectMilestones.some(x => x.projectId === p.id)) State.projectMilestones.push({ id:'MS-' + p.id + '-01', projectId:p.id, name:'Baseline completion', plannedDate:p.baselineCompletionDate || p.endDate || '', revisedDate:p.revisedCompletionDate || p.endDate || '', status:'upcoming' });
+    });
+    (State.boq || []).forEach((b, i) => {
+      b.id = b.id || 'BOQ-' + String(i+1).padStart(4,'0');
+      b.projectId = b.projectId || fallbackProject;
+      b.workCategory = b.workCategory || 'General';
+      b.projectSection = b.projectSection || 'Main works';
+      b.location = b.location || 'Main site';
+      b.wbs = b.wbs || '';
+      b.scheduleActivity = b.scheduleActivity || b.wbs || '';
+      b.ipcItem = b.ipcItem || b.code || '';
+      b.revisedQty = Number(b.revisedQty ?? b.qty ?? 0);
+      b.variationQty = Number(b.variationQty || 0);
+      b.approvedQty = Number(b.approvedQty || b.revisedQty || b.qty || 0);
+      b.executedQty = Number(b.executedQty || 0);
+      b.balanceQty = Math.max(0, Number(b.approvedQty || 0) - Number(b.executedQty || 0));
+      b.approvalStatus = b.approvalStatus || 'approved';
+    });
+    (State.dprs || []).forEach(d => {
+      d.projectId = d.projectId || d.proj || fallbackProject;
+      d.approvalStatus = d.approvalStatus || d.status || 'draft';
+      d.location = d.location || d.site || d.workLocation || '';
+      d.boqCode = d.boqCode || d.boq || '';
+      d.wbs = d.wbs || d.activityWbs || '';
+    });
+  }
+  function projectMasterOptions(pid, type) {
+    if (type === 'location') return (State.projectLocations || []).filter(x => !pid || x.projectId === pid).map(x => `<option value="${esc(x.name)}">${esc(x.code || x.id)} - ${esc(x.name)}</option>`).join('');
+    if (type === 'wbs') return (State.wbsActivities || []).filter(x => !pid || x.projectId === pid).map(x => `<option value="${esc(x.wbs)}">${esc(x.wbs)} - ${esc(x.name)}</option>`).join('');
+    if (type === 'boq') return (State.boq || []).filter(x => !pid || x.projectId === pid || !x.projectId).map(x => `<option value="${esc(x.code)}">${esc(x.code)} - ${esc((x.desc || '').slice(0,70))}</option>`).join('');
+    return '';
+  }
+  function dprApprovalStatus(d) { return d.approvalStatus || d.status || 'draft'; }
+  function approveDPRRecord(id, decision='approved') {
+    const d = (State.dprs || []).find(x => x.id === id);
+    if (!d) return;
+    d.approvalStatus = decision;
+    d.status = decision;
+    d.approvedBy = State.session?.user?.name || 'Project Manager';
+    d.approvedAt = new Date().toISOString();
+    State.approvalHistory.unshift({ id:'APP-' + Date.now(), recordType:'DPR', recordId:id, projectId:d.projectId, status:decision, by:d.approvedBy, at:d.approvedAt, comments:decision === 'approved' ? 'Approved for official progress and IPC readiness.' : 'Returned for correction.' });
+    if (decision === 'approved' && d.boqCode) {
+      const b = (State.boq || []).find(x => String(x.code) === String(d.boqCode) && (!x.projectId || x.projectId === d.projectId));
+      if (b) {
+        b.executedQty = Number(b.executedQty || 0) + Number(d.qtyToday || d.quantityToday || 0);
+        b.balanceQty = Math.max(0, Number(b.approvedQty || b.qty || 0) - Number(b.executedQty || 0));
+      }
+    }
+    audit('update','DPR approval', id + ' -> ' + decision);
+    saveState();
+    renderDPRView?.(); renderLauncher?.(); renderControlLayerView?.();
+    toast(decision === 'approved' ? 'DPR Approved' : 'DPR Returned', id + ' ' + decision, decision === 'approved' ? 'ok' : 'warn');
+  }
+  window.approveDPRRecord = approveDPRRecord;
   function controlRecords() {
     const rows = [];
-    (State.dprs || []).forEach((r,i) => rows.push({ module:'DPR', id:r.id || 'DPR-' + (i+1), project:r.projectId || r.proj, location:r.location || r.site || r.wbs, activity:r.activity || r.work, cost:r.boqCode || r.costCode, resource:r.resourceCode || 'Labour/Equipment/Material', date:r.date || r.createdAt, user:r.by || r.engineer || r.responsible, status:r.approval || r.status }));
+    (State.projects || []).forEach((r,i) => rows.push({ module:'Project Setup', id:r.id || 'PRJ-' + (i+1), project:r.id, location:r.location || r.loc, activity:r.contractType || r.type, cost:r.defaultCostCode || r.contractType, resource:r.package || r.type, date:r.startDate, user:r.pm || r.contractor, status:r.approvalStatus || r.status }));
+    (State.boq || []).forEach((r,i) => rows.push({ module:'BOQ/WBS', id:r.code || r.id || 'BOQ-' + (i+1), project:r.projectId, location:r.location, activity:r.wbs || r.scheduleActivity, cost:r.costCode || r.code, resource:r.resourceCode || r.workCategory, date:r.updatedAt || r.createdAt, user:r.updatedBy || r.createdBy, status:r.approvalStatus || 'draft' }));
+    (State.dprs || []).forEach((r,i) => rows.push({ module:'DPR', id:r.id || 'DPR-' + (i+1), project:r.projectId || r.proj, location:r.location || r.site || r.wbs, activity:r.wbs || r.activity || r.work, cost:r.boqCode || r.costCode, resource:r.resourceCode || 'Labour/Equipment/Material', date:r.date || r.createdAt, user:r.by || r.engineer || r.responsible || r.preparedBy, status:r.approvalStatus || r.approval || r.status }));
     (State.stockMovements || []).forEach((r,i) => rows.push({ module:'Materials', id:r.ref || r.id || 'MOV-' + (i+1), project:r.projectId || r.proj || r.chargeProject, location:r.location || r.site || r.toSite || r.fromSite, activity:r.activity || r.chargeActivity, cost:r.boqCode || r.costCode || r.itemId, resource:r.resourceCode || r.itemId, date:r.date, user:r.issuedBy || r.createdBy || r.receiver, status:r.approval || r.status }));
     (State.equipLogs || []).forEach((r,i) => rows.push({ module:'Equipment', id:r.id || 'EQLOG-' + (i+1), project:r.projectId || r.proj || r.chargeProject, location:r.site || r.location, activity:r.activity || r.workActivity, cost:r.costCode || r.equipmentId, resource:r.resourceCode || r.equipmentId, date:r.date, user:r.operator || r.createdBy, status:r.approval || r.status }));
     (State.raBills || []).forEach((r,i) => rows.push({ module:'Billing', id:r.id || r.billNo || 'RA-' + (i+1), project:r.projectId || r.proj, location:r.location || r.wbs, activity:r.activity || r.sourceType, cost:r.boqCode || r.costCode || r.sourceId, resource:r.resourceCode || r.sourceType, date:r.date || r.createdAt, user:r.preparedBy || r.createdBy, status:r.approval || r.status }));
@@ -13788,6 +13905,7 @@ Available Actions:
     return missing;
   }
   function renderControlLayerView() {
+    ensureERPUpgradeDefaults();
     ensureControlLayerDefaults();
     const c = $('#view-control'); if (!c) return;
     const records = controlRecords();
@@ -13934,16 +14052,28 @@ Available Actions:
         <div class="form-grid-2">
           <div class="form-row"><label>Project Name</label><input name="name" placeholder="e.g. Kalanki Underpass"></div>
           <div class="form-row"><label>Project Code</label><input name="code" placeholder="e.g. PRJ-001"></div>
-          <div class="form-row"><label>Client</label><input name="client" placeholder="Client / Employer name"></div>
+          <div class="form-row"><label>Employer / Client</label><input name="client" placeholder="Client / Employer name"></div>
+          <div class="form-row"><label>Contractor</label><input name="contractor" value="${esc(COMPANY.name)}"></div>
+          <div class="form-row"><label>Consultant</label><input name="consultant" placeholder="Engineer / consultant name"></div>
+          <div class="form-row"><label>Contract Type</label><select name="contractType"><option>Item rate / BOQ</option><option>EPC</option><option>Design-build</option><option>Lump sum</option><option>Back-to-back subcontract</option></select></div>
           <div class="form-row"><label>Type</label><select name="typePreset" onchange="document.getElementById('newProjectCustomTypeWrap').style.display=this.value==='__custom__'?'block':'none'">${projectTypeOptionsHTML()}</select></div>
           <div class="form-row" id="newProjectCustomTypeWrap" style="display:none"><label>Custom Type</label><input name="typeCustom" placeholder="e.g. Data center, dry port, stadium"></div>
-          <div class="form-row"><label>Contract Package</label><input name="package" placeholder="Civil / HM / EM / Road / Building"></div>
+          <div class="form-row"><label>Project Sections / Packages</label><input name="package" placeholder="Civil, HM, EM, Road, Building"></div>
           <div class="form-row"><label>Default Cost Code</label><input name="costCode" placeholder="e.g. CC-100"></div>
           <div class="form-row"><label>Location</label><input name="loc" placeholder="Lalitpur"></div>
           <div class="form-row"><label>Contract Value (NPR)</label><input name="value" type="number" placeholder="500000000"></div>
           <div class="form-row"><label>Start Date</label><input name="start" type="date"></div>
-          <div class="form-row"><label>End Date</label><input name="end" type="date"></div>
+          <div class="form-row"><label>Baseline Completion</label><input name="end" type="date"></div>
+          <div class="form-row"><label>Revised Completion</label><input name="revisedEnd" type="date"></div>
+          <div class="form-row"><label>Project Calendar</label><select name="calendarType"><option>6-day working week</option><option>7-day continuous work</option><option>5-day office calendar</option><option>Custom calendar</option></select></div>
+          <div class="form-row"><label>Working Days</label><input name="workingDays" value="Sunday, Monday, Tuesday, Wednesday, Thursday, Friday"></div>
+          <div class="form-row"><label>Holiday List</label><input name="holidays" placeholder="Dashain, Tihar, project holidays"></div>
         </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label>Site Locations</label><textarea name="locations" placeholder="Headworks&#10;Tunnel chainage 0+000 to 1+000&#10;Powerhouse"></textarea></div>
+          <div class="form-row"><label>Initial WBS Activities</label><textarea name="wbsList" placeholder="1.0 Mobilization&#10;2.0 Excavation&#10;3.0 Concrete works"></textarea></div>
+        </div>
+        <div class="form-row"><label>Project Milestones</label><textarea name="milestones" placeholder="Mobilization complete | 2026-06-30&#10;First concrete | 2026-08-15&#10;Substantial completion | 2027-12-30"></textarea></div>
         <div class="form-row"><label>Scope / Description</label><textarea name="desc" placeholder="Main scope, major structures, packages, or chainage"></textarea></div>
       `,
       submitLabel: 'Create Project',
@@ -13958,6 +14088,10 @@ Available Actions:
           id:code,
           name:d.name.trim(),
           client:(d.client || '').trim(),
+          employer:(d.client || '').trim(),
+          contractor:(d.contractor || COMPANY.name).trim(),
+          consultant:(d.consultant || '').trim(),
+          contractType:(d.contractType || '').trim(),
           type,
           loc:(d.loc || '').trim(),
           location:(d.loc || '').trim(),
@@ -13968,9 +14102,14 @@ Available Actions:
           margin:0,
           startDate:d.start || '',
           endDate:d.end || '',
+          baselineCompletionDate:d.end || '',
+          revisedCompletionDate:d.revisedEnd || d.end || '',
           end:d.end || 'TBD',
           package:(d.package || '').trim(),
           defaultCostCode:(d.costCode || '').trim(),
+          calendarType:d.calendarType || '6-day working week',
+          workingDays:d.workingDays || '',
+          holidays:d.holidays || '',
           approvalStatus:'draft',
           codingStatus:'project-created',
           status:'ok',
@@ -13983,6 +14122,11 @@ Available Actions:
           desc:(d.desc || '').trim()
         };
         State.projects.unshift(p);
+        splitListText(d.package || '').forEach((name, i) => State.projectPackages.unshift({ id:'PKG-' + code + '-' + String(i+1).padStart(2,'0'), projectId:code, name, type:type || 'Construction', status:'active' }));
+        splitListText(d.locations || d.loc || '').forEach((name, i) => State.projectLocations.unshift({ id:'LOC-' + code + '-' + String(i+1).padStart(2,'0'), projectId:code, code:'L' + String(i+1).padStart(2,'0'), name, type:'Work location', chainage:'', status:'active' }));
+        splitListText(d.wbsList || '').forEach((line, i) => { const m = String(line).match(/^(\S+)\s+(.+)$/); State.wbsActivities.unshift({ id:'WBS-' + code + '-' + String(i+1).padStart(2,'0'), projectId:code, wbs:m?.[1] || String(i+1) + '.0', name:m?.[2] || line, packageId:'PKG-' + code + '-01', plannedQty:0, unit:'LS', status:'planned', approvalStatus:'draft' }); });
+        splitListText(d.milestones || '').forEach((line, i) => { const parts = String(line).split('|').map(x => x.trim()); State.projectMilestones.unshift({ id:'MS-' + code + '-' + String(i+1).padStart(2,'0'), projectId:code, name:parts[0] || line, plannedDate:parts[1] || '', revisedDate:parts[1] || '', status:'upcoming' }); });
+        State.projectCalendars.unshift({ id:'CAL-' + code, projectId:code, type:p.calendarType, workingDays:p.workingDays, holidays:p.holidays, status:'active' });
         State.activeProject = p.id;
         syncActiveProjectUI();
         saveState();
@@ -14022,25 +14166,41 @@ Available Actions:
     });
   }
   function actAddBOQ() {
+    ensureERPUpgradeDefaults();
+    const pid = State.activeProject && State.activeProject !== 'ALL' ? State.activeProject : (State.projects[0]?.id || '');
     openModal({
       title: 'Add BOQ Line Item',
       body: `
         <div class="form-grid-3">
+          <div class="form-row"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div>
           <div class="form-row"><label>Item Code</label><input name="code" placeholder="2.3.4"></div>
           <div class="form-row"><label>Unit</label><select name="unit"><option>cum</option><option>sqm</option><option>m</option><option>MT</option><option>kg</option><option>nos</option><option>cft</option></select></div>
           <div class="form-row"><label>Quantity</label><input name="qty" type="number" step="0.01"></div>
         </div>
         <div class="form-row"><label>Description</label><textarea name="desc" placeholder="Item description as per CPWD / IS specification"></textarea></div>
         <div class="form-grid-3">
+          <div class="form-row"><label>Work Category</label><input name="workCategory" placeholder="Excavation / concrete / support"></div>
+          <div class="form-row"><label>Section / Package</label><input name="projectSection" placeholder="Civil / Tunnel / Powerhouse"></div>
+          <div class="form-row"><label>Location / Chainage</label><input name="location" placeholder="Block A / CH 0+500"></div>
+          <div class="form-row"><label>Linked WBS Activity</label><select name="wbs"><option value="">Not linked</option>${projectMasterOptions(pid, 'wbs')}</select></div>
+          <div class="form-row"><label>Linked Schedule Activity</label><input name="scheduleActivity" placeholder="Schedule activity code"></div>
+          <div class="form-row"><label>IPC / Payment Item</label><input name="ipcItem" placeholder="IPC item ref"></div>
+        </div>
+        <div class="form-grid-3">
           <div class="form-row"><label>Material Rate</label><input name="mat" type="number" step="0.01"></div>
           <div class="form-row"><label>Labour Rate</label><input name="lab" type="number" step="0.01"></div>
           <div class="form-row"><label>P&M Rate</label><input name="pm" type="number" step="0.01"></div>
+          <div class="form-row"><label>Revised Qty</label><input name="revisedQty" type="number" step="0.01"></div>
+          <div class="form-row"><label>Variation Qty</label><input name="variationQty" type="number" step="0.01" value="0"></div>
+          <div class="form-row"><label>Approved Qty</label><input name="approvedQty" type="number" step="0.01"></div>
         </div>
       `,
       submitLabel: 'Insert Line',
       onSubmit: (d) => {
         const qty = +d.qty||0, mat = +d.mat||0, lab = +d.lab||0, pm = +d.pm||0;
         const tr = (mat + lab + pm), amt = qty * tr;
+        const boq = { id:'BOQ-' + Date.now(), code:d.code || 'X.X', desc:d.desc || '', unit:d.unit, qty, mat, lab, pm, total:amt, projectId:d.projectId, workCategory:d.workCategory || '', projectSection:d.projectSection || '', location:d.location || '', wbs:d.wbs || '', scheduleActivity:d.scheduleActivity || d.wbs || '', ipcItem:d.ipcItem || d.code || '', revisedQty:+d.revisedQty || qty, variationQty:+d.variationQty || 0, approvedQty:+d.approvedQty || +d.revisedQty || qty, executedQty:0, balanceQty:+d.approvedQty || +d.revisedQty || qty, approvalStatus:'draft', createdAt:new Date().toISOString(), createdBy:State.session?.user?.name || 'Estimator' };
+        State.boq.push(boq);
         const tbody = $('#view-estimation table.data tbody');
         if (tbody) {
           const row = document.createElement('tr');
@@ -14058,28 +14218,52 @@ Available Actions:
           tbody.appendChild(row);
           recomputeBOQTotals();
         }
+        saveState();
+        audit('create','BOQ item', boq.code + ' · ' + boq.projectId);
         toast('BOQ Updated', d.code + ' added · ' + fmtNPR(amt), 'ok');
       }
     });
   }
   function actSubmitDPR() {
+    ensureERPUpgradeDefaults();
+    const pid = State.activeProject && State.activeProject !== 'ALL' ? State.activeProject : (State.projects[0]?.id || '');
     openModal({
       title: 'Daily Progress Report · ' + today(),
       body: `
         <div class="form-grid-2">
-          <div class="form-row"><label>Project</label><select name="proj">${State.projects.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+          <div class="form-row"><label>Project</label><select name="proj">${State.projects.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${p.name}</option>`).join('')}</select></div>
+          <div class="form-row"><label>Date</label><input name="date" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+          <div class="form-row"><label>Location / Work Front</label><select name="location"><option value="">Select location</option>${projectMasterOptions(pid, 'location')}</select></div>
+          <div class="form-row"><label>BOQ Item</label><select name="boqCode"><option value="">Select BOQ item</option>${projectMasterOptions(pid, 'boq')}</select></div>
+          <div class="form-row"><label>WBS Activity</label><select name="wbs"><option value="">Select WBS</option>${projectMasterOptions(pid, 'wbs')}</select></div>
+          <div class="form-row"><label>Quantity Executed Today</label><input name="qtyToday" type="number" step="0.01" placeholder="e.g. 84"></div>
+          <div class="form-row"><label>Unit</label><input name="unit" placeholder="cum / m / MT / nos"></div>
           <div class="form-row"><label>Weather</label><select name="weather"><option>Clear · 24°C</option><option>Partly cloudy</option><option>Light rain</option><option>Heavy rain</option><option>Hot · 32°C+</option></select></div>
           <div class="form-row"><label>Labour Present</label><input name="labour" type="number" value="142"></div>
           <div class="form-row"><label>Labour Planned</label><input name="labourPlan" type="number" value="168"></div>
+          <div class="form-row"><label>Subcontractor</label><input name="subcontractor" placeholder="Subcontractor / gang"></div>
         </div>
         <div class="form-row"><label>Activities Executed Today</label><textarea name="activities" placeholder="L4 slab pour — 84 cum M-25 · Column starter L5 — 24 nos · Brick work L2 — 280 sqm"></textarea></div>
-        <div class="form-row"><label>Materials Received</label><textarea name="materials" placeholder="OPC 53 · 240 bags from Shivam (PO-2451)"></textarea></div>
-        <div class="form-row"><label>Issues / Delays / Near-misses</label><textarea name="issues" placeholder="Plaster crew short by 6 today — checked with mestri Ram Bahadur"></textarea></div>
+        <div class="form-row"><label>Materials Used / Received</label><textarea name="materials" placeholder="OPC 53 · 80 bags used for L5 pour"></textarea></div>
+        <div class="form-row"><label>Equipment Used</label><textarea name="equipment" placeholder="Excavator EX-01 · 5 hrs · breaker / bucket"></textarea></div>
+        <div class="form-grid-2"><div class="form-row"><label>Quality Issue / Test</label><textarea name="qualityIssue" placeholder="Cube/slump/rebar inspection reference"></textarea></div><div class="form-row"><label>Safety Issue / TBT</label><textarea name="safetyIssue" placeholder="No incident / observation"></textarea></div></div>
+        <div class="form-row"><label>Issues / Delays / Hindrance</label><textarea name="issues" placeholder="Approval pending, access blocked, weather, manpower shortage"></textarea></div>
+        <div class="form-grid-3">
+          <div class="form-row"><label>Prepared By</label><input name="preparedBy" value="${esc(State.session?.user?.name || 'Site Engineer')}"></div>
+          <div class="form-row"><label>Checked By</label><input name="checkedBy" placeholder="Section / planning engineer"></div>
+          <div class="form-row"><label>Approve By</label><input name="approvedBy" placeholder="Project manager"></div>
+        </div>
       `,
-      submitLabel: 'Submit & Distribute',
+      submitLabel: 'Submit for Approval',
       onSubmit: (d) => {
         const proj = State.projects.find(p => p.id === d.proj);
-        toast('DPR Submitted', (proj?.name || d.proj) + ' · Auto-PDF queued · Sent to PMC & Client', 'ok');
+        const dpr = { id:'DPR-' + Date.now(), date:d.date || new Date().toISOString().slice(0,10), projectId:d.proj, location:d.location || '', boqCode:d.boqCode || '', wbs:d.wbs || '', activity:d.wbs || '', qtyToday:+d.qtyToday || 0, unit:d.unit || '', weather:d.weather, actualLabour:+d.labour || 0, plannedLabour:+d.labourPlan || 0, subcontractor:d.subcontractor || '', activitiesExecuted:d.activities || '', materialConsumed:d.materials || '', equipmentUsed:d.equipment || '', qualityIssue:d.qualityIssue || '', safetyIssue:d.safetyIssue || '', delays:d.issues || '', preparedBy:d.preparedBy || '', checkedBy:d.checkedBy || '', approvedBy:d.approvedBy || '', status:'submitted', approvalStatus:'submitted', clientAck:'pending', createdAt:new Date().toISOString() };
+        State.dprs.unshift(dpr);
+        State.approvalHistory.unshift({ id:'APP-' + Date.now(), recordType:'DPR', recordId:dpr.id, projectId:dpr.projectId, status:'submitted', by:dpr.preparedBy || 'Site Engineer', at:dpr.createdAt, comments:'Submitted for section/planning/PM approval.' });
+        saveState();
+        audit('submit','DPR', dpr.id + ' · ' + dpr.projectId + ' · ' + dpr.boqCode);
+        renderDPRView?.(); renderLauncher?.();
+        toast('DPR Submitted', (proj?.name || d.proj) + ' · awaiting approval before official progress / IPC', 'ok');
       }
     });
   }
@@ -15595,6 +15779,7 @@ Available Actions:
   // -------- INITIAL SEED & RENDERS --------
   const _hadStored = STARTER_MODE ? loadStarterTrialWorkspace(trialWorkspaceId()) : loadState();
   if (STARTER_MODE && !_hadStored) applyStarterWorkspace();
+  ensureERPUpgradeDefaults();
   ensureControlLayerDefaults();
   ensureHydropowerProjects();
   const now = new Date();
