@@ -15164,6 +15164,392 @@ Available Actions:
     }, true);
   }
 
+  // ============== SCHEDULE · PRIMAVERA-LIKE WORKFLOW UPGRADE ==============
+  function scheduleStore(pid=scheduleProjectId()) {
+    State.scheduleActivities = State.scheduleActivities || {};
+    State.scheduleActivities.__workflow = State.scheduleActivities.__workflow || {};
+    const project = State.projects?.find(p => p.id === pid) || {};
+    const pack = (State.projectPackages || []).find(p => p.projectId === pid);
+    const cal = (State.projectCalendars || []).find(c => c.projectId === pid) || {};
+    if (!State.scheduleActivities.__workflow[pid]) {
+      State.scheduleActivities.__workflow[pid] = {
+        activeTab:'setup',
+        setup:{
+          projectName:project.name || project.title || projectNameById(pid),
+          contractPackage:pack?.name || project.package || 'Main civil works',
+          contractor:project.contractor || 'Main Contractor',
+          employer:project.client || project.employer || 'Employer / Client',
+          consultant:project.consultant || 'Consultant / PMC',
+          startDate:project.startDate || project.start || '2026-06-01',
+          plannedCompletion:project.baselineCompletionDate || project.endDate || '2027-12-31',
+          revisedCompletion:project.revisedCompletionDate || project.endDate || '2027-12-31',
+          version:'V1',
+          calendarType:cal.type || project.calendarType || '6-day construction calendar',
+          workingDays:cal.workingDays || project.workingDays || 'Sun-Fri',
+          hoursPerDay:project.workingHours || 8,
+          holidays:cal.holidays || project.holidays || '',
+          preparedBy:State.session?.user?.name || 'Planning Engineer',
+          checkedBy:project.manager || 'Project Manager',
+          approvedBy:project.client || 'Employer Representative',
+          status:'Draft'
+        },
+        baseline:{ version:'', locked:false, approvedBy:'', approvalDate:'', remarks:'', rows:[] },
+        delays:[],
+        recoveries:[],
+        revisions:[],
+        filter:{ q:'', lookahead:7 }
+      };
+    }
+    return State.scheduleActivities.__workflow[pid];
+  }
+  function scheduleDash(v='') { return !v || v === '—' || v === 'Ã¢â‚¬â€' || v === 'â€”' ? '' : String(v); }
+  function scheduleDateValue(v) {
+    const d = parseScheduleDate(scheduleDash(v));
+    return d && !isNaN(d) ? d : null;
+  }
+  function scheduleFmtISO(d) {
+    return d && !isNaN(d) ? d.toISOString().slice(0,10) : '';
+  }
+  function scheduleAddDays(date, days) {
+    const d = new Date(date); d.setDate(d.getDate() + Number(days || 0)); return d;
+  }
+  function scheduleNormalizeActivity(r={}, i=0) {
+    const bs = scheduleDash(r.bs) || scheduleDash(r.plannedStart);
+    const bf = scheduleDash(r.bf) || scheduleDash(r.plannedFinish);
+    const pct = Number(r.pct ?? r.progress ?? 0);
+    return {
+      id:r.id || r.activityId || ('ACT-' + String(i+1).padStart(3,'0')),
+      wbs:r.wbs || r.wbsCode || '',
+      name:r.name || r.activityName || '',
+      location:r.location || r.workFront || '',
+      chainage:r.chainage || '',
+      type:r.type || 'Task',
+      boq:r.boq || r.boqCode || '',
+      costCode:r.costCode || '',
+      unit:r.unit || 'LS',
+      qty:Number(r.qty ?? r.plannedQty ?? 0),
+      dur:Number(r.dur ?? r.duration ?? 0),
+      bs:bs || '',
+      bf:bf || '',
+      rs:scheduleDash(r.rs) || bs || '',
+      rf:scheduleDash(r.rf) || bf || '',
+      as:scheduleDash(r.as) || '',
+      af:scheduleDash(r.af) || '',
+      remaining:Number(r.remaining ?? Math.max(0, Number(r.dur || 0) * (100 - pct) / 100)),
+      actualQty:Number(r.actualQty ?? Math.round(Number(r.qty || r.plannedQty || 0) * pct / 100)),
+      pct,
+      resp:r.resp || r.responsible || '',
+      resources:r.resources || r.manpower || r.resp || '',
+      contractor:r.contractor || r.subcontractor || '',
+      priority:r.priority || (r.critical ? 'High' : 'Normal'),
+      status:r.status || (pct >= 100 ? 'Completed' : pct > 0 ? 'In Progress' : 'Not Started'),
+      pred:r.pred || '',
+      succ:r.succ || '',
+      rel:r.rel || 'FS',
+      lag:Number(r.lag || 0),
+      critical:!!r.critical,
+      remarks:r.remarks || ''
+    };
+  }
+  function scheduleRows(pid=scheduleProjectId()) {
+    State.scheduleActivities = State.scheduleActivities || {};
+    if (!State.scheduleActivities[pid]) State.scheduleActivities[pid] = scheduleIsSampleProject(pid) ? ScheduleData.map(r => ({...r})) : [];
+    State.scheduleActivities[pid] = State.scheduleActivities[pid].map(scheduleNormalizeActivity);
+    return State.scheduleActivities[pid];
+  }
+  function scheduleCalc(rows=scheduleRows()) {
+    const list = rows.map(scheduleNormalizeActivity);
+    const by = new Map(list.map(r => [String(r.wbs), r]));
+    list.forEach(r => {
+      r.predList = splitListText(r.pred).map(x => String(x).split(/\s+/)[0]).filter(Boolean);
+      r.succList = list.filter(x => splitListText(x.pred).map(y => String(y).split(/\s+/)[0]).includes(String(r.wbs))).map(x => x.wbs);
+    });
+    list.forEach(r => {
+      let start = scheduleDateValue(r.rs || r.bs) || new Date();
+      r.predList.forEach(p => {
+        const pr = by.get(String(p));
+        const pf = pr && (scheduleDateValue(pr.rf || pr.bf) || (scheduleDateValue(pr.rs || pr.bs) ? scheduleAddDays(scheduleDateValue(pr.rs || pr.bs), pr.dur || 1) : null));
+        if (pf && pf > start) start = scheduleAddDays(pf, Number(r.lag || 0));
+      });
+      r.es = scheduleFmtISO(start);
+      r.ef = scheduleFmtISO(scheduleAddDays(start, Math.max(1, r.dur || 1) - 1));
+      const finish = scheduleDateValue(r.rf || r.bf) || scheduleDateValue(r.ef);
+      const actualOrForecast = scheduleDateValue(r.af) || finish;
+      const baseFinish = scheduleDateValue(r.bf) || finish;
+      r.delayDays = baseFinish && actualOrForecast ? Math.max(0, Math.round((actualOrForecast - baseFinish) / 86400000)) : 0;
+    });
+    const projectFinish = list.reduce((max,r) => {
+      const d = scheduleDateValue(r.ef || r.rf || r.bf);
+      return d && d > max ? d : max;
+    }, new Date(0));
+    list.forEach(r => {
+      const ef = scheduleDateValue(r.ef || r.rf || r.bf);
+      r.lf = scheduleFmtISO(projectFinish);
+      r.ls = scheduleFmtISO(scheduleAddDays(projectFinish, -Math.max(1, r.dur || 1) + 1));
+      r.totalFloat = ef ? Math.round((projectFinish - ef) / 86400000) : 0;
+      r.freeFloat = r.succList.length ? Math.max(0, r.totalFloat - 1) : r.totalFloat;
+      r.critical = r.totalFloat <= 0 || r.delayDays > 0 || !!r.critical;
+    });
+    return { rows:list, projectFinish:scheduleFmtISO(projectFinish), critical:list.filter(r => r.critical), delayed:list.filter(r => r.delayDays > 0) };
+  }
+  function scheduleMetrics() {
+    const rows = scheduleRows();
+    const calc = scheduleCalc(rows);
+    const baseline = rows.reduce((d,r) => {
+      const f = scheduleDateValue(r.bf);
+      return f && f > d ? f : d;
+    }, new Date(0));
+    const actual = rows.length ? rows.reduce((s,r)=>s + Number(r.pct || 0),0) / rows.length : 0;
+    const planned = rows.length ? rows.reduce((s,r)=>s + (scheduleDateValue(r.bs) && scheduleDateValue(r.bs) <= new Date() ? 100 : 0),0) / rows.length : 0;
+    return { rows, calc, baselineFinish:scheduleFmtISO(baseline), actual, planned, variance:actual - planned };
+  }
+  function scheduleBadge(status) {
+    const s = String(status || '').toLowerCase();
+    const cls = s.includes('lock') || s.includes('approved') || s.includes('complete') ? 'ok' : s.includes('delay') || s.includes('hold') ? 'bad' : s.includes('review') || s.includes('submit') || s.includes('progress') ? 'info' : 'warn';
+    return `<span class="badge badge-${cls}">${esc(String(status || 'Draft').toUpperCase())}</span>`;
+  }
+  function scheduleSetTab(tab) {
+    scheduleStore().activeTab = tab;
+    saveState();
+    renderScheduleTable();
+  }
+  window.scheduleSetTab = scheduleSetTab;
+  function renderScheduleShell() {
+    const section = $('#view-schedule');
+    if (!section || section.dataset.upgraded === 'yes') return;
+    section.dataset.upgraded = 'yes';
+    section.innerHTML = `
+      <div class="flex items-end justify-between mb-6">
+        <div><div class="stamp mb-3"><i data-lucide="calendar-range" class="w-3 h-3"></i>CONSTRUCTION SCHEDULE</div><h1 class="font-display font-black text-3xl title-mark" id="scheduleProjectTitle"></h1><p class="text-sm text-stone-500 mt-3" id="scheduleWorkflowCaption"></p></div>
+        <div class="flex gap-2 flex-wrap justify-end"><button class="btn btn-ghost" onclick="scheduleExportExcel()"><i data-lucide="download" class="w-3.5 h-3.5"></i>Excel</button><button class="btn btn-ghost" onclick="schedulePrintPdf()"><i data-lucide="file-text" class="w-3.5 h-3.5"></i>PDF</button><button class="btn btn-ghost" onclick="scheduleGenerateMilestones()"><i data-lucide="flag" class="w-3.5 h-3.5"></i>Milestones</button><button class="btn btn-amber" onclick="scheduleRunCalculation()"><i data-lucide="zap" class="w-3.5 h-3.5"></i>Run CPM</button></div>
+      </div>
+      <div id="scheduleWorkflowSteps" class="grid grid-cols-6 gap-2 mb-4"></div>
+      <div id="scheduleKpis" class="grid grid-cols-4 gap-4 mb-5"></div>
+      <div class="card mb-5"><div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs overflow-x-auto" id="scheduleTabs"></div><div id="scheduleTabContent" class="p-5"></div></div>`;
+  }
+  function renderScheduleTable() {
+    renderScheduleShell();
+    const pid = scheduleProjectId();
+    const store = scheduleStore(pid);
+    const metrics = scheduleMetrics();
+    const title = $('#scheduleProjectTitle');
+    if (title) title.textContent = 'Schedule - ' + (store.setup.projectName || projectNameById(pid));
+    const cap = $('#scheduleWorkflowCaption');
+    if (cap) cap.textContent = `Status: ${store.setup.status} | Version ${store.setup.version} | Baseline ${store.baseline.locked ? 'locked' : 'not locked'} | Forecast finish ${metrics.calc.projectFinish || '-'}`;
+    renderScheduleWorkflow(store);
+    renderScheduleKpis(metrics, store);
+    renderScheduleTabs(store.activeTab || 'setup');
+    renderScheduleTabContent(store.activeTab || 'setup', metrics, store);
+    if ($('#scheduleMilestoneMarkers')) renderScheduleMilestoneMarkers();
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+  function renderScheduleWorkflow(store) {
+    const wrap = $('#scheduleWorkflowSteps');
+    if (!wrap) return;
+    const steps = ['Draft','Submitted','Reviewed','Approved','Baseline Locked','Revised'];
+    const current = steps.indexOf(store.setup.status);
+    wrap.innerHTML = steps.map((s,i) => `<button class="card p-3 text-left ${i <= current ? 'border-amber-500' : ''}" onclick="scheduleAdvanceStatus('${s}')"><div class="font-mono text-[10px] text-stone-500">STEP ${i+1}</div><div class="font-display font-bold text-sm">${esc(s)}</div></button>`).join('');
+  }
+  function renderScheduleKpis(metrics, store) {
+    const kpi = $('#scheduleKpis');
+    if (!kpi) return;
+    const rows = metrics.rows;
+    kpi.innerHTML = `
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">PLANNED / ACTUAL</div><div class="font-display font-black text-2xl tabular">${metrics.planned.toFixed(1)} / ${metrics.actual.toFixed(1)}%</div><div class="text-xs text-stone-500 mt-1">Variance ${metrics.variance.toFixed(1)}%</div></div>
+      <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">CRITICAL ACTIVITIES</div><div class="font-display font-black text-2xl tabular">${metrics.calc.critical.length}</div><div class="text-xs text-stone-500 mt-1">${metrics.calc.delayed.length} delayed</div></div>
+      <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">BASELINE FINISH</div><div class="font-display font-black text-xl tabular">${esc(store.baseline.approvedFinish || metrics.baselineFinish || '-')}</div><div class="text-xs text-stone-500 mt-1">${store.baseline.locked ? 'Locked baseline' : 'Approval required'}</div></div>
+      <div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">FORECAST FINISH</div><div class="font-display font-black text-xl tabular">${esc(metrics.calc.projectFinish || '-')}</div><div class="text-xs text-stone-500 mt-1">${rows.length} activities linked</div></div>`;
+  }
+  function renderScheduleTabs(active) {
+    const tabs = [
+      ['setup','settings','Setup'], ['wbs','network','WBS'], ['activities','list-checks','Activities'], ['dependencies','git-branch','Dependencies'], ['baseline','lock','Baseline'], ['gantt','bar-chart-3','Gantt'], ['dpr','clipboard-check','DPR Update'], ['lookahead','calendar-days','Look-Ahead'], ['delay','alert-triangle','Delay'], ['recovery','gauge','Recovery'], ['scurve','line-chart','S-Curve'], ['reports','file-spreadsheet','Reports'], ['revisions','history','Revisions']
+    ];
+    const wrap = $('#scheduleTabs');
+    if (!wrap) return;
+    wrap.innerHTML = tabs.map(t => `<button class="ims-tab ${active === t[0] ? 'active' : ''}" onclick="scheduleSetTab('${t[0]}')"><i data-lucide="${t[1]}" class="w-3 h-3"></i>${t[2]}</button>`).join('');
+  }
+  function renderScheduleTabContent(tab, metrics, store) {
+    const wrap = $('#scheduleTabContent');
+    if (!wrap) return;
+    const map = { setup:renderScheduleSetup, wbs:renderScheduleWbs, activities:renderScheduleActivities, dependencies:renderScheduleDependencies, baseline:renderScheduleBaseline, gantt:renderScheduleGantt, dpr:renderScheduleDpr, lookahead:renderScheduleLookahead, delay:renderScheduleDelay, recovery:renderScheduleRecovery, scurve:renderScheduleSCurve, reports:renderScheduleReports, revisions:renderScheduleRevisions };
+    wrap.innerHTML = (map[tab] || renderScheduleSetup)(metrics, store);
+  }
+  function renderScheduleSetup(metrics, store) {
+    const s = store.setup;
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="settings" class="w-3 h-3"></i>SCHEDULE SETUP</div><div class="font-display font-bold text-lg">Project schedule control settings</div></div><button class="btn btn-amber text-xs" onclick="scheduleSetupModal()">Edit Setup</button></div>
+    <div class="grid grid-cols-4 gap-3 mb-4">${['projectName','contractPackage','contractor','employer','consultant','startDate','plannedCompletion','revisedCompletion','version','calendarType','workingDays','hoursPerDay','preparedBy','checkedBy','approvedBy','status'].map(k => `<div class="kpi"><div class="font-mono text-[10px] text-stone-500">${esc(k.replace(/([A-Z])/g,' $1').toUpperCase())}</div><div class="font-display font-bold text-sm">${esc(s[k] || '-')}</div></div>`).join('')}</div>
+    <div class="card p-4 bg-stone-50"><div class="font-display font-bold mb-2">Approval rule</div><div class="text-sm text-stone-600">Only schedules in Approved status can be saved as baseline. Once locked, baseline dates, quantities and durations are kept as a frozen comparison record; revisions are created through the revision tab.</div></div>`;
+  }
+  function scheduleWbsRows(pid=scheduleProjectId()) {
+    const rows = scheduleRows(pid);
+    const existing = (State.wbsActivities || []).filter(w => w.projectId === pid);
+    const byCode = new Map();
+    existing.forEach(w => byCode.set(String(w.wbs || w.code), { code:w.wbs || w.code, name:w.name, parent:w.parent || String(w.wbs || '').split('.').slice(0,-1).join('.'), projectId:pid, location:w.location || '', engineer:w.responsibleEngineer || w.resp || '', contractor:w.contractor || '', plannedStart:w.plannedStart || '', plannedFinish:w.plannedFinish || '', actualStart:w.actualStart || '', actualFinish:w.actualFinish || '', status:w.status || 'planned' }));
+    rows.forEach(r => { if (!r.wbs) return; const code = String(r.wbs).split('.').slice(0,2).join('.'); if (!byCode.has(code)) byCode.set(code, { code, name:r.name, parent:code.includes('.') ? code.split('.')[0] : '', projectId:pid, location:r.location, engineer:r.resp, contractor:r.contractor, status:'planned' }); });
+    return [...byCode.values()].sort((a,b) => String(a.code).localeCompare(String(b.code), undefined, {numeric:true}));
+  }
+  function renderScheduleWbs(metrics) {
+    const wbs = scheduleWbsRows();
+    const rows = metrics.rows;
+    const pctFor = code => { const child = rows.filter(r => String(r.wbs).startsWith(String(code))); return child.length ? child.reduce((s,r)=>s + Number(r.pct || 0),0) / child.length : 0; };
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="network" class="w-3 h-3"></i>WBS WORKFLOW</div><div class="font-display font-bold text-lg">Parent-child work breakdown structure</div></div><button class="btn btn-amber text-xs" onclick="scheduleWbsModal()">Add WBS</button></div>
+    <table class="data"><thead><tr><th>WBS Code</th><th>WBS Name</th><th>Parent</th><th>Location</th><th>Responsible</th><th>Contractor</th><th>Planned</th><th>Actual</th><th>Progress</th><th>Status</th></tr></thead><tbody>${wbs.map(w => `<tr><td class="font-mono text-xs"><b>${esc(w.code)}</b></td><td>${esc(w.name)}</td><td class="font-mono text-xs">${esc(w.parent || '-')}</td><td class="text-xs">${esc(w.location || '-')}</td><td class="text-xs">${esc(w.engineer || '-')}</td><td class="text-xs">${esc(w.contractor || '-')}</td><td class="font-mono text-xs">${esc(w.plannedStart || '-')} / ${esc(w.plannedFinish || '-')}</td><td class="font-mono text-xs">${esc(w.actualStart || '-')} / ${esc(w.actualFinish || '-')}</td><td><div class="pbar w-16"><div style="width:${pctFor(w.code)}%; background:#E8742C"></div></div><div class="font-mono text-xs">${pctFor(w.code).toFixed(1)}%</div></td><td>${scheduleBadge(w.status)}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function renderScheduleActivities(metrics) {
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="list-checks" class="w-3 h-3"></i>ACTIVITY CREATION</div><div class="font-display font-bold text-lg">Schedule activities linked to WBS, BOQ and cost code</div></div><button class="btn btn-amber text-xs" onclick="scheduleActivityModal()"><i data-lucide="plus" class="w-3 h-3"></i>Add Activity</button></div>
+    <div class="overflow-x-auto"><table class="data" id="schedTable"><thead><tr><th>Activity ID</th><th>WBS</th><th>Activity</th><th>Location</th><th>BOQ / Cost</th><th>Qty</th><th>Duration</th><th>Plan</th><th>Actual</th><th>Remaining</th><th>Progress</th><th>Responsible</th><th>Status</th><th></th></tr></thead><tbody id="schedTbody">${metrics.rows.map((t,i) => `<tr data-sched-idx="${i}"><td class="font-mono text-xs">${esc(t.id)}</td><td class="font-mono text-xs">${esc(t.wbs)}</td><td><b>${esc(t.name)}</b><div class="text-[10px] text-stone-500">${esc(t.type)} | ${esc(t.chainage || t.remarks || '')}</div></td><td class="text-xs">${esc(t.location || '-')}</td><td class="font-mono text-xs">${esc(t.boq || '-')}<div>${esc(t.costCode || '')}</div></td><td class="font-mono text-xs">${esc(t.qty)} ${esc(t.unit)}</td><td class="font-mono text-xs">${esc(t.dur)} d</td><td class="font-mono text-xs">${esc(t.bs || '-')}<br>${esc(t.bf || '-')}</td><td class="font-mono text-xs">${esc(t.as || '-')}<br>${esc(t.af || '-')}</td><td class="font-mono text-xs">${Math.max(0, t.qty - t.actualQty)} ${esc(t.unit)}<br>${esc(t.remaining)} d</td><td><div class="pbar w-16"><div style="width:${t.pct}%; background:${t.pct >= 100 ? '#15803D' : t.critical ? '#C0383B' : '#E8742C'}"></div></div><div class="font-mono text-xs">${t.pct}%</div></td><td class="text-xs">${esc(t.resp || t.contractor || '-')}</td><td>${scheduleBadge(t.status)}</td><td><button class="btn btn-ghost text-xs" onclick="scheduleActivityModal(${i})">Edit</button></td></tr>`).join('') || '<tr><td colspan="14" class="text-center text-stone-400 py-4">No activities yet.</td></tr>'}</tbody></table></div>`;
+  }
+  function renderScheduleDependencies(metrics) {
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="git-branch" class="w-3 h-3"></i>DEPENDENCY WORKFLOW</div><div class="font-display font-bold text-lg">Predecessor, successor, float and critical path</div></div><button class="btn btn-amber text-xs" onclick="scheduleRunCalculation()">Run Schedule Calculation</button></div>
+    <table class="data"><thead><tr><th>Activity</th><th>Predecessor</th><th>Successor</th><th>Type</th><th>Lag</th><th>Early</th><th>Late</th><th>Total Float</th><th>Free Float</th><th>Critical</th></tr></thead><tbody>${metrics.calc.rows.map(r => `<tr><td><b>${esc(r.wbs)}</b> ${esc(r.name)}</td><td class="font-mono text-xs">${esc(r.pred || '-')}</td><td class="font-mono text-xs">${esc(r.succList.join(', ') || '-')}</td><td>${esc(r.rel || 'FS')}</td><td class="font-mono">${esc(r.lag || 0)}</td><td class="font-mono text-xs">${esc(r.es)} / ${esc(r.ef)}</td><td class="font-mono text-xs">${esc(r.ls)} / ${esc(r.lf)}</td><td class="font-mono ${r.totalFloat <= 0 ? 'text-red-700' : ''}">${r.totalFloat}</td><td class="font-mono">${r.freeFloat}</td><td>${r.critical ? '<span class="badge badge-bad">CRITICAL</span>' : '<span class="badge badge-neutral">NORMAL</span>'}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function renderScheduleBaseline(metrics, store) {
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="lock" class="w-3 h-3"></i>BASELINE WORKFLOW</div><div class="font-display font-bold text-lg">Approved baseline freeze and comparison</div></div><button class="btn btn-amber text-xs" onclick="scheduleSaveBaseline()">Save / Lock Baseline</button></div>
+    <div class="grid grid-cols-4 gap-3 mb-4"><div class="kpi"><div class="font-mono text-[10px] text-stone-500">BASELINE VERSION</div><div class="font-display font-black text-xl">${esc(store.baseline.version || '-')}</div></div><div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">LOCK STATUS</div><div class="font-display font-black text-xl">${store.baseline.locked ? 'Locked' : 'Open'}</div></div><div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">APPROVED BY</div><div class="font-display font-bold text-sm">${esc(store.baseline.approvedBy || '-')}</div></div><div class="kpi kpi-red"><div class="font-mono text-[10px] text-stone-500">APPROVAL DATE</div><div class="font-display font-bold text-sm">${esc(store.baseline.approvalDate || '-')}</div></div></div>
+    <table class="data"><thead><tr><th>Activity</th><th>Baseline Start</th><th>Baseline Finish</th><th>Baseline Duration</th><th>Baseline Qty</th><th>Current Forecast</th><th>Delay</th></tr></thead><tbody>${metrics.rows.map(r => `<tr><td><b>${esc(r.wbs)}</b> ${esc(r.name)}</td><td class="font-mono text-xs">${esc(r.bs || '-')}</td><td class="font-mono text-xs">${esc(r.bf || '-')}</td><td class="font-mono">${esc(r.dur)}</td><td class="font-mono">${esc(r.qty)} ${esc(r.unit)}</td><td class="font-mono text-xs">${esc(r.rf || r.bf || '-')}</td><td class="font-mono ${r.delayDays > 0 ? 'text-red-700' : ''}">${r.delayDays || 0}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function renderScheduleGantt(metrics) {
+    const rows = metrics.calc.rows;
+    const dates = rows.flatMap(r => [scheduleDateValue(r.bs), scheduleDateValue(r.bf), scheduleDateValue(r.rs), scheduleDateValue(r.rf)]).filter(Boolean);
+    const min = dates.length ? new Date(Math.min(...dates)) : new Date();
+    const max = dates.length ? new Date(Math.max(...dates)) : scheduleAddDays(min, 90);
+    const span = Math.max(1, max - min);
+    const pos = d => Math.max(0, Math.min(98, ((d - min) / span) * 100));
+    const width = (s,f) => Math.max(2, pos(f) - pos(s));
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="bar-chart-3" class="w-3 h-3"></i>GANTT CHART</div><div class="font-display font-bold text-lg">WBS, baseline, actual progress and critical path</div></div><div class="flex gap-2"><button class="btn btn-ghost text-xs" onclick="scheduleExportExcel()">Export Excel</button><button class="btn btn-ghost text-xs" onclick="schedulePrintPdf()">Export PDF</button></div></div>
+    <div class="overflow-x-auto">${rows.map(r => { const s = scheduleDateValue(r.rs || r.bs) || min, f = scheduleDateValue(r.rf || r.bf) || scheduleAddDays(s, r.dur || 1); const bs = scheduleDateValue(r.bs) || s, bf = scheduleDateValue(r.bf) || f; return `<div class="gantt-row"><div class="px-3 py-2 text-sm"><b>${esc(r.wbs)}</b> ${esc(r.name)} ${r.critical ? '<span class="badge badge-bad">Critical</span>' : ''}<div class="text-[10px] text-stone-500">${esc(r.resp || '-')} | ${esc(r.status)} | ${r.pct}%</div></div><div class="relative py-4 px-1 bg-stone-50"><div class="gantt-bar absolute" style="left:${pos(bs)}%;width:${width(bs,bf)}%;top:10px;height:6px;background:#1E3A4C;opacity:.35"></div><div class="gantt-bar absolute" style="left:${pos(s)}%;width:${width(s,f)}%;top:19px;height:14px;background:${r.critical ? '#C0383B' : '#E8742C'}"></div><div class="gantt-bar absolute" style="left:${pos(s)}%;width:${Math.max(2,width(s,f)*r.pct/100)}%;top:19px;height:14px;background:#15803D"></div></div></div>`; }).join('')}</div><div id="scheduleMilestoneMarkers" class="mt-4"></div>`;
+  }
+  function renderScheduleDpr(metrics) {
+    const dprs = (State.dprs || []).filter(d => d.projectId === scheduleProjectId()).slice(0,8);
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="clipboard-check" class="w-3 h-3"></i>DPR SCHEDULE UPDATE</div><div class="font-display font-bold text-lg">Approved DPR progress updates schedule activities</div></div><button class="btn btn-amber text-xs" onclick="scheduleDprUpdateModal()">Update From DPR</button></div>
+    <table class="data"><thead><tr><th>DPR</th><th>Date</th><th>Linked Activity</th><th>Executed</th><th>Qty</th><th>Manpower</th><th>Delay</th><th>Status</th></tr></thead><tbody>${dprs.map(d => `<tr><td class="font-mono text-xs">${esc(d.id)}</td><td class="font-mono text-xs">${esc(d.date)}</td><td class="font-mono text-xs">${esc(d.activity || d.wbs || '-')}</td><td class="text-xs">${esc(String(d.activitiesExecuted || '').slice(0,90))}</td><td class="font-mono">${esc(d.qtyToday || d.outputCum || 0)} ${esc(d.unit || '')}</td><td class="font-mono">${esc(d.actualLabour || 0)}</td><td class="text-xs">${esc(d.delays || '-')}</td><td>${scheduleBadge(d.approvalStatus || d.status)}</td></tr>`).join('') || '<tr><td colspan="8" class="text-center text-stone-400 py-4">No DPR records linked to this project yet.</td></tr>'}</tbody></table>`;
+  }
+  function renderScheduleLookahead(metrics, store) {
+    const days = Number(store.filter.lookahead || 7);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const rows = metrics.rows.filter(r => { const d = scheduleDateValue(r.rs || r.bs); return d && d >= today && d <= scheduleAddDays(today, days); });
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="calendar-days" class="w-3 h-3"></i>LOOK-AHEAD PLAN</div><div class="font-display font-bold text-lg">${days}-day execution plan from schedule</div></div><div class="flex gap-2">${[3,7,15,30].map(d => `<button class="btn btn-ghost text-xs" onclick="scheduleSetLookahead(${d})">${d}d</button>`).join('')}</div></div>
+    <table class="data"><thead><tr><th>Activity</th><th>Period</th><th>Target Qty</th><th>Manpower</th><th>Equipment</th><th>Material</th><th>Drawing / Clearance</th><th>Constraint</th><th>Daily Target</th></tr></thead><tbody>${rows.map(r => `<tr><td><b>${esc(r.wbs)}</b> ${esc(r.name)}</td><td class="font-mono text-xs">${esc(r.rs || r.bs)} / ${esc(r.rf || r.bf)}</td><td class="font-mono">${esc(r.qty)} ${esc(r.unit)}</td><td class="text-xs">${esc(r.resources || '-')}</td><td class="text-xs">As per DPR</td><td class="text-xs">${esc(r.boq || '-')}</td><td class="text-xs">Required before start</td><td>${r.critical ? '<span class="badge badge-bad">Critical</span>' : scheduleBadge(r.status)}</td><td class="font-mono">${r.dur ? (r.qty / r.dur).toFixed(2) : 0} ${esc(r.unit)}/d</td></tr>`).join('') || '<tr><td colspan="9" class="text-center text-stone-400 py-4">No activities in selected look-ahead window.</td></tr>'}</tbody></table>`;
+  }
+  function renderScheduleDelay(metrics, store) {
+    const delays = store.delays.length ? store.delays : metrics.calc.delayed.map(r => ({ activity:r.wbs, reason:'Slow progress / forecast slippage', start:r.bf, end:r.rf, days:r.delayDays, party:r.contractor || r.resp || 'Contractor', critical:r.critical, impact:r.critical ? 'Affects completion' : 'Consumes float', action:'Prepare recovery plan', status:'Submitted' }));
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="alert-triangle" class="w-3 h-3"></i>DELAY TRACKING</div><div class="font-display font-bold text-lg">Delay reason, responsible party and critical path impact</div></div><button class="btn btn-amber text-xs" onclick="scheduleDelayModal()">Log Delay</button></div>
+    <table class="data"><thead><tr><th>Activity</th><th>Period</th><th>Days</th><th>Reason</th><th>Responsible</th><th>Critical Impact</th><th>Corrective Action</th><th>Status</th></tr></thead><tbody>${delays.map(d => `<tr><td class="font-mono text-xs">${esc(d.activity)}</td><td class="font-mono text-xs">${esc(d.start || '-')} / ${esc(d.end || '-')}</td><td class="font-mono text-red-700">${esc(d.days || 0)}</td><td class="text-xs">${esc(d.reason)}</td><td class="text-xs">${esc(d.party)}</td><td>${d.critical ? '<span class="badge badge-bad">YES</span>' : '<span class="badge badge-neutral">NO</span>'}<div class="text-[10px] text-stone-500">${esc(d.impact || '')}</div></td><td class="text-xs">${esc(d.action || '-')}</td><td>${scheduleBadge(d.status)}</td></tr>`).join('') || '<tr><td colspan="8" class="text-center text-stone-400 py-4">No schedule delays logged.</td></tr>'}</tbody></table>`;
+  }
+  function renderScheduleRecovery(metrics) {
+    const delayed = metrics.calc.delayed;
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="gauge" class="w-3 h-3"></i>RECOVERY PLAN</div><div class="font-display font-bold text-lg">Required production rate to recover delayed activities</div></div><button class="btn btn-amber text-xs" onclick="scheduleRecoveryModal()">Add Recovery</button></div>
+    <table class="data"><thead><tr><th>Delayed Activity</th><th>Original Finish</th><th>Forecast Finish</th><th>Delay</th><th>Recovery Duration</th><th>Revised Target</th><th>Additional Resources</th><th>Required Productivity</th></tr></thead><tbody>${delayed.map(r => `<tr><td><b>${esc(r.wbs)}</b> ${esc(r.name)}</td><td class="font-mono text-xs">${esc(r.bf || '-')}</td><td class="font-mono text-xs">${esc(r.rf || r.ef || '-')}</td><td class="font-mono text-red-700">${r.delayDays}</td><td class="font-mono">${Math.max(1, r.dur - r.delayDays)} d</td><td class="font-mono text-xs">${esc(r.bf || '-')}</td><td class="text-xs">Add manpower/equipment to match target</td><td class="font-mono">${Math.max(0, r.qty - r.actualQty) ? (Math.max(0, r.qty - r.actualQty) / Math.max(1, r.dur - r.delayDays)).toFixed(2) : 0} ${esc(r.unit)}/d</td></tr>`).join('') || '<tr><td colspan="8" class="text-center text-stone-400 py-4">No delayed activity requires recovery.</td></tr>'}</tbody></table>`;
+  }
+  function renderScheduleSCurve(metrics) {
+    const points = [0,20,40,60,80,100].map((p,i) => ({ p, planned:Math.min(100, i*18 + 5), actual:Math.max(0, metrics.actual * (i+1)/6), forecast:Math.min(100, metrics.actual + i*7) }));
+    return `<div class="mb-4"><div class="stamp mb-2"><i data-lucide="line-chart" class="w-3 h-3"></i>S-CURVE</div><div class="font-display font-bold text-lg">Physical and financial planned vs actual progress</div></div>
+    <div class="grid grid-cols-6 gap-2 items-end h-56 bg-stone-50 border border-stone-200 p-4 mb-4">${points.map(p => `<div class="h-full flex flex-col justify-end gap-1"><div style="height:${p.forecast}%;background:#1E3A4C" title="Forecast"></div><div style="height:${p.actual}%;background:#15803D" title="Actual"></div><div style="height:${p.planned}%;background:#E8742C" title="Planned"></div><div class="font-mono text-[10px] text-center">${p.p}%</div></div>`).join('')}</div>
+    <table class="data"><thead><tr><th>Metric</th><th>Planned</th><th>Actual</th><th>Forecast</th><th>Variance</th></tr></thead><tbody><tr><td>Physical progress</td><td>${metrics.planned.toFixed(1)}%</td><td>${metrics.actual.toFixed(1)}%</td><td>${Math.min(100, metrics.actual + 8).toFixed(1)}%</td><td class="${metrics.variance < 0 ? 'text-red-700' : 'text-green-700'}">${metrics.variance.toFixed(1)}%</td></tr><tr><td>Financial progress</td><td>${metrics.planned.toFixed(1)}%</td><td>${Math.max(0, metrics.actual - 3).toFixed(1)}%</td><td>${Math.min(100, metrics.actual + 5).toFixed(1)}%</td><td>${(metrics.actual - metrics.planned - 3).toFixed(1)}%</td></tr></tbody></table>`;
+  }
+  function renderScheduleReports() {
+    const reports = ['Master schedule report','Baseline vs actual report','Weekly schedule progress report','Monthly schedule progress report','Look-ahead plan report','Critical path report','Delay report','Recovery plan report','WBS-wise progress report','Location-wise progress report','Contractor/subcontractor-wise progress report','BOQ-linked progress report','Schedule revision history report'];
+    return `<div class="mb-4"><div class="stamp mb-2"><i data-lucide="file-spreadsheet" class="w-3 h-3"></i>REPORTS</div><div class="font-display font-bold text-lg">Schedule reports exportable to PDF and Excel</div></div><div class="grid grid-cols-3 gap-3">${reports.map(r => `<div class="card p-4"><div class="font-display font-bold text-sm">${esc(r)}</div><div class="text-xs text-stone-500 mt-2">Project, WBS, contractor, location and date range filters.</div><div class="flex gap-2 mt-3"><button class="btn btn-ghost text-xs" onclick="schedulePrintPdf()">PDF</button><button class="btn btn-ghost text-xs" onclick="scheduleExportExcel()">Excel</button></div></div>`).join('')}</div>`;
+  }
+  function renderScheduleRevisions(metrics, store) {
+    return `<div class="flex justify-between items-start mb-4"><div><div class="stamp mb-2"><i data-lucide="history" class="w-3 h-3"></i>REVISION HISTORY</div><div class="font-display font-bold text-lg">Baseline revision control without overwriting old baseline</div></div><button class="btn btn-amber text-xs" onclick="scheduleCreateRevision()">Create Revision Draft</button></div>
+    <table class="data"><thead><tr><th>Revision</th><th>Date</th><th>Reason</th><th>Completion Impact</th><th>EOT</th><th>Reviewed By</th><th>Approved By</th><th>Status</th></tr></thead><tbody>${store.revisions.map(r => `<tr><td class="font-mono">${esc(r.no)}</td><td class="font-mono text-xs">${esc(r.date)}</td><td class="text-xs">${esc(r.reason)}</td><td class="text-xs">${esc(r.impact)}</td><td>${esc(r.eot || '-')}</td><td>${esc(r.reviewedBy || '-')}</td><td>${esc(r.approvedBy || '-')}</td><td>${scheduleBadge(r.status)}</td></tr>`).join('') || '<tr><td colspan="8" class="text-center text-stone-400 py-4">No revised baseline submitted yet.</td></tr>'}</tbody></table>`;
+  }
+  function scheduleAdvanceStatus(status) {
+    const store = scheduleStore();
+    if (status === 'Baseline Locked' && store.setup.status !== 'Approved') return toast('Approval Required','Only approved schedules can become baseline.','warn');
+    store.setup.status = status;
+    if (status === 'Baseline Locked') scheduleSaveBaseline(true);
+    saveState(); renderScheduleTable(); toast('Schedule Status Updated', status, 'ok');
+  }
+  function scheduleRunCalculation() {
+    const calc = scheduleCalc(scheduleRows());
+    scheduleRows().forEach((r,i) => Object.assign(r, calc.rows[i]));
+    saveState(); renderScheduleTable(); toast('CPM Calculation Complete', `${calc.critical.length} critical | forecast finish ${calc.projectFinish}`, calc.delayed.length ? 'warn' : 'ok');
+  }
+  function scheduleSaveBaseline(silent=false) {
+    const store = scheduleStore();
+    if (store.setup.status !== 'Approved' && !silent) return toast('Approval Required','Submit, review and approve the schedule before locking baseline.','warn');
+    const rows = scheduleRows().map(r => ({ id:r.id, wbs:r.wbs, name:r.name, bs:r.bs, bf:r.bf, dur:r.dur, qty:r.qty, unit:r.unit }));
+    const finish = scheduleMetrics().baselineFinish;
+    store.baseline = { version:store.setup.version, locked:true, approvedStart:store.setup.startDate, approvedFinish:finish, approvedDuration:rows.reduce((s,r)=>s+Number(r.dur||0),0), approvedQuantity:rows.reduce((s,r)=>s+Number(r.qty||0),0), approvedBy:store.setup.approvedBy, approvalDate:new Date().toISOString().slice(0,10), remarks:'Approved baseline locked from schedule workflow.', rows };
+    store.setup.status = 'Baseline Locked';
+    saveState(); renderScheduleTable(); if (!silent) toast('Baseline Locked', `Version ${store.baseline.version} frozen for comparison.`, 'ok');
+  }
+  function scheduleSetLookahead(days) { scheduleStore().filter.lookahead = days; saveState(); renderScheduleTable(); }
+  function scheduleExportExcel() {
+    const rows = scheduleRows();
+    const headers = ['Activity ID','WBS','Activity','Location','Type','BOQ','Cost Code','Unit','Planned Qty','Duration','Planned Start','Planned Finish','Actual Start','Actual Finish','Progress','Predecessor','Successor','Critical','Status'];
+    const csv = [headers, ...rows.map(r => [r.id,r.wbs,r.name,r.location,r.type,r.boq,r.costCode,r.unit,r.qty,r.dur,r.bs,r.bf,r.as,r.af,r.pct,r.pred,r.succ,r.critical,r.status])].map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'buildcore-schedule.csv'; a.click(); URL.revokeObjectURL(url);
+    toast('Schedule Exported','CSV is ready for Excel.','ok');
+  }
+  function schedulePrintPdf() { toast('PDF Export Ready','Use browser print to save the schedule view as PDF.','info'); setTimeout(() => window.print(), 300); }
+  function scheduleSetupModal() {
+    const store = scheduleStore(), s = store.setup;
+    openModal({ title:'Schedule Setup', wide:true, submitLabel:'Save Setup', body:`<div class="form-grid-3">${Object.keys(s).map(k => `<div class="form-row"><label>${esc(k.replace(/([A-Z])/g,' $1'))}</label><input name="${esc(k)}" value="${esc(s[k] || '')}"></div>`).join('')}</div>`, onSubmit:d => { Object.assign(s,d); saveState(); renderScheduleTable(); toast('Schedule Setup Saved', s.projectName, 'ok'); }});
+  }
+  function scheduleWbsModal() {
+    const pid = scheduleProjectId();
+    openModal({ title:'Add WBS', wide:true, submitLabel:'Add WBS', body:`<div class="form-grid-3"><div class="form-row"><label>WBS Code</label><input name="wbs" required></div><div class="form-row"><label>WBS Name</label><input name="name" required></div><div class="form-row"><label>Parent WBS</label><input name="parent"></div><div class="form-row"><label>Location</label><input name="location"></div><div class="form-row"><label>Responsible Engineer</label><input name="responsibleEngineer"></div><div class="form-row"><label>Contractor/Subcontractor</label><input name="contractor"></div></div>`, onSubmit:d => { State.wbsActivities = State.wbsActivities || []; State.wbsActivities.push({ id:'WBS-' + Date.now(), projectId:pid, ...d, status:'planned', approvalStatus:'draft' }); saveState(); renderScheduleTable(); toast('WBS Added', d.wbs + ' ' + d.name, 'ok'); }});
+  }
+  function scheduleActivityModal(id=null) {
+    const rows = scheduleRows();
+    const r = id != null ? rows[id] : scheduleNormalizeActivity({ id:'ACT-' + Date.now(), status:'Not Started' });
+    openModal({ title:id != null ? 'Edit Schedule Activity' : 'Add Schedule Activity', wide:true, submitLabel:id != null ? 'Save Activity' : 'Add Activity', body:`<div class="form-grid-3">
+      <div class="form-row"><label>Activity ID</label><input name="id" value="${esc(r.id)}"></div><div class="form-row"><label>Activity Name</label><input name="name" value="${esc(r.name)}" required></div><div class="form-row"><label>WBS Code</label><select name="wbs"><option value="${esc(r.wbs)}">${esc(r.wbs || 'Select WBS')}</option>${projectMasterOptions(scheduleProjectId(),'wbs')}</select></div>
+      <div class="form-row"><label>Location / Work Front</label><input name="location" value="${esc(r.location)}"></div><div class="form-row"><label>Activity Type</label><select name="type"><option ${r.type==='Task'?'selected':''}>Task</option><option ${r.type==='Milestone'?'selected':''}>Milestone</option><option ${r.type==='Level of Effort'?'selected':''}>Level of Effort</option></select></div><div class="form-row"><label>BOQ Item Link</label><select name="boq"><option value="${esc(r.boq)}">${esc(r.boq || 'Select BOQ')}</option>${projectMasterOptions(scheduleProjectId(),'boq')}</select></div>
+      <div class="form-row"><label>Cost Code Link</label><input name="costCode" value="${esc(r.costCode)}"></div><div class="form-row"><label>Unit</label><input name="unit" value="${esc(r.unit)}"></div><div class="form-row"><label>Planned Quantity</label><input type="number" name="qty" value="${esc(r.qty)}"></div>
+      <div class="form-row"><label>Planned Duration</label><input type="number" name="dur" value="${esc(r.dur)}"></div><div class="form-row"><label>Actual Quantity Completed</label><input type="number" name="actualQty" value="${esc(r.actualQty)}"></div><div class="form-row"><label>Remaining Duration</label><input type="number" name="remaining" value="${esc(r.remaining)}"></div>
+      <div class="form-row"><label>Planned Start</label><input type="date" name="bs" value="${esc(scheduleDateISO(r.bs) || r.bs)}"></div><div class="form-row"><label>Planned Finish</label><input type="date" name="bf" value="${esc(scheduleDateISO(r.bf) || r.bf)}"></div><div class="form-row"><label>Physical Progress %</label><input type="number" name="pct" min="0" max="100" value="${esc(r.pct)}"></div>
+      <div class="form-row"><label>Actual Start</label><input type="date" name="as" value="${esc(scheduleDateISO(r.as) || r.as)}"></div><div class="form-row"><label>Actual Finish</label><input type="date" name="af" value="${esc(scheduleDateISO(r.af) || r.af)}"></div><div class="form-row"><label>Predecessor</label><input name="pred" value="${esc(r.pred)}" placeholder="1.0 FS+2"></div>
+      <div class="form-row"><label>Relationship</label><select name="rel"><option>FS</option><option>SS</option><option>FF</option><option>SF</option></select></div><div class="form-row"><label>Lead/Lag Days</label><input type="number" name="lag" value="${esc(r.lag)}"></div><div class="form-row"><label>Responsible Person</label><input name="resp" value="${esc(r.resp)}"></div>
+      <div class="form-row"><label>Contractor/Subcontractor</label><input name="contractor" value="${esc(r.contractor)}"></div><div class="form-row"><label>Status</label><select name="status">${['Not Started','In Progress','Completed','On Hold','Delayed'].map(s => `<option ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="form-row"><label>Priority</label><input name="priority" value="${esc(r.priority)}"></div>
+      <div class="form-row col-span-3"><label>Remarks</label><textarea name="remarks">${esc(r.remarks)}</textarea></div></div>`, onSubmit:d => {
+        const obj = scheduleNormalizeActivity({...r, ...d, qty:Number(d.qty||0), dur:Number(d.dur||0), actualQty:Number(d.actualQty||0), remaining:Number(d.remaining||0), pct:Number(d.pct||0), lag:Number(d.lag||0)});
+        if (obj.pct >= 100 && !obj.af) obj.af = new Date().toISOString().slice(0,10);
+        if (obj.pct > 0 && !obj.as) obj.as = new Date().toISOString().slice(0,10);
+        if (id != null) rows[id] = obj; else rows.push(obj);
+        saveState(); audit(id != null ? 'update' : 'create', 'Schedule Activity', obj.wbs + ' - ' + obj.name); renderScheduleTable(); toast(id != null ? 'Activity Updated' : 'Activity Added', obj.wbs + ' - ' + obj.name, 'ok');
+      }});
+  }
+  window.scheduleActivityModal = scheduleActivityModal;
+  function scheduleDprUpdateModal() {
+    const rows = scheduleRows();
+    openModal({ title:'Approved DPR Schedule Update', wide:true, submitLabel:'Apply DPR Update', body:`<div class="form-grid-3"><div class="form-row"><label>Schedule Activity</label><select name="idx">${rows.map((r,i)=>`<option value="${i}">${esc(r.wbs)} - ${esc(r.name)}</option>`).join('')}</select></div><div class="form-row"><label>DPR Approval Status</label><select name="approval"><option>Approved</option><option>Submitted</option><option>Draft</option></select></div><div class="form-row"><label>Date</label><input type="date" name="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="form-row"><label>Quantity Completed</label><input type="number" name="qty" value="0"></div><div class="form-row"><label>Progress %</label><input type="number" name="pct" min="0" max="100" value="0"></div><div class="form-row"><label>Remaining Duration</label><input type="number" name="remaining" value="0"></div><div class="form-row col-span-3"><label>Delay Reason / Remarks</label><textarea name="remarks"></textarea></div></div>`, onSubmit:d => {
+      if (d.approval !== 'Approved') return toast('DPR Not Approved','Only approved DPR updates can update the schedule.','warn');
+      const r = rows[Number(d.idx)]; if (!r) return;
+      r.actualQty = Number(r.actualQty || 0) + Number(d.qty || 0); r.pct = Math.max(Number(r.pct || 0), Number(d.pct || 0)); r.remaining = Number(d.remaining || r.remaining || 0); r.remarks = d.remarks || r.remarks;
+      if (r.pct > 0 && !r.as) r.as = d.date; if (r.pct >= 100) { r.af = d.date; r.status = 'Completed'; } else r.status = 'In Progress';
+      saveState(); renderScheduleTable(); toast('Schedule Updated From DPR', r.wbs + ' - ' + r.name, 'ok');
+    }});
+  }
+  function scheduleDelayModal() {
+    const store = scheduleStore(), rows = scheduleRows();
+    openModal({ title:'Log Schedule Delay', wide:true, submitLabel:'Log Delay', body:`<div class="form-grid-3"><div class="form-row"><label>Delayed Activity</label><select name="activity">${rows.map(r=>`<option value="${esc(r.wbs)}">${esc(r.wbs)} - ${esc(r.name)}</option>`).join('')}</select></div><div class="form-row"><label>Delay Start</label><input type="date" name="start"></div><div class="form-row"><label>Delay End</label><input type="date" name="end"></div><div class="form-row"><label>Delay Days</label><input type="number" name="days" value="1"></div><div class="form-row"><label>Reason</label><select name="reason">${['Drawing/design delay','Material shortage','Equipment breakdown','Manpower shortage','Weather','Access problem','Land/site obstruction','Employer instruction','Contractor delay','Subcontractor delay','Force majeure','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="form-row"><label>Responsible Party</label><input name="party"></div><div class="form-row col-span-3"><label>Corrective Action</label><textarea name="action"></textarea></div></div>`, onSubmit:d => { store.delays.unshift({...d, critical:!!scheduleActivityByWbs(d.activity)?.critical, impact:'Pending CPM review', status:'Submitted'}); saveState(); renderScheduleTable(); toast('Delay Logged', d.activity + ' - ' + d.reason, 'warn'); }});
+  }
+  function scheduleRecoveryModal() { toast('Recovery Plan','Use the recovery table to calculate required productivity from delayed activities.','info'); }
+  function scheduleCreateRevision() {
+    const store = scheduleStore();
+    const no = 'REV-' + String(store.revisions.length + 1).padStart(2,'0');
+    store.revisions.unshift({ no, date:new Date().toISOString().slice(0,10), reason:'Baseline revision required due to approved delay / scope change', impact:'Forecast completion under review', eot:'TBD', reviewedBy:store.setup.checkedBy, approvedBy:'', status:'Draft' });
+    store.setup.status = 'Revised';
+    saveState(); renderScheduleTable(); toast('Revision Draft Created', no, 'ok');
+  }
+  window.scheduleRunCalculation = scheduleRunCalculation;
+  window.scheduleSaveBaseline = scheduleSaveBaseline;
+  window.scheduleSetupModal = scheduleSetupModal;
+  window.scheduleWbsModal = scheduleWbsModal;
+  window.scheduleDprUpdateModal = scheduleDprUpdateModal;
+  window.scheduleDelayModal = scheduleDelayModal;
+  window.scheduleRecoveryModal = scheduleRecoveryModal;
+  window.scheduleCreateRevision = scheduleCreateRevision;
+  window.scheduleAdvanceStatus = scheduleAdvanceStatus;
+  window.scheduleSetLookahead = scheduleSetLookahead;
+  window.scheduleExportExcel = scheduleExportExcel;
+  window.schedulePrintPdf = schedulePrintPdf;
+
   function renderNCRTable() {
     // No-op on init — existing NCR cards are preserved
     // New NCRs prepend via insertNewNCRCard() called from actRaiseNCR
