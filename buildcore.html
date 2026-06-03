@@ -1388,7 +1388,7 @@
           <div>
             <div class="stamp mb-3"><i data-lucide="package" class="w-3 h-3"></i>INVENTORY MANAGEMENT SYSTEM</div>
             <h1 class="font-display font-black text-3xl title-mark">Stores & Inventory</h1>
-            <p class="text-sm text-stone-500 mt-3">Full CRUD Â· live stock from movements Â· auto-reorder Â· PO generator Â· tool tracker Â· all data persisted to local storage</p>
+            <p class="text-sm text-stone-500 mt-3">Full CRUD - live stock from movements - auto-reorder - PO generator - tool tracker - all data persisted to local storage</p>
           </div>
           <div class="flex gap-2">
             <button class="btn btn-ghost" data-ims="export-csv"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
@@ -3545,9 +3545,9 @@
   }
 
   // ----- Stock computation (live, derived from movements) -----
-  function stockOf(itemId) {
+  function stockOf(itemId, siteId=null) {
     return State.stockMovements
-      .filter(m => m.itemId === itemId)
+      .filter(m => m.itemId === itemId && (siteId == null || Number(m.siteId || 0) === Number(siteId)))
       .reduce((sum, m) => sum + (m.type === 'IN' ? m.qty : -m.qty), 0);
   }
   function stockMap() {
@@ -3562,9 +3562,11 @@
     return Number(m.unitRate ?? m.rate ?? m.purchaseRate ?? m.costPrice ?? item.lastPurchaseRate ?? item.costPrice ?? 0);
   }
   function imsMovementValue(m) {
+    const qtyRateValue = Number(m.qty || 0) * imsMovementUnitRate(m);
+    if (m.type === 'IN' && Number(m.totalValue || 0) <= 0 && qtyRateValue > 0) return qtyRateValue;
     if (m.totalValue != null) return Number(m.totalValue || 0);
     if (m.total != null) return Number(m.total || 0);
-    return Number(m.qty || 0) * imsMovementUnitRate(m);
+    return qtyRateValue;
   }
   function imsSortedMovements(excludeId) {
     return (State.stockMovements || [])
@@ -3600,11 +3602,11 @@
     });
     return layers.filter(l => l.remaining > 0.000001);
   }
-  function imsFifoIssue(itemId, qty, date, excludeId) {
+  function imsFifoIssue(itemId, qty, date, excludeId, siteId=null) {
     let need = Number(qty || 0);
     const lots = [];
     let total = 0;
-    const layers = imsFifoLayers(itemId, { beforeDate:date, excludeId });
+    const layers = imsFifoLayers(itemId, { beforeDate:date, excludeId, siteId });
     const available = layers.reduce((s,l) => s + l.remaining, 0);
     for (const layer of layers) {
       if (need <= 0) break;
@@ -3738,14 +3740,14 @@
       if (!m.projectId) m.projectId = pid;
       if (!m.flowStage) m.flowStage = m.type === 'IN' ? 'received' : (m.recipientType === 'transfer' ? 'transfer' : 'issued');
       if (m.type === 'IN' && m.unitRate == null) m.unitRate = imsMovementUnitRate(m);
-      if (m.type === 'IN' && m.totalValue == null) m.totalValue = Number(m.qty || 0) * imsMovementUnitRate(m);
+      if (m.type === 'IN' && (m.totalValue == null || Number(m.totalValue || 0) <= 0)) m.totalValue = Number(m.qty || 0) * imsMovementUnitRate(m);
       if (m.type === 'IN') {
         m.vatPct = Number(m.vatPct || 0);
         m.vatAmount = Number(m.vatAmount || 0);
         m.grossValue = Number(m.grossValue || (Number(m.totalValue || 0) + m.vatAmount));
       }
       if (m.type === 'OUT' && (!Array.isArray(m.fifoLots) || m.unitRate == null || m.totalValue == null)) {
-        const fifo = imsFifoIssue(m.itemId, m.qty, m.date || Date.now(), m.id);
+        const fifo = imsFifoIssue(m.itemId, m.qty, m.date || Date.now(), m.id, m.siteId);
         m.fifoLots = fifo.lots;
         m.unitRate = fifo.unitRate;
         m.totalValue = fifo.total;
@@ -3769,6 +3771,15 @@
     return 'NPR ' + Math.round(Number.isFinite(value) ? value : 0).toLocaleString('en-IN');
   };
   const fmtDateShort = (ts) => { if (!ts) return 'â€”'; const d = new Date(typeof ts === 'string' ? ts : ts); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}); };
+  function imsCleanText(v, fallback='-') {
+    let text = String(v ?? '').trim()
+      .replace(/Â·/g, '-')
+      .replace(/â€”/g, '-')
+      .replace(/â†’/g, '->')
+      .replace(/âˆ’/g, '-');
+    if (!text || (text.length <= 4 && /[ÂÃâ€�œ€˜’]/.test(text))) return fallback;
+    return text;
+  }
 
   function seedVendorData() {
     if (STARTER_MODE) { State.vendors = Array.isArray(State.vendors) ? State.vendors : []; return; }
@@ -4134,7 +4145,7 @@
                 <div class="notification-dot" style="background:${col}18;color:${col}"><i data-lucide="${m.type==='IN'?'package-plus':'package-minus'}" class="w-4 h-4"></i></div>
                 <div>
                   <div class="text-xs font-bold">${m.refNo || m.type} Â· ${it.name}</div>
-                  <div class="text-[10px] text-stone-500 mt-0.5">${fmtDateShort(m.date)} Â· ${m.qty} ${it.unit||''} Â· ${m.purpose || m.supplier || m.issuedTo || ''}</div>
+                  <div class="text-[10px] text-stone-500 mt-0.5">${fmtDateShort(m.date)} - ${m.qty} ${esc(it.unit||'')} - ${esc(imsCleanText(m.purpose || m.supplier || m.issuedTo || ''))}</div>
                 </div>
                 <div class="text-[10px] font-mono self-center" style="color:${col}">${m.type}</div>
               </div>`;
@@ -4278,8 +4289,8 @@
               <td class="font-mono text-xs" style="color:${m.type==='IN'?'#15803D':'#C0383B'}">${m.type==='IN'?'+':'âˆ’'}${m.qty}</td>
               <td class="font-mono text-xs">${fmtINR(imsMovementUnitRate(m))}</td>
               <td class="font-mono text-xs">${fmtINR(imsMovementValue(m))}</td>
-              <td class="text-xs">${(State.sites.find(s=>s.id===m.siteId)||{}).name?.split('Â·')[0]||'â€”'}</td>
-              <td class="text-xs">${m.supplier || m.issuedTo || 'â€”'}${m.purpose?` <span class="text-[10px] text-stone-500">(${m.purpose})</span>`:''}</td>
+              <td class="text-xs">${esc(imsCleanText((State.sites.find(s=>s.id===m.siteId)||{}).name?.split('Â·')[0], '-'))}</td>
+              <td class="text-xs">${esc(imsCleanText(m.supplier || m.issuedTo, '-'))}${m.purpose?` <span class="text-[10px] text-stone-500">(${esc(imsCleanText(m.purpose, ''))})</span>`:''}</td>
               <td class="font-mono text-xs"><b>${m._bal.toLocaleString()}</b></td>
             </tr>`).join('') || '<tr><td colspan="9" class="text-center text-stone-400 py-4">No movements yet</td></tr>'}
           </tbody>
@@ -4297,12 +4308,12 @@
       .sort((a,b) => (b.date||0) - (a.date||0));
     const itemById = Object.fromEntries(State.items.map(i => [i.id, i]));
     const siteById = Object.fromEntries(State.sites.map(s => [s.id, s]));
-    const typeLabel = (type === 'IN' ? 'Stock IN (GRN)' : 'Stock OUT (Issue)') + (pid ? ' Â· ' + pid : '');
+    const typeLabel = (type === 'IN' ? 'Stock IN (GRN)' : 'Stock OUT (Issue)') + (pid ? ' - ' + pid : '');
     c.innerHTML = `
       <div class="flex justify-between items-center mb-4 gap-3 flex-wrap">
         <div>
           <div class="font-display font-bold text-lg">${typeLabel}</div>
-          <div class="text-xs text-stone-500">${movs.length} ${type === 'IN' ? 'receipts' : 'issues'} recorded Â· each entry ${type==='IN' ? 'adds to' : 'deducts from'} stock</div>
+          <div class="text-xs text-stone-500">${movs.length} ${type === 'IN' ? 'receipts' : 'issues'} recorded - each entry ${type==='IN' ? 'adds to' : 'deducts from'} stock</div>
         </div>
         <div class="flex gap-2">
           <input id="imsMovSearch" type="text" placeholder="Search by ref, item, partyâ€¦" class="border border-stone-200 px-2 py-1 text-xs" style="min-width:240px">
@@ -4330,10 +4341,10 @@
               ${projectCell}
               <td><b>${it.name}</b></td>
               <td class="text-right font-mono">${m.qty} <span class="text-[10px] text-stone-500">${it.unit||''}</span></td>
-              <td class="text-xs">${site ? site.name.split('Â·')[0] : 'â€”'}</td>
+              <td class="text-xs">${esc(imsCleanText(site ? site.name.split('Â·')[0] : '', '-'))}</td>
               ${type === 'IN' 
-                ? `<td class="text-xs">${m.supplier || 'â€”'}</td>`
-                : `<td class="text-xs">${m.issuedTo || 'â€”'}</td><td class="text-xs">${m.purpose || 'â€”'}</td>`
+                ? `<td class="text-xs">${esc(imsCleanText(m.supplier, '-'))}</td>`
+                : `<td class="text-xs">${esc(imsCleanText(m.issuedTo, '-'))}</td><td class="text-xs">${esc(imsCleanText(m.purpose, '-'))}</td>`
               }
               <td class="text-right font-mono text-xs">${fmtINR(imsMovementUnitRate(m))}</td>
               <td class="text-right font-mono text-xs"><b>${fmtINR(imsMovementValue(m))}</b>${m.type==='OUT' && Array.isArray(m.fifoLots) && m.fifoLots.length ? `<div class="text-[10px] text-stone-500">${m.fifoLots.length} FIFO lot${m.fifoLots.length!==1?'s':''}</div>` : ''}</td>
@@ -4343,7 +4354,7 @@
                 <button class="ims-icon-btn danger" data-ims-act="del-mov" data-id="${m.id}" title="Delete">ðŸ—‘</button>
               </div></td>
             </tr>`;
-          }).join('') || `<tr><td colspan="${type==='IN'?11:12}" class="text-center text-stone-400 py-4">No ${type==='IN'?'receipts':'issues'} yet Â· click "New ${type==='IN'?'GRN':'Issue'}" to record one</td></tr>`}
+          }).join('') || `<tr><td colspan="${type==='IN'?11:12}" class="text-center text-stone-400 py-4">No ${type==='IN'?'receipts':'issues'} yet - click "New ${type==='IN'?'GRN':'Issue'}" to record one</td></tr>`}
         </tbody>
       </table>
     `;
@@ -4394,11 +4405,11 @@
           </div>
           <div class="ims-form-row">
             <div class="ims-field"><label>Item *</label><select name="itemId" required>${State.items.map(i => `<option value="${i.id}" ${m.itemId===i.id?'selected':''}>${i.sku ? i.sku + ' Â· ' : ''}${i.name} (${i.unit||'pcs'})</option>`).join('')}</select></div>
-            <div class="ims-field"><label>Quantity *</label><input type="number" name="qty" min="0.01" step="0.01" value="${m.qty}" required></div>
+            <div class="ims-field"><label>Quantity *</label><input type="number" name="qty" min="0.01" step="0.01" value="${m.qty}" oninput="imsRecalcGRNAmount()" required></div>
           </div>
           <div class="ims-form-row">
             ${effType === 'IN'
-              ? `<div class="ims-field"><label>Actual Purchase Rate (NPR / unit) *</label><input type="number" name="unitRate" min="0" step="0.01" value="${imsMovementUnitRate(m)}" required></div><div class="ims-field"><label>Basic Amount</label><input type="number" name="totalValue" min="0" step="0.01" value="${m.totalValue ?? (Number(m.qty||0) * imsMovementUnitRate(m))}"></div>`
+              ? `<div class="ims-field"><label>Actual Purchase Rate (NPR / unit) *</label><input type="number" name="unitRate" min="0" step="0.01" value="${imsMovementUnitRate(m)}" oninput="imsRecalcGRNAmount()" required></div><div class="ims-field"><label>Basic Amount</label><input type="number" name="totalValue" min="0" step="0.01" value="${imsMovementValue(m).toFixed(2)}" readonly style="background:#FFFBF0;font-weight:700"></div>`
               : `<div class="ims-field"><label>FIFO Rate</label><input value="${fmtINR(imsMovementUnitRate(m))}" readonly></div><div class="ims-field"><label>FIFO Issue Value</label><input value="${fmtINR(imsMovementValue(m))}" readonly></div>`
             }
           </div>
@@ -4416,13 +4427,13 @@
             : `
               <div class="ims-form-row-3">
                 <div class="ims-field"><label>Issue To Type *</label><select name="recipientType" id="imsRecipientType" required onchange="imsUpdateRecipientPicker()">
-                  <option value="equipment" ${m.recipientType==='equipment'?'selected':''}>ðŸšœ Equipment (fuel, lubricants)</option>
+                  <option value="equipment" ${m.recipientType==='equipment'?'selected':''}>Equipment (fuel, lubricants)</option>
                   <option value="client" ${m.recipientType==='client'?'selected':''}>Client chargeable material</option>
-                  <option value="site" ${m.recipientType==='site'?'selected':''}>ðŸ—ï¸ Site / Project Activity</option>
+                  <option value="site" ${m.recipientType==='site'?'selected':''}>Site / Project Activity</option>
                   <option value="subcontractor" ${m.recipientType==='subcontractor'?'selected':''}>ðŸ¤ Subcontractor</option>
                   <option value="individual" ${m.recipientType==='individual'?'selected':''}>ðŸ‘¤ Individual / Worker</option>
                   <option value="gang" ${m.recipientType==='gang'?'selected':''}>ðŸ‘· Gang / Crew</option>
-                  <option value="transfer" ${m.recipientType==='transfer'?'selected':''}>â†”ï¸ Transfer to other Project</option>
+                  <option value="transfer" ${m.recipientType==='transfer'?'selected':''}>Transfer to other Project</option>
                 </select></div>
                 <div class="ims-field"><label>Issued To *</label><select name="recipientId" id="imsRecipientPicker" required></select></div>
                 <div class="ims-field"><label>Project (chargeable)</label><select name="chargeProject"><option value="">â€” Current project â€”</option>${State.projects?.map(p => `<option value="${p.id || p.id}" ${m.chargeProject===p.id?'selected':''}>${p.id || p}</option>`).join('') || ['PRJ-017','PRJ-021','PRJ-019','PRJ-024','PRJ-013'].map(p => `<option ${m.chargeProject===p?'selected':''}>${p}</option>`).join('')}</select></div>
@@ -4459,7 +4470,7 @@
         obj.date = new Date(obj.date).getTime();
         if (effType === 'IN') {
           obj.unitRate = Number(obj.unitRate || 0);
-          obj.totalValue = Number(obj.totalValue || (obj.qty * obj.unitRate));
+          obj.totalValue = obj.qty * obj.unitRate;
           obj.vatPct = Number(obj.vatPct || 0);
           obj.vatAmount = Number(obj.vatAmount || (obj.totalValue * obj.vatPct / 100));
           obj.grossValue = obj.totalValue + obj.vatAmount;
@@ -4482,13 +4493,13 @@
         }
         // Negative-stock check for OUT
         if (effType === 'OUT') {
-          const currentStock = stockOf(obj.itemId);
-          const original = id ? m.qty : 0;
+          const currentStock = stockOf(obj.itemId, obj.siteId);
+          const original = id && Number(m.siteId || 0) === Number(obj.siteId || 0) ? Number(m.qty || 0) : 0;
           const effective = currentStock + original;
           if (obj.qty > effective) {
-            if (!confirm(`âš  Stock will go negative.\nAvailable: ${effective}\nIssuing: ${obj.qty}\n\nProceed anyway?`)) return false;
+            if (!confirm(`Stock will go negative.\nAvailable: ${effective}\nIssuing: ${obj.qty}\n\nProceed anyway?`)) return false;
           }
-          const fifo = imsFifoIssue(obj.itemId, obj.qty, obj.date || Date.now(), id);
+          const fifo = imsFifoIssue(obj.itemId, obj.qty, obj.date || Date.now(), id, obj.siteId);
           obj.fifoLots = fifo.lots;
           obj.unitRate = fifo.unitRate;
           obj.totalValue = fifo.total;
@@ -4521,13 +4532,21 @@
           submitStoreIssueToClient(obj, true);
           saveState();
         }
-        toast(`Stock ${effType} ${id?'Updated':'Recorded'}`, obj.refNo + (obj.issuedTo ? ' â†’ ' + obj.issuedTo.slice(0,30) : ''), 'ok');
+        toast(`Stock ${effType} ${id?'Updated':'Recorded'}`, obj.refNo + (obj.issuedTo ? ' -> ' + obj.issuedTo.slice(0,30) : ''), 'ok');
         renderIMS();
       }
     });
+    if (effType === 'IN') setTimeout(() => imsRecalcGRNAmount(), 50);
     // Initialize the recipient picker
     if (effType === 'OUT') setTimeout(() => imsUpdateRecipientPicker(m.recipientType, m.recipientId), 50);
   }
+  window.imsRecalcGRNAmount = function() {
+    const f = document.getElementById('imsMovForm');
+    if (!f || !f.elements.totalValue) return;
+    const qty = Number(f.elements.qty?.value || 0);
+    const rate = Number(f.elements.unitRate?.value || 0);
+    f.elements.totalValue.value = (qty * rate).toFixed(2);
+  };
   // Recipient picker updater â€” populates the second dropdown based on type
   window.imsUpdateRecipientPicker = function(presetType, presetId) {
     const typeSel = document.getElementById('imsRecipientType');
