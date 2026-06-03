@@ -98,6 +98,9 @@
   .nav-item:hover { background: rgba(232,116,44,0.08); color: #fff; }
   .nav-item.active { background: rgba(232,116,44,0.14); color: #fff; border-left-color: var(--amber); }
   .nav-item.active .nav-icon { color: var(--amber); }
+  img, video, canvas { max-width:100%; height:auto; object-fit:contain; }
+  [data-lucide], .lucide, .nav-icon { width:1rem; height:1rem; flex:0 0 auto; stroke-width:2; }
+  .btn [data-lucide], .ims-tab [data-lucide], .stamp [data-lucide] { width:.875rem; height:.875rem; }
   .notification-wrap { position: relative; }
   .notification-panel { display:none; position:absolute; right:0; top:calc(100% + 10px); width:380px; max-width:calc(100vw - 24px); background:#fff; border:1px solid var(--line); box-shadow:0 18px 50px rgba(15,15,14,.18); z-index:80; }
   .notification-panel.show { display:block; animation: fadeIn .18s ease; }
@@ -1400,7 +1403,8 @@
             <p class="text-sm text-stone-500 mt-3">Full CRUD - live stock from movements - auto-reorder - PO generator - tool tracker - all data persisted to local storage</p>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-ghost" data-ims="export-csv"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
+            <button class="btn btn-ghost" data-ims="export-csv"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>Excel</button>
+            <button class="btn btn-ghost" data-ims="export-pdf"><i data-lucide="printer" class="w-3.5 h-3.5"></i>PDF</button>
             <button class="btn btn-ghost" data-ims="qr-scan"><i data-lucide="qr-code" class="w-3.5 h-3.5"></i>QR Scan</button>
             <button class="btn btn-amber" data-ims="quick-add"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Quick Add</button>
           </div>
@@ -1438,7 +1442,8 @@
             <p class="text-sm text-stone-500 mt-3">Full equipment lifecycle Â· per-machine daily logsheets Â· operator master Â· maintenance schedules Â· fuel & lubricants tracking Â· type-specific data capture Â· all persisted to local storage</p>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-ghost" data-eq="export-csv"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
+            <button class="btn btn-ghost" data-eq="export-csv"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>Excel</button>
+            <button class="btn btn-ghost" data-eq="export-pdf"><i data-lucide="printer" class="w-3.5 h-3.5"></i>PDF</button>
             <button class="btn btn-ghost" data-eq="qr-scan"><i data-lucide="qr-code" class="w-3.5 h-3.5"></i>QR Scan</button>
             <button class="btn btn-amber" data-eq="quick-log"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Quick Log Entry</button>
           </div>
@@ -1497,7 +1502,8 @@
             <p class="text-sm text-stone-500 mt-3">Central register for plant, vehicles, tools, survey instruments, camp assets, IT, safety, temporary works, hydropower, road and building project assets.</p>
           </div>
           <div class="flex gap-2 flex-wrap">
-            <button class="btn btn-ghost" data-asset-act="export"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
+            <button class="btn btn-ghost" data-asset-act="export"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>Excel</button>
+            <button class="btn btn-ghost" data-asset-act="export-pdf"><i data-lucide="printer" class="w-3.5 h-3.5"></i>PDF</button>
             <button class="btn btn-ghost" data-asset-act="scan"><i data-lucide="scan-line" class="w-3.5 h-3.5"></i>QR Scan</button>
             <button class="btn btn-ghost" data-asset-act="label"><i data-lucide="printer" class="w-3.5 h-3.5"></i>Print QR Label</button>
             <button class="btn btn-amber" data-asset-act="new"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Register Asset</button>
@@ -1945,7 +1951,9 @@
             <p class="text-sm text-stone-500 mt-3">86 vendors Â· Performance scoring Â· Payment tracking Â· Retention management</p>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-ghost"><i data-lucide="star" class="w-3.5 h-3.5"></i>Rate vendor</button>
+            <button class="btn btn-ghost" onclick="subcontractorExportCSV()"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>Excel</button>
+            <button class="btn btn-ghost" onclick="subcontractorExportPDF()"><i data-lucide="printer" class="w-3.5 h-3.5"></i>PDF</button>
+            <button class="btn btn-ghost"><i data-lucide="star" class="w-3.5 h-3.5"></i>Rate Subcontractor</button>
             <button class="btn btn-amber"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Onboard vendor</button>
           </div>
         </div>
@@ -2932,14 +2940,44 @@
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const fmtNPR = (n) => {
-    if (n >= 10000000) return 'à¤°à¥‚ ' + (n/10000000).toFixed(2) + 'Cr';
-    if (n >= 100000) return 'à¤°à¥‚ ' + (n/100000).toFixed(2) + 'L';
-    if (n >= 1000) return 'à¤°à¥‚ ' + (n/1000).toFixed(1) + 'K';
-    return 'à¤°à¥‚ ' + n.toLocaleString('en-IN');
+    if (n >= 10000000) return 'NPR ' + (n/10000000).toFixed(2) + 'Cr';
+    if (n >= 100000) return 'NPR ' + (n/100000).toFixed(2) + 'L';
+    if (n >= 1000) return 'NPR ' + (n/1000).toFixed(1) + 'K';
+    return 'NPR ' + n.toLocaleString('en-IN');
   };
   const today = () => new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
   const uid = (p='ID') => p + '-' + Math.floor(Math.random()*9000+1000);
   const esc = (v='') => String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  function cleanUITextText(text) {
+    return String(text || '')
+      .replace(/à¤°à¥‚/g, 'NPR')
+      .replace(/Â·/g, ' - ')
+      .replace(/â€”|ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â|Ã¢â‚¬â€/g, '-')
+      .replace(/â†’/g, 'to')
+      .replace(/â€¢/g, '-')
+      .replace(/ðŸ¤|ðŸ‘¤|ðŸ‘·|ðŸ“‹|ðŸ—‘|âœŽ|â†©|â˜…|â˜†/g, '')
+      .replace(/\bTool Tracker\b/g, 'Tools Tracker')
+      .replace(/\bLogsheets\b/g, 'Equipment Logsheet')
+      .replace(/\bSubcontract Issue\b/g, 'Subcontractor Issue')
+      .replace(/\bVendor Management\b/g, 'Subcontractor and Vendor Management')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+  function normalizeUIWording(root=document.body) {
+    if (!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const p = node.parentElement;
+        return p && !['SCRIPT','STYLE','TEXTAREA','INPUT','OPTION'].includes(p.tagName) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n => {
+      const cleaned = cleanUITextText(n.nodeValue);
+      if (cleaned && cleaned !== n.nodeValue) n.nodeValue = cleaned;
+    });
+  }
   const STARTER_MODE = true;
   const TRIAL_CREDENTIALS = {
     'company-1': { username:'trial1', password:'BuildCore@101', label:'Trial Company 1' },
@@ -3621,6 +3659,7 @@
   }
   function imsMovementValue(m) {
     const qtyRateValue = Number(m.qty || 0) * imsMovementUnitRate(m);
+    if (m.type === 'OUT') return qtyRateValue;
     if (m.type === 'IN' && Number(m.totalValue || 0) <= 0 && qtyRateValue > 0) return qtyRateValue;
     if (m.totalValue != null) return Number(m.totalValue || 0);
     if (m.total != null) return Number(m.total || 0);
@@ -3953,6 +3992,7 @@
       btn.onclick = () => {
         const act = btn.dataset.ims;
         if (act === 'export-csv') return imsExportCSV();
+        if (act === 'export-pdf') return imsExportPDF();
         if (act === 'qr-scan') return toast('QR Scanner','Scan a GRN/MIN/Item QR code to look up record','info');
         if (act === 'quick-add') return imsEditItem();
       };
@@ -4587,8 +4627,8 @@
             <div class="ims-field"><label>Reference No *</label><input name="refNo" value="${m.refNo||''}" placeholder="${effType==='IN'?'GRN/DC/Invoice':'MIN/Indent'} no." required></div>
           </div>
           <div class="ims-form-row">
-            <div class="ims-field"><label>Item *</label><select name="itemId" required>${State.items.map(i => `<option value="${i.id}" ${m.itemId===i.id?'selected':''}>${i.sku ? i.sku + ' Â· ' : ''}${i.name} (${i.unit||'pcs'})</option>`).join('')}</select></div>
-            <div class="ims-field"><label>Quantity *</label><input type="number" name="qty" min="0.01" step="0.01" value="${m.qty}" oninput="imsRecalcGRNAmount()" required></div>
+            <div class="ims-field"><label>Item *</label><select name="itemId" required onchange="imsShowAvailableStock()">${State.items.map(i => `<option value="${i.id}" ${m.itemId===i.id?'selected':''}>${i.sku ? i.sku + ' - ' : ''}${i.name} (${i.unit||'pcs'})</option>`).join('')}</select></div>
+            <div class="ims-field"><label>Quantity *</label><input type="number" name="qty" min="0.01" step="0.01" value="${m.qty}" oninput="imsRecalcGRNAmount(); imsShowAvailableStock()" required>${effType === 'OUT' ? '<div id="imsAvailableStockHint" class="text-[10px] text-stone-500 mt-1"></div>' : ''}</div>
           </div>
           <div class="ims-form-row">
             ${effType === 'IN'
@@ -4596,7 +4636,7 @@
               : `<div class="ims-field"><label>FIFO Rate</label><input value="${fmtINR(imsMovementUnitRate(m))}" readonly></div><div class="ims-field"><label>FIFO Issue Value</label><input value="${fmtINR(imsMovementValue(m))}" readonly></div>`
             }
           </div>
-          <div class="ims-field"><label>Receiving / Issue Store *</label><select name="siteId" required>${storeOptions.map(s => `<option value="${s.id}" ${Number(m.siteId)===Number(s.id)?'selected':''}>${esc(s.code || '')} - ${esc(s.name || '')}</option>`).join('')}</select></div>
+          <div class="ims-field"><label>Receiving / Issue Store *</label><select name="siteId" required onchange="imsShowAvailableStock()">${storeOptions.map(s => `<option value="${s.id}" ${Number(m.siteId)===Number(s.id)?'selected':''}>${esc(s.code || '')} - ${esc(s.name || '')}</option>`).join('')}</select></div>
           ${effType === 'IN' 
             ? `<div class="ims-form-row">
                 <div class="ims-field"><label>Supplier</label><input name="supplier" value="${m.supplier||''}" placeholder="Vendor name"></div>
@@ -4610,13 +4650,18 @@
             : `
               <div class="ims-form-row-3">
                 <div class="ims-field"><label>Issue To Type *</label><select name="recipientType" id="imsRecipientType" required onchange="imsUpdateRecipientPicker()">
-                  <option value="equipment" ${m.recipientType==='equipment'?'selected':''}>Equipment (fuel, lubricants)</option>
+                  <option value="asset" ${m.recipientType==='asset'?'selected':''}>Asset</option>
+                  <option value="equipment" ${m.recipientType==='equipment'?'selected':''}>Equipment</option>
                   <option value="plant" ${m.recipientType==='plant'?'selected':''}>Crusher / Batching Plant</option>
+                  <option value="crusherplant" ${m.recipientType==='crusherplant'?'selected':''}>Crusher Plant</option>
+                  <option value="batchingplant" ${m.recipientType==='batchingplant'?'selected':''}>Batching Plant</option>
                   <option value="client" ${m.recipientType==='client'?'selected':''}>Client chargeable material</option>
                   <option value="site" ${m.recipientType==='site'?'selected':''}>Site / Project Activity</option>
-                  <option value="subcontractor" ${m.recipientType==='subcontractor'?'selected':''}>ðŸ¤ Subcontractor</option>
-                  <option value="individual" ${m.recipientType==='individual'?'selected':''}>ðŸ‘¤ Individual / Worker</option>
-                  <option value="gang" ${m.recipientType==='gang'?'selected':''}>ðŸ‘· Gang / Crew</option>
+                  <option value="subcontractor" ${m.recipientType==='subcontractor'?'selected':''}>Subcontractor</option>
+                  <option value="staff" ${m.recipientType==='staff'?'selected':''}>Staff / User</option>
+                  <option value="individual" ${m.recipientType==='individual'?'selected':''}>Worker</option>
+                  <option value="gang" ${m.recipientType==='gang'?'selected':''}>Gang / Crew</option>
+                  <option value="custom" ${m.recipientType==='custom'?'selected':''}>Other / Custom</option>
                   <option value="transfer" ${m.recipientType==='transfer'?'selected':''}>Transfer to other Project</option>
                 </select></div>
                 <div class="ims-field"><label>Issued To *</label><select name="recipientId" id="imsRecipientPicker" required></select></div>
@@ -4666,11 +4711,16 @@
         if (effType === 'OUT' && !obj.issuedTo && obj.recipientType && obj.recipientId) {
           const labels = {
             equipment: (State.equipment?.find(e => e.id === obj.recipientId) || {}).name + ' (' + obj.recipientId + ')',
+            asset:    'Asset: ' + obj.recipientId,
             plant:     'Plant: ' + obj.recipientId,
+            crusherplant: 'Crusher Plant: ' + obj.recipientId,
+            batchingplant: 'Batching Plant: ' + obj.recipientId,
             site:      'Site: ' + obj.recipientId,
             subcontractor: 'Subcontractor: ' + obj.recipientId,
+            staff:     'Staff/User: ' + obj.recipientId,
             individual: 'Worker: ' + obj.recipientId,
             gang:      'Gang: ' + obj.recipientId,
+            custom:    'Other: ' + obj.recipientId,
             client:    'Client: ' + obj.recipientId,
             transfer:  'Transfer to: ' + obj.recipientId
           };
@@ -4682,11 +4732,8 @@
           const original = id && Number(m.siteId || 0) === Number(obj.siteId || 0) ? Number(m.qty || 0) : 0;
           const effective = currentStock + original;
           if (obj.qty > effective) {
-            if (obj.recipientType === 'plant') {
-              toast('Production cannot be saved because required material stock is insufficient.', `Available: ${effective} · Issuing: ${obj.qty}`, 'bad', 5200);
-              return false;
-            }
-            if (!confirm(`Stock will go negative.\nAvailable: ${effective}\nIssuing: ${obj.qty}\n\nProceed anyway?`)) return false;
+            toast('Issue Blocked', `Available stock: ${fmtNum(effective)}. Issue quantity: ${fmtNum(obj.qty)}. Negative stock is not allowed.`, 'bad', 5200);
+            return false;
           }
           const fifo = imsFifoIssue(obj.itemId, obj.qty, obj.date || Date.now(), id, obj.siteId);
           obj.fifoLots = fifo.lots;
@@ -4716,7 +4763,8 @@
           State.stockMovements.push(obj);
           audit('create', 'Movement Â· ' + obj.refNo, effType + ' Â· ' + obj.qty + ' to ' + (obj.issuedTo||'site'));
         }
-        if (effType === 'OUT' && obj.recipientType === 'plant') plantSyncDieselIssues();
+        if (effType === 'OUT' && ['plant','crusherplant','batchingplant'].includes(obj.recipientType)) plantSyncDieselIssues();
+        if (effType === 'OUT' && obj.recipientType === 'equipment') eqSyncMaterialIssueLogs();
         saveState();
         if (effType === 'OUT' && obj.clientBillable && obj.submitClientApproval === 'yes') {
           submitStoreIssueToClient(obj, true);
@@ -4737,6 +4785,19 @@
     const rate = Number(f.elements.unitRate?.value || 0);
     f.elements.totalValue.value = (qty * rate).toFixed(2);
   };
+  window.imsShowAvailableStock = function() {
+    const f = document.getElementById('imsMovForm');
+    const hint = document.getElementById('imsAvailableStockHint');
+    if (!f || !hint) return;
+    const itemId = Number(f.elements.itemId?.value || 0);
+    const siteId = Number(f.elements.siteId?.value || 0);
+    const qty = Number(f.elements.qty?.value || 0);
+    const available = stockOf(itemId, siteId);
+    const it = (State.items || []).find(i => Number(i.id) === itemId) || {};
+    hint.textContent = `Available stock: ${fmtNum(available)} ${it.unit || ''}${qty > available ? ' - issue quantity is higher than available stock' : ''}`;
+    hint.style.color = qty > available ? '#C0383B' : '#57534E';
+    hint.style.fontWeight = qty > available ? '700' : '400';
+  };
   // Recipient picker updater â€” populates the second dropdown based on type
   window.imsUpdateRecipientPicker = function(presetType, presetId) {
     const typeSel = document.getElementById('imsRecipientType');
@@ -4744,7 +4805,10 @@
     if (!typeSel || !picker) return;
     const t = presetType || typeSel.value;
     let opts = [];
-    if (t === 'equipment') {
+    if (t === 'asset') {
+      try { seedAssetData?.(); } catch(e) {}
+      opts = (State.assets || []).map(a => ({ value:a.id, label:a.id + ' - ' + a.name + ' - ' + (a.location || a.projectId || '') }));
+    } else if (t === 'equipment') {
       opts = (State.equipment || []).map(e => ({ value: e.id, label: e.id + ' Â· ' + e.name + ' Â· ' + e.brand + ' ' + e.model }));
     } else if (t === 'plant') {
       try { plantEnsureDefaults?.(); } catch(e) {}
@@ -4756,6 +4820,14 @@
       opts = plants.filter(p => p.name && !seen.has(p.type + '|' + p.name) && seen.add(p.type + '|' + p.name))
         .map(p => ({ value:p.type + '|' + p.name, label:p.type + ' Plant - ' + p.name + (p.location ? ' - ' + p.location : '') }));
       if (!opts.length) opts = [{ value:'Crusher|Crusher Plant CP-01', label:'Crusher Plant - Crusher Plant CP-01' }, { value:'Batching|Batching Plant BP-01', label:'Batching Plant - Batching Plant BP-01' }];
+    } else if (t === 'crusherplant') {
+      try { plantEnsureDefaults?.(); } catch(e) {}
+      opts = [...new Set((State.crusherRecords || []).map(r => r.plantName).filter(Boolean))].map(name => ({ value:'Crusher|' + name, label:'Crusher Plant - ' + name }));
+      if (!opts.length) opts = [{ value:'Crusher|Crusher Plant CP-01', label:'Crusher Plant - Crusher Plant CP-01' }];
+    } else if (t === 'batchingplant') {
+      try { plantEnsureDefaults?.(); } catch(e) {}
+      opts = [...new Set((State.batchingRecords || []).map(r => r.plantName).filter(Boolean))].map(name => ({ value:'Batching|' + name, label:'Batching Plant - ' + name }));
+      if (!opts.length) opts = [{ value:'Batching|Batching Plant BP-01', label:'Batching Plant - Batching Plant BP-01' }];
     } else if (t === 'client') {
       opts = (State.projects || []).map(p => ({ value:p.client || p.id, label:(p.client || 'Client') + ' - ' + p.id + ' - ' + p.name }));
     } else if (t === 'site') {
@@ -4771,12 +4843,16 @@
       opts = ['Sigma MEP','Apex Aluminium','BJ Painting','Krishna Tiles','Hetauda Plumbing','Roshan Electricals'].map(s => ({ value: s, label: 'ðŸ¤ ' + s }));
       seedSubcontractors();
       opts = (State.subcontractors || []).map(s => ({ value: s.name, label: (s.id || '') + ' - ' + s.name + ' - ' + (s.type || 'General') }));
+    } else if (t === 'staff') {
+      opts = ['Project Manager','Store Keeper','Site Engineer','QA/QC Engineer','Safety Officer','Accountant','Admin User'].map(s => ({ value:s, label:s }));
     } else if (t === 'individual') {
       opts = ['W-1041 Â· Ram Bahadur Tamang','W-1042 Â· Krishna Lama','W-1043 Â· Bishnu Magar','W-1052 Â· Dipak Rai','W-1071 Â· Suresh Sunar','W-1082 Â· Manoj Khadka','W-1094 Â· Pawan Yadav','W-1102 Â· Surya Bohara'].map(s => ({ value: s.split(' Â·')[0], label: s }));
     } else if (t === 'gang') {
       opts = ['G-01 (R. Tamang) Â· Mason gang','G-02 (K. Lama) Â· Carpentry gang','G-03 (B. Magar) Â· Mason gang','G-04 Â· Helper crew','G-05 (D. Rai) Â· Steel fixing','G-06 (S. Sunar) Â· Mason gang','MEP gang'].map(s => ({ value: s.split(' Â·')[0].trim(), label: s }));
     } else if (t === 'transfer') {
       opts = ['PRJ-017','PRJ-021','PRJ-019','PRJ-024','PRJ-013'].map(p => ({ value: p, label: 'Transfer to ' + p }));
+    } else if (t === 'custom') {
+      opts = [{ value:'Other / Custom', label:'Other / Custom' }];
     }
     picker.innerHTML = opts.map(o => `<option value="${o.value}" ${presetId === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
   };
@@ -4828,8 +4904,8 @@
       <div class="grid grid-cols-12 gap-4">
         <div class="col-span-5 card overflow-hidden">
           <div class="px-4 py-3 border-b border-stone-100" style="background:#fafaf6"><div class="font-display font-bold">Subcontractor Master</div></div>
-          <table class="data"><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Project</th><th>Phone</th></tr></thead><tbody>
-            ${State.subcontractors.map(s => `<tr data-sub-search="${esc((s.id+' '+s.name+' '+s.type+' '+s.projectId+' '+s.phone).toLowerCase())}"><td class="font-mono text-xs">${esc(s.id)}</td><td><b>${esc(s.name)}</b><div class="text-[10px] text-stone-500">${esc(s.contact || '')}</div></td><td class="text-xs">${esc(s.type || 'General')}</td><td class="text-xs">${esc(s.projectId || '')}</td><td class="text-xs">${esc(s.phone || '')}</td></tr>`).join('')}
+          <table class="data"><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Project</th><th>Phone</th><th></th></tr></thead><tbody>
+            ${State.subcontractors.map(s => `<tr data-sub-search="${esc((s.id+' '+s.name+' '+s.type+' '+s.projectId+' '+s.phone).toLowerCase())}"><td class="font-mono text-xs">${esc(s.id)}</td><td><b>${esc(s.name)}</b><div class="text-[10px] text-stone-500">${esc(s.contact || '')}</div></td><td class="text-xs">${esc(s.type || 'General')}</td><td class="text-xs">${esc(s.projectId || '')}</td><td class="text-xs">${esc(s.phone || '')}</td><td><div class="ims-row-action"><button class="ims-icon-btn" data-ims-act="edit-sub" data-id="${esc(s.id)}" title="Edit">Edit</button><button class="ims-icon-btn danger" data-ims-act="del-sub" data-id="${esc(s.id)}" title="Delete">Del</button></div></td></tr>`).join('')}
           </tbody></table>
         </div>
         <div class="col-span-7 card overflow-hidden">
@@ -4856,34 +4932,41 @@
       const btn = e.target.closest('[data-ims-act]');
       if (!btn) return;
       if (btn.dataset.imsAct === 'new-sub') return imsEditSubcontractor();
+      if (btn.dataset.imsAct === 'edit-sub') return imsEditSubcontractor(btn.dataset.id);
+      if (btn.dataset.imsAct === 'del-sub') return imsDeleteSubcontractor(btn.dataset.id);
       if (btn.dataset.imsAct === 'issue-sub') { State._imsDefaultRecipientType = 'subcontractor'; return imsEditMovement('OUT'); }
     });
     if (window.lucide) lucide.createIcons();
   }
-  function imsEditSubcontractor() {
+  function imsEditSubcontractor(id='') {
     seedSubcontractors();
     const nextNo = State.subcontractors.length + 1;
+    const rec = id ? State.subcontractors.find(s => String(s.id) === String(id)) : null;
     openModal({
-      title:'Create Subcontractor',
+      title:rec ? 'Edit Subcontractor' : 'Create Subcontractor',
       submitLabel:'Save Subcontractor',
       body:`
         <form id="imsSubForm" class="ims-form">
-          <div class="ims-form-row"><div class="ims-field"><label>Code</label><input name="id" value="SC-${String(nextNo).padStart(3,'0')}" required></div><div class="ims-field"><label>Name *</label><input name="name" required></div></div>
-          <div class="ims-form-row"><div class="ims-field"><label>Type *</label><input name="type" list="imsSubTypes" required placeholder="MEP / Facade / Labour / Tiling"><datalist id="imsSubTypes"><option>MEP</option><option>Facade</option><option>Labour</option><option>Tiling</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Finishes</option></datalist></div><div class="ims-field"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${p.id===(imsActiveProjectId() || State.activeProject)?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div></div>
-          <div class="ims-form-row"><div class="ims-field"><label>Contact Person</label><input name="contact"></div><div class="ims-field"><label>Phone</label><input name="phone"></div></div>
-          <div class="ims-field"><label>Scope / Notes</label><textarea name="scope" rows="2"></textarea></div>
+          <div class="ims-form-row"><div class="ims-field"><label>Code</label><input name="id" value="${esc(rec?.id || ('SC-' + String(nextNo).padStart(3,'0')))}" ${rec?'readonly':''} required></div><div class="ims-field"><label>Name *</label><input name="name" value="${esc(rec?.name || '')}" required></div></div>
+          <div class="ims-form-row"><div class="ims-field"><label>Type *</label><input name="type" value="${esc(rec?.type || '')}" list="imsSubTypes" required placeholder="MEP / Facade / Labour / Tiling"><datalist id="imsSubTypes"><option>MEP</option><option>Facade</option><option>Labour</option><option>Tiling</option><option>Painting</option><option>Plumbing</option><option>Electrical</option><option>Finishes</option></datalist></div><div class="ims-field"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${(rec?.projectId || imsActiveProjectId() || State.activeProject)===p.id?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div></div>
+          <div class="ims-form-row"><div class="ims-field"><label>Contact Person</label><input name="contact" value="${esc(rec?.contact || '')}"></div><div class="ims-field"><label>Phone</label><input name="phone" value="${esc(rec?.phone || '')}"></div></div>
+          <div class="ims-form-row"><div class="ims-field"><label>Status</label><select name="status">${['Active','Inactive','On Hold'].map(x=>`<option ${rec?.status===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="ims-field"><label>Scope</label><input name="scope" value="${esc(rec?.scope || '')}"></div></div>
         </form>`,
       onSubmit:() => {
         const fd = new FormData($('#imsSubForm'));
         const sub = {}; fd.forEach((v,k)=>sub[k]=v);
-        sub.status = 'Active';
-        const existing = State.subcontractors.find(s => s.id === sub.id || (s.name || '').toLowerCase() === String(sub.name || '').toLowerCase());
+        const existing = State.subcontractors.find(s => s.id === sub.id || (!rec && (s.name || '').toLowerCase() === String(sub.name || '').toLowerCase()));
         if (existing) Object.assign(existing, sub); else State.subcontractors.push(sub);
         saveState();
         toast('Subcontractor Saved', sub.name + ' - ready for stock issue', 'ok');
         renderIMS();
       }
     });
+  }
+  function imsDeleteSubcontractor(id) {
+    const rec = State.subcontractors.find(s => String(s.id) === String(id));
+    if (!rec) return;
+    openModal({ title:'Delete Subcontractor', submitLabel:'Delete', submitClass:'btn-danger', body:`<div class="text-sm">Delete subcontractor <b>${esc(rec.name)}</b>? Existing issue records will remain for audit history.</div>`, onSubmit:() => { State.subcontractors = State.subcontractors.filter(s => String(s.id) !== String(id)); saveState(); toast('Subcontractor Deleted', rec.name, 'warn'); renderIMS(); } });
   }
 
   // ----- TAB 5: TOOL TRACKER -----
@@ -4986,14 +5069,55 @@
         obj.itemId = Number(obj.itemId);
         obj.qty = Number(obj.qty);
         obj.issueDate = new Date(obj.issueDate).getTime();
+        if (!imsCanPostToolStock(obj, rec)) return false;
         if (rec) Object.assign(rec, obj);
         else { obj.id = State.imsNextId.tool++; State.toolIssues.push(obj); }
+        imsPostToolStock(obj);
         audit(rec ? 'update' : 'create', 'Tool Issue', obj.issuedTo + ' Â· qty ' + obj.qty);
         saveState();
         toast('Tool Issued','Issued to ' + obj.issuedTo,'ok');
         renderIMS();
       }
     });
+  }
+  function imsToolSourceId(t) { return 'TOOL-' + t.id; }
+  function imsToolStoreId(t) {
+    return Number(t.siteId || (State.sites || []).find(s => s.status !== 'inactive')?.id || State.sites?.[0]?.id || 1);
+  }
+  function imsCanPostToolStock(obj, previous=null) {
+    const siteId = imsToolStoreId(obj);
+    const sourceId = previous?.id ? imsToolSourceId(previous) : '';
+    const available = (State.stockMovements || [])
+      .filter(m => Number(m.itemId) === Number(obj.itemId) && Number(m.siteId || 0) === Number(siteId) && String(m.sourceId || '') !== sourceId)
+      .reduce((s,m) => s + (m.type === 'IN' ? Number(m.qty || 0) : -Number(m.qty || 0)), 0);
+    if (Number(obj.qty || 0) > available) {
+      toast('Tool Issue Blocked', `Available stock: ${fmtNum(available)}. Issue quantity: ${fmtNum(obj.qty)}.`, 'bad', 5200);
+      return false;
+    }
+    return true;
+  }
+  function imsPostToolStock(t) {
+    if (!t.id) return;
+    const sourceId = imsToolSourceId(t);
+    State.stockMovements = (State.stockMovements || []).filter(m => String(m.sourceId || '') !== sourceId);
+    const item = (State.items || []).find(i => Number(i.id) === Number(t.itemId)) || {};
+    const siteId = imsToolStoreId(t);
+    const out = {
+      id:State.imsNextId.mov++, type:'OUT', itemId:Number(t.itemId), qty:Number(t.qty || 0), date:Number(t.issueDate || Date.now()),
+      refNo:sourceId + '-ISSUE', issuedTo:t.issuedTo || '', purpose:'Tools Tracker issue', recipientType:'staff', recipientId:t.issuedTo || '',
+      siteId, unitRate:Number(item.costPrice || stockAvgRateOf(Number(t.itemId)) || 0), sourceModule:'tools-tracker', sourceId, notes:t.notes || ''
+    };
+    out.totalValue = out.qty * out.unitRate;
+    State.stockMovements.push(out);
+    if (t.status === 'RETURNED') {
+      const inn = {
+        id:State.imsNextId.mov++, type:'IN', itemId:Number(t.itemId), qty:Number(t.qty || 0), date:Number(t.returnDate || Date.now()),
+        refNo:sourceId + '-RETURN', supplier:'Tools Tracker return', siteId, unitRate:out.unitRate, sourceModule:'tools-tracker', sourceId,
+        notes:'Returned by ' + (t.issuedTo || '')
+      };
+      inn.totalValue = inn.qty * inn.unitRate;
+      State.stockMovements.push(inn);
+    }
   }
   function imsReturnTool(id) {
     const t = State.toolIssues.find(x => x.id === id);
@@ -5015,6 +5139,7 @@
         t.returnDate = new Date(fd.get('returnDate') || new Date()).getTime();
         t.returnCondition = fd.get('returnCondition') || 'Good';
         t.damageNotes = fd.get('damageNotes') || '';
+        imsPostToolStock(t);
         audit('update','Tool Return', t.issuedTo + ' Â· qty ' + t.qty + ' Â· ' + t.returnCondition);
         saveState();
         toast('Tool Returned', t.issuedTo, 'ok');
@@ -5027,7 +5152,7 @@
     if (!t) return;
     openModal({ title:'Delete Tool Record', submitLabel:'Delete', submitClass:'btn-danger',
       body:`<div class="text-sm">Delete tool issue record for <b>${t.issuedTo}</b>?</div>`,
-      onSubmit: () => { State.toolIssues = State.toolIssues.filter(x => x.id !== id); audit('delete','Tool Issue',t.issuedTo); saveState(); toast('Record Deleted','','warn'); renderIMS(); }
+      onSubmit: () => { State.toolIssues = State.toolIssues.filter(x => x.id !== id); State.stockMovements = (State.stockMovements || []).filter(m => String(m.sourceId || '') !== imsToolSourceId(t)); audit('delete','Tool Issue',t.issuedTo); saveState(); toast('Record Deleted','','warn'); renderIMS(); }
     });
   }
 
@@ -5463,6 +5588,59 @@
     audit('export','Stock CSV', rows.length + ' items');
     toast('CSV Exported', rows.length + ' items downloaded', 'ok');
   }
+  function bcReportContext() {
+    const pid = State.activeProject && State.activeProject !== 'ALL' ? State.activeProject : '';
+    const project = (State.projects || []).find(p => p.id === pid);
+    return {
+      company: (typeof COMPANY !== 'undefined' && COMPANY.name) ? COMPANY.name : 'BuildCore',
+      project: project ? `${project.id} - ${project.name}` : 'All Projects',
+      date: new Date().toLocaleDateString('en-GB')
+    };
+  }
+  function bcDownloadCSV(title, headers, rows, filename) {
+    const ctx = bcReportContext();
+    const summaryRows = [[title], ['Company', ctx.company], ['Project', ctx.project], ['Date', ctx.date], []];
+    const csv = [...summaryRows, headers, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type:'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = (filename || title.toLowerCase().replace(/[^a-z0-9]+/g,'-')) + '-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 200);
+    audit('export', title + ' Excel', rows.length + ' rows');
+    toast('Excel Exported', title + ' exported with ' + rows.length + ' rows', 'ok');
+  }
+  function bcPrintPDF(title, headers, rows, summary={}, filename='') {
+    const ctx = bcReportContext();
+    const summaryHtml = Object.entries(summary).map(([k,v]) => `<div class="box"><b>${esc(k)}</b><br>${esc(v)}</div>`).join('');
+    const html = `<html><head><title>${esc(title)}</title><style>
+      body{font-family:Arial,sans-serif;color:#1c1917;margin:22px} h1{font-size:20px;margin:0 0 6px}
+      .meta{font-size:12px;color:#57534e;margin-bottom:12px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.box{border:1px solid #ddd;padding:8px;font-size:12px}
+      table{width:100%;border-collapse:collapse;font-size:10px} th,td{border:1px solid #ddd;padding:5px;text-align:left;vertical-align:top} th{background:#f5f5f4}
+      @media print{body{margin:10mm}.no-print{display:none}}
+    </style></head><body><h1>${esc(title)}</h1><div class="meta">Company: ${esc(ctx.company)} | Project: ${esc(ctx.project)} | Date: ${esc(ctx.date)}</div>
+    ${summaryHtml ? `<div class="summary">${summaryHtml}</div>` : ''}
+    <table><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <div class="no-print" style="margin-top:14px"><button onclick="window.print()">Print / Save PDF</button></div></body></html>`;
+    const w = window.open('', '_blank');
+    w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 250);
+    audit('export', title + ' PDF', rows.length + ' rows');
+  }
+  function imsStockReportRows() {
+    const m = stockMap();
+    const headers = ['SKU','Name','Category','Unit','Available Stock','Unit Rate','Stock Value','Reorder Level','Supplier'];
+    const rows = State.items.map(it => {
+      const stock = m.get(it.id) || 0;
+      const rate = stockAvgRateOf(it.id) || Number(it.costPrice || 0);
+      return [it.sku||'', it.name, it.category||'', it.unit||'', stock, rate, stock * rate, it.reorderLevel||0, it.supplier||''];
+    });
+    return { headers, rows };
+  }
+  function imsExportPDF() {
+    const r = imsStockReportRows();
+    const totalValue = r.rows.reduce((s,row) => s + Number(row[6] || 0), 0);
+    bcPrintPDF('Material Stock Report', r.headers, r.rows, { 'Items':r.rows.length, 'Stock Value':fmtINR(totalValue), 'Report':'Available quantity x unit rate' });
+  }
 
   // =====================================================================
   //                  PLANT PRODUCTION MONITORING
@@ -5559,7 +5737,7 @@
     return { kind:/batch/i.test(kind) ? 'batching' : 'crusher', plantName };
   }
   function plantSyncDieselIssues() {
-    const dieselIssues = (State.stockMovements || []).filter(m => m.type === 'OUT' && m.recipientType === 'plant' && m.sourceModule !== 'plant-production' && plantIsDieselItem(m.itemId));
+    const dieselIssues = (State.stockMovements || []).filter(m => m.type === 'OUT' && ['plant','crusherplant','batchingplant'].includes(m.recipientType) && m.sourceModule !== 'plant-production' && plantIsDieselItem(m.itemId));
     const groups = new Map();
     dieselIssues.forEach(m => {
       const parts = plantRecipientParts(m);
@@ -5852,23 +6030,15 @@
   function plantExportCSV(label='Plant production report') {
     const headers = ['Module','Record ID','Date','Plant','Location/Structure','Operator','Shift','Working hours','Breakdown hours','Idle hours','Diesel','Electricity','Grade/Feed','Main output/feed qty','Cement/40mm','Sand/20mm','Aggregate/10mm','Admixture/Dust','Batch/Other size','Rejected/Other qty','Total production','Wastage/rejected','Production rate','Diesel per unit','Cost per unit','Remarks'];
     const rows = plantExportRows();
-    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type:'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'buildcore-plant-production-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 200);
-    audit('export', label, rows.length + ' production rows');
-    toast('Excel CSV Exported', rows.length + ' plant production rows downloaded', 'ok');
+    bcDownloadCSV(label, headers, rows, 'buildcore-plant-production');
   }
   function plantExportPDF() {
     const rows = plantExportRows();
     const summary = plantSummary(State.crusherRecords || [], 'totalProduction');
     const bp = plantSummary(State.batchingRecords || [], 'concreteQty');
-    const html = `<html><head><title>BuildCore Plant Production Report</title><style>body{font-family:Arial,sans-serif;color:#1c1917}h1{font-size:20px}table{width:100%;border-collapse:collapse;font-size:10px}th,td{border:1px solid #ddd;padding:5px;text-align:left}th{background:#f5f5f4}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.box{border:1px solid #ddd;padding:8px}</style></head><body><h1>BuildCore Plant Production Report</h1><div>Project: ${esc(plantProjectName())} | Date range: All records | Printed: ${new Date().toLocaleString()}</div><div class="summary"><div class="box"><b>Crusher month</b><br>${fmtNum(summary.month)}</div><div class="box"><b>Batching month</b><br>${fmtNum(bp.month)} m3</div><div class="box"><b>Diesel</b><br>${fmtNum(summary.diesel + bp.diesel)} L</div><div class="box"><b>Cost</b><br>${fmtINR(summary.cost + bp.cost)}</div></div><table><thead><tr>${['Module','ID','Date','Plant','Location','Output','Diesel','Rate','Cost/unit','Remarks'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${esc(r[3])}</td><td>${esc(r[4])}</td><td>${r[20]}</td><td>${r[10]}</td><td>${fmtNum(r[22])}</td><td>${fmtINR(r[24])}</td><td>${esc(r[25])}</td></tr>`).join('')}</tbody></table></body></html>`;
-    const w = window.open('', '_blank');
-    w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 250);
-    audit('export','Plant Production PDF', rows.length + ' rows');
+    const headers = ['Module','ID','Date','Plant','Location','Output','Diesel','Rate','Cost/unit','Remarks'];
+    const data = rows.map(r => [r[0],r[1],r[2],r[3],r[4],r[20],r[10],fmtNum(r[22]),fmtINR(r[24]),r[25]]);
+    bcPrintPDF('Plant Production Report', headers, data, { 'Crusher Month':fmtNum(summary.month), 'Batching Month':fmtNum(bp.month) + ' m3', 'Diesel':fmtNum(summary.diesel + bp.diesel) + ' L', 'Cost':fmtINR(summary.cost + bp.cost) });
   }
   window.plantEditCrusher = plantEditCrusher;
   window.plantEditBatching = plantEditBatching;
@@ -5962,6 +6132,7 @@
     document.querySelectorAll('#view-assets [data-asset-act]').forEach(btn => btn.onclick = () => {
       if (btn.dataset.assetAct === 'new') return assetEdit();
       if (btn.dataset.assetAct === 'export') return assetExportCSV();
+      if (btn.dataset.assetAct === 'export-pdf') return assetExportPDF();
       if (btn.dataset.assetAct === 'scan') return assetScanModal();
       if (btn.dataset.assetAct === 'label') return assetPrintLabel(State.assetSelectedId || State.assets[0]?.id);
     });
@@ -6125,6 +6296,27 @@
     const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'buildcore-assets-' + new Date().toISOString().slice(0,10) + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 200);
     audit('export','Asset Register','CSV - ' + State.assets.length + ' assets'); toast('Asset Report Exported', State.assets.length + ' assets exported', 'ok');
+  }
+  function assetExportPDF() {
+    seedAssetData();
+    const headers = ['Asset ID','Name','Category','Status','Location','Project','Assigned To','Book Value'];
+    const rows = State.assets.map(a => [a.id, a.name, a.category, a.status, a.location, a.projectId, a.assignedTo, fmtINR(Math.round(assetBookValue(a)))]);
+    const totalBook = State.assets.reduce((s,a) => s + Math.round(assetBookValue(a)), 0);
+    bcPrintPDF('Asset Register Report', headers, rows, { 'Assets':State.assets.length, 'Book Value':fmtINR(totalBook), 'Report':'Asset records' });
+  }
+  function subcontractorReportRows() {
+    seedSubcontractors();
+    const headers = ['Subcontractor','Type / Scope','Project','Contact','Phone','Status'];
+    const rows = (State.subcontractors || []).map(s => [s.name, s.type || '', s.projectId || '', s.contact || '', s.phone || '', s.status || 'Active']);
+    return { headers, rows };
+  }
+  function subcontractorExportCSV() {
+    const r = subcontractorReportRows();
+    bcDownloadCSV('Subcontractor Records Report', r.headers, r.rows, 'buildcore-subcontractors');
+  }
+  function subcontractorExportPDF() {
+    const r = subcontractorReportRows();
+    bcPrintPDF('Subcontractor Records Report', r.headers, r.rows, { 'Subcontractors':r.rows.length, 'Report':'Editable subcontractor records' });
   }
 
   // =====================================================================
@@ -6334,6 +6526,25 @@
   function eqMonthlyMaterialIssues(equipmentId, monthKey) {
     return (State.stockMovements || []).filter(m => m.type === 'OUT' && m.recipientType === 'equipment' && m.recipientId === equipmentId && new Date(m.date || Date.now()).toISOString().slice(0,7) === monthKey);
   }
+  function eqSyncMaterialIssueLogs() {
+    State.equipLogs = Array.isArray(State.equipLogs) ? State.equipLogs : [];
+    (State.stockMovements || []).filter(m => m.type === 'OUT' && m.recipientType === 'equipment').forEach(m => {
+      const sourceId = 'EQ-MAT-' + m.id;
+      if (State.equipLogs.some(l => l.sourceId === sourceId)) return;
+      const item = (State.items || []).find(i => Number(i.id) === Number(m.itemId)) || {};
+      const isDiesel = /diesel|fuel/i.test((item.name || '') + ' ' + (item.category || ''));
+      State.equipLogs.unshift({
+        id:'LG' + String(State.eqNextId?.log || State.equipLogs.length + 1).padStart(4,'0'),
+        equipmentId:m.recipientId, siteId:m.projectId || m.chargeProject || State.activeProject || '',
+        date:new Date(m.date || Date.now()).toISOString().slice(0,10), operatorName:'', supervisorName:'',
+        startTime:'', endTime:'', workingHours:0, idleHours:0, breakdownHours:0, meterStart:0, meterEnd:0,
+        diesel:isDiesel ? Number(m.qty || 0) : 0, grease:0, hydOil:0, outputQty:0, outputUnit:item.unit || '',
+        remarks:'Auto-created from store issue: ' + (m.refNo || '') + ' - ' + (item.name || ''),
+        sourceModule:'stock-issue', sourceId, materialIssueValue:imsMovementValue(m)
+      });
+      if (State.eqNextId) State.eqNextId.log = Number(State.eqNextId.log || 1) + 1;
+    });
+  }
   function eqLogDeductions(eq, log) {
     const monthKey = String(log.date || new Date().toISOString()).slice(0,7);
     const monthHrs = (State.equipLogs || [])
@@ -6383,6 +6594,7 @@
   // ----- Main render -----
   function renderEquipmentView() {
     seedEqData();
+    eqSyncMaterialIssueLogs();
     renderEqKPIs();
     document.querySelectorAll('#view-equipment .ims-tab').forEach(btn => {
       btn.onclick = () => {
@@ -6395,6 +6607,7 @@
       btn.onclick = () => {
         const act = btn.dataset.eq;
         if (act === 'export-csv') return eqExportCSV();
+        if (act === 'export-pdf') return eqExportPDF();
         if (act === 'qr-scan') return toast('QR Scanner', 'Scan an equipment QR tag to open its logsheet', 'info');
         if (act === 'quick-log') {
           // Switch to logsheets tab
@@ -7260,6 +7473,17 @@
     setTimeout(() => URL.revokeObjectURL(url), 200);
     audit('export','Equipment CSV', rows.length + ' machines');
     toast('CSV Exported', rows.length + ' equipment records','ok');
+  }
+  function eqExportPDF() {
+    seedEqData();
+    const headers = ['Equipment ID','Type','Brand','Model','Status','Site','Operator','Hours','Diesel','Cost'];
+    const rows = State.equipment.map(e => {
+      const st = eqStats(e);
+      return [e.id, e.name, e.brand, e.model, e.status, eqSiteName(e.siteId), opName(e.operatorId), fmtNum(st.hrs), fmtNum(st.diesel) + ' L', fmtINR(Number(e.purchaseCost || 0))];
+    });
+    const totalDiesel = State.equipLogs.reduce((s,l) => s + Number(l.diesel || 0), 0);
+    const totalHours = State.equipLogs.reduce((s,l) => s + Number(l.workingHours || 0), 0);
+    bcPrintPDF('Equipment Logsheet Report', headers, rows, { 'Equipment':State.equipment.length, 'Working Hours':fmtNum(totalHours), 'Diesel':fmtNum(totalDiesel) + ' L' });
   }
   function eqExportUtilCSV(rows) {
     const headers = ['ID','Type','Brand','Model','Op Hours','Logs','Avg Hrs/Day','Utilization %','Diesel L','L/hr','Maint Cost NPR','Cost/hr NPR'];
@@ -14623,6 +14847,7 @@ Available Actions:
     if (view === 'aidocs')    { setTimeout(renderAIDocsView, 30); }
     if (view === 'projectsites') { setTimeout(renderProjectSitesView, 30); }
     if (view === 'dashboard') { setTimeout(renderLauncher, 30); }
+    setTimeout(() => normalizeUIWording(), 90);
     audit('view', 'Module', view);
   }
   $$('.nav-item').forEach(item => item.addEventListener('click', () => navTo(item.dataset.view)));
@@ -17006,6 +17231,7 @@ Available Actions:
   if (!STARTER_MODE) audit('view','Session','App opened Â· ' + navigator.userAgent.split(')')[0].split('(')[1] || 'browser');
 
   // Welcome toast
+  setTimeout(() => normalizeUIWording(), 120);
   setTimeout(() => toast(_hadStored ? 'Session Restored' : 'BuildCore Ready', _hadStored ? 'Previous data restored from local storage Â· Cmd/Ctrl+K to navigate' : 'Cmd/Ctrl + K to jump anywhere Â· click cards & tables for detail', 'info', 4500), 600);
 </script>
 
