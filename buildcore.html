@@ -502,6 +502,12 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="plantproduction">
         <i data-lucide="factory" class="nav-icon w-4 h-4 text-white/60"></i>Plant Production
       </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="crusherplant">
+        <i data-lucide="factory" class="nav-icon w-4 h-4 text-white/60"></i>Crusher Plant
+      </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="batchingplant">
+        <i data-lucide="building-2" class="nav-icon w-4 h-4 text-white/60"></i>Batching Plant
+      </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="quality">
         <i data-lucide="badge-check" class="nav-icon w-4 h-4 text-white/60"></i>Quality & HSE
       </a>
@@ -4605,6 +4611,7 @@
               <div class="ims-form-row-3">
                 <div class="ims-field"><label>Issue To Type *</label><select name="recipientType" id="imsRecipientType" required onchange="imsUpdateRecipientPicker()">
                   <option value="equipment" ${m.recipientType==='equipment'?'selected':''}>Equipment (fuel, lubricants)</option>
+                  <option value="plant" ${m.recipientType==='plant'?'selected':''}>Crusher / Batching Plant</option>
                   <option value="client" ${m.recipientType==='client'?'selected':''}>Client chargeable material</option>
                   <option value="site" ${m.recipientType==='site'?'selected':''}>Site / Project Activity</option>
                   <option value="subcontractor" ${m.recipientType==='subcontractor'?'selected':''}>ðŸ¤ Subcontractor</option>
@@ -4659,6 +4666,7 @@
         if (effType === 'OUT' && !obj.issuedTo && obj.recipientType && obj.recipientId) {
           const labels = {
             equipment: (State.equipment?.find(e => e.id === obj.recipientId) || {}).name + ' (' + obj.recipientId + ')',
+            plant:     'Plant: ' + obj.recipientId,
             site:      'Site: ' + obj.recipientId,
             subcontractor: 'Subcontractor: ' + obj.recipientId,
             individual: 'Worker: ' + obj.recipientId,
@@ -4674,6 +4682,10 @@
           const original = id && Number(m.siteId || 0) === Number(obj.siteId || 0) ? Number(m.qty || 0) : 0;
           const effective = currentStock + original;
           if (obj.qty > effective) {
+            if (obj.recipientType === 'plant') {
+              toast('Production cannot be saved because required material stock is insufficient.', `Available: ${effective} · Issuing: ${obj.qty}`, 'bad', 5200);
+              return false;
+            }
             if (!confirm(`Stock will go negative.\nAvailable: ${effective}\nIssuing: ${obj.qty}\n\nProceed anyway?`)) return false;
           }
           const fifo = imsFifoIssue(obj.itemId, obj.qty, obj.date || Date.now(), id, obj.siteId);
@@ -4704,6 +4716,7 @@
           State.stockMovements.push(obj);
           audit('create', 'Movement Â· ' + obj.refNo, effType + ' Â· ' + obj.qty + ' to ' + (obj.issuedTo||'site'));
         }
+        if (effType === 'OUT' && obj.recipientType === 'plant') plantSyncDieselIssues();
         saveState();
         if (effType === 'OUT' && obj.clientBillable && obj.submitClientApproval === 'yes') {
           submitStoreIssueToClient(obj, true);
@@ -4733,6 +4746,16 @@
     let opts = [];
     if (t === 'equipment') {
       opts = (State.equipment || []).map(e => ({ value: e.id, label: e.id + ' Â· ' + e.name + ' Â· ' + e.brand + ' ' + e.model }));
+    } else if (t === 'plant') {
+      try { plantEnsureDefaults?.(); } catch(e) {}
+      const plants = [
+        ...(State.crusherRecords || []).map(r => ({ type:'Crusher', name:r.plantName, location:r.location })),
+        ...(State.batchingRecords || []).map(r => ({ type:'Batching', name:r.plantName, location:r.location || r.pourLocation }))
+      ];
+      const seen = new Set();
+      opts = plants.filter(p => p.name && !seen.has(p.type + '|' + p.name) && seen.add(p.type + '|' + p.name))
+        .map(p => ({ value:p.type + '|' + p.name, label:p.type + ' Plant - ' + p.name + (p.location ? ' - ' + p.location : '') }));
+      if (!opts.length) opts = [{ value:'Crusher|Crusher Plant CP-01', label:'Crusher Plant - Crusher Plant CP-01' }, { value:'Batching|Batching Plant BP-01', label:'Batching Plant - Batching Plant BP-01' }];
     } else if (t === 'client') {
       opts = (State.projects || []).map(p => ({ value:p.client || p.id, label:(p.client || 'Client') + ' - ' + p.id + ' - ' + p.name }));
     } else if (t === 'site') {
@@ -5516,12 +5539,64 @@
       State.plantNextId.batching = 2;
       plantPostProduction('batching', rec, true);
     }
+    plantSyncDieselIssues();
     saveState();
   }
   function plantRate(a,b) { return Number(b || 0) > 0 ? Number(a || 0) / Number(b || 0) : 0; }
   function plantProjectName(projectId) {
     const p = (State.projects || []).find(x => x.id === (projectId || State.activeProject));
     return p ? `${p.id} - ${p.name}` : (projectId || State.activeProject || 'All projects');
+  }
+  function plantIsDieselItem(itemId) {
+    const it = (State.items || []).find(i => Number(i.id) === Number(itemId)) || {};
+    return /diesel|fuel/i.test((it.name || '') + ' ' + (it.category || '') + ' ' + (it.sku || ''));
+  }
+  function plantRecipientParts(m) {
+    const raw = String(m.recipientId || m.issuedTo || '');
+    const parts = raw.includes('|') ? raw.split('|') : [];
+    const kind = parts[0] || (/batch/i.test(raw) ? 'Batching' : 'Crusher');
+    const plantName = parts.slice(1).join('|') || raw.replace(/^Plant:\s*/i,'') || (kind === 'Batching' ? 'Batching Plant BP-01' : 'Crusher Plant CP-01');
+    return { kind:/batch/i.test(kind) ? 'batching' : 'crusher', plantName };
+  }
+  function plantSyncDieselIssues() {
+    const dieselIssues = (State.stockMovements || []).filter(m => m.type === 'OUT' && m.recipientType === 'plant' && m.sourceModule !== 'plant-production' && plantIsDieselItem(m.itemId));
+    const groups = new Map();
+    dieselIssues.forEach(m => {
+      const parts = plantRecipientParts(m);
+      const date = new Date(m.date || Date.now()).toISOString().slice(0,10);
+      const key = parts.kind + '|' + parts.plantName + '|' + date;
+      const g = groups.get(key) || { ...parts, date, qty:0, itemId:m.itemId, projectId:m.projectId || m.chargeProject || State.activeProject || 'PRJ-017' };
+      g.qty += Number(m.qty || 0);
+      groups.set(key, g);
+    });
+    groups.forEach(g => {
+      const list = g.kind === 'crusher' ? State.crusherRecords : State.batchingRecords;
+      let rec = list.find(r => r.date === g.date && String(r.plantName || '').toLowerCase() === g.plantName.toLowerCase());
+      if (!rec && g.kind === 'crusher') {
+        rec = { id:'CRP-' + String(State.plantNextId.crusher++).padStart(4,'0'), date:g.date, plantName:g.plantName, location:'', operatorName:'', shift:'Day', workingHours:0, breakdownHours:0, idleHours:0, dieselConsumed:0, electricityConsumed:0, feedMaterialType:'', feedMaterialItemId:0, feedQty:0, dieselItemId:g.itemId, agg40Qty:0, agg40ItemId:0, agg20Qty:0, agg20ItemId:0, agg10Qty:0, agg10ItemId:0, dustQty:0, dustItemId:0, otherSize:'', otherQty:0, otherItemId:0, wastageQty:0, directCost:0, remarks:'Auto-created from diesel stock issue', projectId:g.projectId };
+        State.crusherRecords.push(rec);
+      }
+      if (!rec && g.kind === 'batching') {
+        rec = { id:'BPL-' + String(State.plantNextId.batching++).padStart(4,'0'), date:g.date, plantName:g.plantName, location:'', operatorName:'', concreteGrade:'', pourLocation:'', shift:'Day', workingHours:0, breakdownHours:0, idleHours:0, concreteQty:0, cementQty:0, cementItemId:0, sandQty:0, sandItemId:0, aggregateQty:0, aggregateItemId:0, admixtureQty:0, admixtureItemId:0, waterQty:0, dieselConsumed:0, dieselItemId:g.itemId, electricityConsumed:0, equipmentUsed:'', batchNo:'', rejectedQty:0, directCost:0, remarks:'Auto-created from diesel stock issue', projectId:g.projectId };
+        State.batchingRecords.push(rec);
+      }
+      if (!rec) return;
+      rec.dieselIssuedQty = g.qty;
+      rec.dieselItemId = rec.dieselItemId || g.itemId;
+      rec.projectId = rec.projectId || g.projectId;
+      if (Number(rec.dieselConsumed || 0) < g.qty) rec.dieselConsumed = g.qty;
+      if (g.kind === 'crusher') {
+        rec.totalProduction = plantCrusherTotal(rec);
+        rec.productionRate = plantRate(rec.totalProduction, rec.workingHours);
+        rec.dieselPerUnit = plantRate(rec.dieselConsumed, rec.totalProduction);
+        rec.productionCostPerUnit = plantCrusherCostPerUnit(rec);
+      } else {
+        rec.productionRate = plantRate(rec.concreteQty, rec.workingHours);
+        rec.materialPerM3 = plantBatchingMaterialPerM3(rec);
+        rec.productionCostPerM3 = plantBatchingCostPerM3(rec);
+      }
+      plantPostProduction(g.kind, rec, true);
+    });
   }
   function plantCrusherTotal(r) { return ['agg40Qty','agg20Qty','agg10Qty','dustQty','otherQty'].reduce((s,k) => s + Number(r[k] || 0), 0); }
   function plantCrusherCostPerUnit(r) {
@@ -5566,7 +5641,7 @@
     const addOut = (itemId, qty, label) => { if (Number(qty || 0) > 0 && itemId) { const it = State.items.find(i => Number(i.id) === Number(itemId)) || {}; moves.push(plantMovement('OUT', itemId, qty, rec, label, it.costPrice || 0)); } };
     if (kind === 'crusher') {
       addOut(rec.feedMaterialItemId, rec.feedQty, 'Feed');
-      addOut(rec.dieselItemId, rec.dieselConsumed, 'Diesel');
+      addOut(rec.dieselItemId, Math.max(0, Number(rec.dieselConsumed || 0) - Number(rec.dieselIssuedQty || 0)), 'Diesel');
       addIn(rec.agg40ItemId, rec.agg40Qty, '40mm');
       addIn(rec.agg20ItemId, rec.agg20Qty, '20mm');
       addIn(rec.agg10ItemId, rec.agg10Qty, '10mm');
@@ -5577,7 +5652,7 @@
       addOut(rec.sandItemId, rec.sandQty, 'Sand');
       addOut(rec.aggregateItemId, rec.aggregateQty, 'Aggregate');
       addOut(rec.admixtureItemId, rec.admixtureQty, 'Admixture');
-      addOut(rec.dieselItemId, rec.dieselConsumed, 'Diesel');
+      addOut(rec.dieselItemId, Math.max(0, Number(rec.dieselConsumed || 0) - Number(rec.dieselIssuedQty || 0)), 'Diesel');
     }
     return moves;
   }
@@ -5605,6 +5680,7 @@
   }
   function renderPlantProductionView() {
     plantEnsureDefaults();
+    plantSyncDieselIssues();
     renderPlantKPIs();
     document.querySelectorAll('#view-plantproduction .ims-tab').forEach(btn => {
       btn.onclick = () => { State.plantCurrentTab = btn.dataset.planttab; renderPlantProductionView(); };
@@ -5768,6 +5844,7 @@
     </div>${plantRecordTable('crusher')}<div class="mt-5">${plantRecordTable('batching')}</div>`;
   }
   function plantExportRows() {
+    plantSyncDieselIssues();
     const crusher = (State.crusherRecords || []).map(r => ['Crusher', r.id, r.date, r.plantName, r.location, r.operatorName, r.shift, r.workingHours, r.breakdownHours, r.idleHours, r.dieselConsumed, r.electricityConsumed, r.feedMaterialType, r.feedQty, r.agg40Qty, r.agg20Qty, r.agg10Qty, r.dustQty, r.otherSize, r.otherQty, r.totalProduction, r.wastageQty, r.productionRate, r.dieselPerUnit, r.productionCostPerUnit, r.remarks]);
     const batching = (State.batchingRecords || []).map(r => ['Batching', r.id, r.date, r.plantName, r.location || r.pourLocation, r.operatorName, r.shift, r.workingHours, r.breakdownHours, r.idleHours, r.dieselConsumed, r.electricityConsumed, r.concreteGrade, r.concreteQty, r.cementQty, r.sandQty, r.aggregateQty, r.admixtureQty, r.batchNo, r.rejectedQty, r.concreteQty, r.rejectedQty, r.productionRate, plantRate(r.dieselConsumed, r.concreteQty), r.productionCostPerM3, r.remarks]);
     return crusher.concat(batching);
@@ -12219,6 +12296,7 @@
   }
 
   function canAccessModule(view) {
+    if (view === 'crusherplant' || view === 'batchingplant') view = 'plantproduction';
     const modules = State.session?.user?.modules;
     if (!modules || modules === 'ALL') return true;
     return Array.isArray(modules) && modules.includes(view);
@@ -12235,6 +12313,8 @@
       { view:'dpr',       icon:'clipboard-list', title:'DPR',           sub:'Progress, weather, activity', color:'#E8742C' },
       { view:'materials', icon:'package',        title:'Materials',     sub:'Stock, GRN, issue, POs', color:'#15803D' },
       { view:'equipment', icon:'truck',          title:'Equipment',     sub:'Plant, logsheets, maintenance', color:'#B45309' },
+      { view:'crusherplant', icon:'factory',     title:'Crusher Plant', sub:'Aggregate production and diesel', color:'#B45309' },
+      { view:'batchingplant', icon:'building-2', title:'Batching Plant', sub:'Concrete output and consumption', color:'#1E3A4C' },
       { view:'quality',   icon:'badge-check',    title:'Quality & HSE', sub:'NCRs, tests, permits, safety', color:'#0EA5E9' }
     ]},
     { label:'Commercial', tiles:[
@@ -12261,6 +12341,9 @@
   function launcherTileCount(view) {
     if (view === 'materials') return State.items?.length || 0;
     if (view === 'equipment') return State.equipment?.length || 0;
+    if (view === 'plantproduction') return (State.crusherRecords?.length || 0) + (State.batchingRecords?.length || 0);
+    if (view === 'crusherplant') return State.crusherRecords?.length || 0;
+    if (view === 'batchingplant') return State.batchingRecords?.length || 0;
     if (view === 'assets')    { seedAssetData(); return State.assets?.length || 0; }
     if (view === 'events')    return State.events?.length || 0;
     if (view === 'todos')     return State.todos?.filter(t => t.status !== 'completed').length || 0;
@@ -12393,6 +12476,8 @@
       { view:'budgetcontrol', icon:'circle-dollar-sign', label:'Budget Control', value:(State.bccBoq || []).length, detail:'BOQ profitability and milestones', color:'#1E3A4C' },
       { view:'materials', icon:'package', label:'Materials', value:(State.items || []).length, detail:'catalogued inventory items', color:'#15803D' },
       { view:'plantproduction', icon:'factory', label:'Plant Production', value:(State.crusherRecords || []).length + (State.batchingRecords || []).length, detail:'crusher output and concrete production', color:'#B45309' },
+      { view:'crusherplant', icon:'factory', label:'Crusher Plant', value:(State.crusherRecords || []).length, detail:'aggregate output, feed, diesel, downtime', color:'#B45309' },
+      { view:'batchingplant', icon:'building-2', label:'Batching Plant', value:(State.batchingRecords || []).length, detail:'concrete output and material consumption', color:'#1E3A4C' },
       { view:'assets', icon:'qr-code', label:'Assets', value:(State.assets || []).length, detail:'asset lifecycle and QR tracking', color:'#1E3A4C' },
       { view:'aidocs', icon:'brain-circuit', label:'AI Docs', value:(State.aiDocAnswerHistory || []).length, detail:'answers with source references', color:'#1E3A4C' },
       { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs.length, detail:'PO approval, receipt, vendor detail', color:'#7C3AED' },
@@ -12556,6 +12641,8 @@
           { view:'materials', icon:'package', title:'Materials', value:fmtINR(projectStockValue), sub:'Stock, GRN, issue, transfer', color:'#15803D' },
           { view:'equipment', icon:'truck', title:'Equipment', value:project.equipment, sub:'Plant allocation and logsheets', color:'#B45309' },
           { view:'plantproduction', icon:'factory', title:'Plant Production', value:(State.crusherRecords || []).filter(r => r.projectId === project.id).length + (State.batchingRecords || []).filter(r => r.projectId === project.id).length, sub:'Crusher, batching, stock links', color:'#B45309' },
+          { view:'crusherplant', icon:'factory', title:'Crusher Plant', value:(State.crusherRecords || []).filter(r => r.projectId === project.id).length, sub:'Daily aggregate production', color:'#B45309' },
+          { view:'batchingplant', icon:'building-2', title:'Batching Plant', value:(State.batchingRecords || []).filter(r => r.projectId === project.id).length, sub:'Concrete and material consumption', color:'#1E3A4C' },
           { view:'quality', icon:'badge-check', title:'Quality & HSE', value:openNcrs, sub:'NCRs, inspections, permits', color:openNcrs ? '#C0383B' : '#15803D' },
           { view:'budgetcontrol', icon:'circle-dollar-sign', title:'Cost Control', value:project.margin.toFixed(1) + '%', sub:'Budget, EAC, milestones', color:project.margin < 3 ? '#C0383B' : '#1E3A4C' },
           { view:'billing', icon:'receipt', title:'Billing', value:projectBills.length, sub:'RA bills and certification', color:'#15803D' },
@@ -14497,12 +14584,15 @@ Available Actions:
 
   // -------- NAVIGATION --------
   function navTo(view) {
+    const requestedView = view;
+    if (view === 'crusherplant') { State.plantCurrentTab = 'crusher'; view = 'plantproduction'; }
+    if (view === 'batchingplant') { State.plantCurrentTab = 'batching'; view = 'plantproduction'; }
     if (!canAccessModule(view)) {
       const fallback = canAccessModule('clientportal') ? 'clientportal' : 'dashboard';
       toast('Access Restricted', 'This role can open only assigned project modules', 'warn');
       view = fallback;
     }
-    $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === view));
+    $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === requestedView || (requestedView === view && n.dataset.view === view)));
     $$('.view').forEach(v => v.classList.remove('active'));
     const target = $('#view-' + view);
     if (target) { target.classList.add('active'); State.currentView = view; }
@@ -14548,7 +14638,7 @@ Available Actions:
 
   // -------- COMMAND PALETTE (Cmd+K) --------
   const palItems = [
-    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','workforce','materials','equipment','plantproduction','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings','control'].map(v => ({label: v === 'plantproduction' ? 'Plant Production' : v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
+    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','workforce','materials','equipment','plantproduction','crusherplant','batchingplant','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings','control'].map(v => ({label: v === 'plantproduction' ? 'Plant Production' : v === 'crusherplant' ? 'Crusher Plant' : v === 'batchingplant' ? 'Batching Plant' : v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
     ...State.projects.map(p => ({ label: p.name, sub: p.id + ' Â· ' + p.client, kind:'Project', action: () => { navTo('projects'); setTimeout(() => openProjectDetail(p.id), 100); }})),
     { label:'New Project', kind:'Action', action: () => actNewProject() },
     { label:'New Tender', kind:'Action', action: () => actNewTender() },
