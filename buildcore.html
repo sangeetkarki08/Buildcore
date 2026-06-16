@@ -496,6 +496,9 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dpr">
         <i data-lucide="clipboard-list" class="nav-icon w-4 h-4 text-white/60"></i>DPR
       </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="hrms">
+        <i data-lucide="users-round" class="nav-icon w-4 h-4 text-white/60"></i>HRMS
+      </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="materials">
         <i data-lucide="package" class="nav-icon w-4 h-4 text-white/60"></i>Materials
       </a>
@@ -740,6 +743,23 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section id="view-hrms" class="view">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <div class="stamp mb-3"><i data-lucide="users-round" class="w-3 h-3"></i>HUMAN RESOURCE MANAGEMENT</div>
+            <h1 class="font-display font-black text-3xl title-mark">HRMS</h1>
+            <p class="text-sm text-stone-500 mt-3">Project manpower, attendance, payroll, leave, documents, training, safety and subcontractor records</p>
+          </div>
+          <div class="flex gap-2 flex-wrap justify-end">
+            <button class="btn btn-ghost" data-hrms-act="import"><i data-lucide="upload" class="w-3.5 h-3.5"></i>Import Excel</button>
+            <button class="btn btn-ghost" data-hrms-act="export"><i data-lucide="download" class="w-3.5 h-3.5"></i>Excel</button>
+            <button class="btn btn-ghost" data-hrms-act="print"><i data-lucide="printer" class="w-3.5 h-3.5"></i>PDF</button>
+            <button class="btn btn-amber" data-hrms-act="new-manpower"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Add Manpower</button>
+          </div>
+        </div>
+        <div id="hrmsRoot"></div>
       </section>
 
       <!-- ============================================= -->
@@ -3102,6 +3122,20 @@
     vos: [],       // variation orders
     risks: [],     // risk register
     photos: [],    // photo metadata
+    manpowerMaster: [],
+    manpowerDeployment: [],
+    manpowerAttendance: [],
+    manpowerPayroll: [],
+    manpowerLeave: [],
+    manpowerDocuments: [],
+    manpowerTraining: [],
+    manpowerSafety: [],
+    subcontractorManpower: [],
+    manpowerAdvanceDeduction: [],
+    manpowerTransferHistory: [],
+    hrmsCurrentTab: 'dashboard',
+    hrmsFilters: { q:'', project:'ALL', department:'ALL', employment:'ALL', skill:'ALL', status:'ALL' },
+    hrmsNextId: { manpower:1, deploy:1, attendance:1, payroll:1, leave:1, doc:1, training:1, safety:1, sub:1, advance:1, transfer:1 },
     projectPackages: [],
     projectCalendars: [],
     wbsActivities: [],
@@ -3233,6 +3267,20 @@
     State.vos = [];
     State.risks = [];
     State.photos = [];
+    State.manpowerMaster = [];
+    State.manpowerDeployment = [];
+    State.manpowerAttendance = [];
+    State.manpowerPayroll = [];
+    State.manpowerLeave = [];
+    State.manpowerDocuments = [];
+    State.manpowerTraining = [];
+    State.manpowerSafety = [];
+    State.subcontractorManpower = [];
+    State.manpowerAdvanceDeduction = [];
+    State.manpowerTransferHistory = [];
+    State.hrmsCurrentTab = 'dashboard';
+    State.hrmsFilters = { q:'', project:'ALL', department:'ALL', employment:'ALL', skill:'ALL', status:'ALL' };
+    State.hrmsNextId = { manpower:1, deploy:1, attendance:1, payroll:1, leave:1, doc:1, training:1, safety:1, sub:1, advance:1, transfer:1 };
     State.projectPackages = [];
     State.projectCalendars = [];
     State.wbsActivities = [];
@@ -3342,6 +3390,13 @@
       labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
       labNextId: State.labNextId, labTestNextId: State.labTestNextId, clientSubmissionNextId: State.clientSubmissionNextId,
       documents: State.documents, docCurrentTab: State.docCurrentTab,
+      manpowerMaster: State.manpowerMaster, manpowerDeployment: State.manpowerDeployment,
+      manpowerAttendance: State.manpowerAttendance, manpowerPayroll: State.manpowerPayroll,
+      manpowerLeave: State.manpowerLeave, manpowerDocuments: State.manpowerDocuments,
+      manpowerTraining: State.manpowerTraining, manpowerSafety: State.manpowerSafety,
+      subcontractorManpower: State.subcontractorManpower, manpowerAdvanceDeduction: State.manpowerAdvanceDeduction,
+      manpowerTransferHistory: State.manpowerTransferHistory, hrmsCurrentTab: State.hrmsCurrentTab,
+      hrmsFilters: State.hrmsFilters, hrmsNextId: State.hrmsNextId,
       aiDocSourceMode: State.aiDocSourceMode, aiDocSelectedProject: State.aiDocSelectedProject,
       aiDocSelectedDocs: State.aiDocSelectedDocs, aiDocCategoryFilter: State.aiDocCategoryFilter,
       aiDocStatusFilter: State.aiDocStatusFilter, aiDocQuestion: State.aiDocQuestion,
@@ -3397,7 +3452,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge â€” preserve seeded data structure
-      ['activeProject','currentView','session','projects','tenders','materials','boq','projectPackages','projectCalendars','wbsActivities','projectLocations','projectMilestones','approvalHistory','measurements','costRecords','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','crusherRecords','batchingRecords','plantCurrentTab','plantNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','boq','projectPackages','projectCalendars','wbsActivities','projectLocations','projectMilestones','approvalHistory','measurements','costRecords','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','crusherRecords','batchingRecords','plantCurrentTab','plantNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','manpowerMaster','manpowerDeployment','manpowerAttendance','manpowerPayroll','manpowerLeave','manpowerDocuments','manpowerTraining','manpowerSafety','subcontractorManpower','manpowerAdvanceDeduction','manpowerTransferHistory','hrmsCurrentTab','hrmsFilters','hrmsNextId','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage Â· saved', new Date(snap.savedAt).toLocaleString());
@@ -3430,6 +3485,13 @@
         labReports:State.labReports, labTestTypes:State.labTestTypes, clientSubmissions:State.clientSubmissions,
         labNextId:State.labNextId, labTestNextId:State.labTestNextId, clientSubmissionNextId:State.clientSubmissionNextId,
         documents:State.documents, docCurrentTab:State.docCurrentTab,
+        manpowerMaster:State.manpowerMaster, manpowerDeployment:State.manpowerDeployment,
+        manpowerAttendance:State.manpowerAttendance, manpowerPayroll:State.manpowerPayroll,
+        manpowerLeave:State.manpowerLeave, manpowerDocuments:State.manpowerDocuments,
+        manpowerTraining:State.manpowerTraining, manpowerSafety:State.manpowerSafety,
+        subcontractorManpower:State.subcontractorManpower, manpowerAdvanceDeduction:State.manpowerAdvanceDeduction,
+        manpowerTransferHistory:State.manpowerTransferHistory, hrmsCurrentTab:State.hrmsCurrentTab,
+        hrmsFilters:State.hrmsFilters, hrmsNextId:State.hrmsNextId,
         aiDocSourceMode:State.aiDocSourceMode, aiDocSelectedProject:State.aiDocSelectedProject,
         aiDocSelectedDocs:State.aiDocSelectedDocs, aiDocCategoryFilter:State.aiDocCategoryFilter,
         aiDocStatusFilter:State.aiDocStatusFilter, aiDocQuestion:State.aiDocQuestion,
@@ -12535,6 +12597,7 @@
     ]},
     { label:'Build', tiles:[
       { view:'dpr',       icon:'clipboard-list', title:'DPR',           sub:'Progress, weather, activity', color:'#E8742C' },
+      { view:'hrms',      icon:'users-round',     title:'HRMS',          sub:'Manpower, attendance, payroll', color:'#1E3A4C' },
       { view:'materials', icon:'package',        title:'Materials',     sub:'Stock, GRN, issue, POs', color:'#15803D' },
       { view:'equipment', icon:'truck',          title:'Equipment',     sub:'Plant, logsheets, maintenance', color:'#B45309' },
       { view:'crusherplant', icon:'factory',     title:'Crusher Plant', sub:'Aggregate production and diesel', color:'#B45309' },
@@ -12576,6 +12639,7 @@
     if (view === 'audit')     return State.audit?.length || 0;
     if (view === 'documents') { seedDocumentsData(); return State.documents?.length || 0; }
     if (view === 'aidocs')    { seedDocumentsData(); return State.documents?.filter(d => aiDocIsApproved(d)).length || 0; }
+    if (view === 'hrms') { ensureHRMSData(); return State.manpowerMaster?.filter(m => m.status === 'Active').length || 0; }
     if (view === 'workforce') return 142;
     if (view === 'procurement') return State.pos?.length || 0;
     if (view === 'tenders')   return State.tenders?.length || 0;
@@ -12666,6 +12730,12 @@
     const equipmentDown = (State.equipment || []).filter(e => e.status === 'Breakdown' || e.status === 'Under Maintenance');
     if (equipmentDown.length) add('bad', equipmentDown.length + ' equipment exceptions', 'Check breakdowns, maintenance records, and utilization impact.', 'equipment', 'truck', 'Open fleet');
 
+    try { ensureHRMSData(); } catch(_) {}
+    const hrmsExpiry = (State.manpowerDocuments || []).filter(d => d.expiryDate && new Date(d.expiryDate) <= new Date(Date.now() + 30*86400000));
+    const hrmsPendingLeave = (State.manpowerLeave || []).filter(l => String(l.status || '').toLowerCase() === 'pending');
+    if (hrmsExpiry.length) add('warn', hrmsExpiry.length + ' HRMS document expiry alerts', 'Citizenship, license, insurance, medical or training documents need renewal.', 'hrms', 'users-round', 'Open HRMS');
+    if (hrmsPendingLeave.length) add('warn', hrmsPendingLeave.length + ' leave requests pending', 'Approve or reject leave before monthly attendance lock.', 'hrms', 'calendar-x', 'Open leave');
+
     try { seedAssetData(); } catch(_) {}
     const assetAlerts = (State.assetNotifications || []).filter(n => n.status !== 'Closed');
     if (assetAlerts.length) add('warn', assetAlerts.length + ' asset alerts', 'Review maintenance, calibration, insurance, rental, return and document exceptions.', 'assets', 'qr-code', 'Open assets');
@@ -12699,6 +12769,7 @@
       { view:'events', icon:'calendar-check', label:'Events', value:openEvents, detail:'active contractual records', color:'#7C3AED' },
       { view:'budgetcontrol', icon:'circle-dollar-sign', label:'Budget Control', value:(State.bccBoq || []).length, detail:'BOQ profitability and milestones', color:'#1E3A4C' },
       { view:'materials', icon:'package', label:'Materials', value:(State.items || []).length, detail:'catalogued inventory items', color:'#15803D' },
+      { view:'hrms', icon:'users-round', label:'HRMS', value:(State.manpowerMaster || []).filter(m => m.status === 'Active').length, detail:'active manpower, attendance and payroll', color:'#1E3A4C' },
       { view:'plantproduction', icon:'factory', label:'Plant Production', value:(State.crusherRecords || []).length + (State.batchingRecords || []).length, detail:'crusher output and concrete production', color:'#B45309' },
       { view:'crusherplant', icon:'factory', label:'Crusher Plant', value:(State.crusherRecords || []).length, detail:'aggregate output, feed, diesel, downtime', color:'#B45309' },
       { view:'batchingplant', icon:'building-2', label:'Batching Plant', value:(State.batchingRecords || []).length, detail:'concrete output and material consumption', color:'#1E3A4C' },
@@ -12799,7 +12870,7 @@
 
   function renderLauncher() {
     // Seed data so counts are accurate
-    try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); } catch(e){}
+    try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); ensureHRMSData?.(); } catch(e){}
     ensureERPUpgradeDefaults();
     ensureControlLayerDefaults();
     const codingRecords = controlRecords();
@@ -13274,11 +13345,11 @@
   // =====================================================================
   const ROLE_PERMS = {
     ceo:      { name:'Mr. Rajesh Tamang',     role:'CEO Â· Full Access',           avatar:'RT', projects:'ALL', modules:'ALL' },
-    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO Â· Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','analytics','audit','control','documents','aidocs','reports'] },
+    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO Â· Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','hrms','analytics','audit','control','documents','aidocs','reports'] },
     pm:       { name:'R. Tamang (PM)',        role:'Project Manager Â· Projects',  avatar:'RT', projects:['PRJ-017','PRJ-030'], modules:'ALL' },
-    se:       { name:'S. Adhikari',           role:'Site Engineer Â· Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','budgetcontrol','dpr','workforce','materials','equipment','assets','quality','safety','documents','aidocs','control','events','todos'] },
+    se:       { name:'S. Adhikari',           role:'Site Engineer Â· Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','budgetcontrol','dpr','hrms','workforce','materials','equipment','assets','quality','safety','documents','aidocs','control','events','todos'] },
     qc:       { name:'M. Khatri (QC)',        role:'QC Officer Â· Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019','PRJ-030'], modules:['dashboard','projects','quality','safety','dpr','documents','aidocs','events','todos'] },
-    store:    { name:'Store Manager',          role:'Store Â· Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','assets','control','events','todos'] },
+    store:    { name:'Store Manager',          role:'Store Â· Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','assets','hrms','control','events','todos'] },
     estimator:{ name:'D. Rai (Estimator)',     role:'Estimator Â· BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','budgetcontrol','finance','documents','aidocs','control','events','todos'] },
     client:   { name:'Client Reviewer',        role:'Client Â· Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','aidocs','reports'] }
   };
@@ -14761,6 +14832,9 @@ Available Actions:
     (State.dprs || []).forEach((r,i) => rows.push({ module:'DPR', id:r.id || 'DPR-' + (i+1), project:r.projectId || r.proj, location:r.location || r.site || r.wbs, activity:r.wbs || r.activity || r.work, cost:r.boqCode || r.costCode, resource:r.resourceCode || 'Labour/Equipment/Material', date:r.date || r.createdAt, user:r.by || r.engineer || r.responsible || r.preparedBy, status:r.approvalStatus || r.approval || r.status }));
     (State.stockMovements || []).forEach((r,i) => rows.push({ module:'Materials', id:r.ref || r.id || 'MOV-' + (i+1), project:r.projectId || r.proj || r.chargeProject, location:r.location || r.site || r.toSite || r.fromSite, activity:r.activity || r.chargeActivity, cost:r.boqCode || r.costCode || r.itemId, resource:r.resourceCode || r.itemId, date:r.date, user:r.issuedBy || r.createdBy || r.receiver, status:r.approval || r.status }));
     (State.equipLogs || []).forEach((r,i) => rows.push({ module:'Equipment', id:r.id || 'EQLOG-' + (i+1), project:r.projectId || r.proj || r.chargeProject, location:r.site || r.location, activity:r.activity || r.workActivity, cost:r.costCode || r.equipmentId, resource:r.resourceCode || r.equipmentId, date:r.date, user:r.operator || r.createdBy, status:r.approval || r.status }));
+    (State.manpowerMaster || []).forEach((r,i) => rows.push({ module:'HRMS Manpower', id:r.id || 'MP-' + (i+1), project:r.projectId, location:r.temporaryAddress || r.department, activity:r.designation || r.skillCategory, cost:r.wageType || r.department, resource:r.skillCategory || r.employmentType, date:r.joiningDate, user:r.fullName, status:r.status }));
+    (State.manpowerAttendance || []).forEach((r,i) => rows.push({ module:'HRMS Attendance', id:r.id || 'ATT-' + (i+1), project:r.projectId, location:r.shift, activity:r.status, cost:'Attendance', resource:r.manpowerId, date:r.date, user:hrmsPerson(r.manpowerId).fullName, status:r.approved ? 'approved' : 'pending' }));
+    (State.manpowerPayroll || []).forEach((r,i) => rows.push({ module:'HRMS Payroll', id:r.id || 'PAY-' + (i+1), project:r.projectId, location:r.month, activity:r.wageType, cost:'Payroll', resource:r.manpowerId, date:r.month, user:hrmsPerson(r.manpowerId).fullName, status:r.status }));
     (State.raBills || []).forEach((r,i) => rows.push({ module:'Billing', id:r.id || r.billNo || 'RA-' + (i+1), project:r.projectId || r.proj, location:r.location || r.wbs, activity:r.activity || r.sourceType, cost:r.boqCode || r.costCode || r.sourceId, resource:r.resourceCode || r.sourceType, date:r.date || r.createdAt, user:r.preparedBy || r.createdBy, status:r.approval || r.status }));
     (State.documents || []).forEach((r,i) => rows.push({ module:'Documents', id:r.id || r.code || 'DOC-' + (i+1), project:r.projectId, location:r.location || r.discipline, activity:r.activity || r.type, cost:r.boqCode || r.costCode || r.docCategory, resource:r.resourceCode || r.type, date:r.updated || r.date, user:r.owner || r.issuedBy, status:r.documentStatus || r.status }));
     return rows;
@@ -14831,6 +14905,7 @@ Available Actions:
     if (view === 'control') { renderControlLayerView(); }
     if (view === 'schedule') { renderScheduleTable(); }
     if (view === 'materials') { if (State.session?.inProjectMode) State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
+    if (view === 'hrms')      { setTimeout(renderHRMSView, 30); }
     if (view === 'procurement') { setTimeout(renderProcurementView, 30); }
     if (view === 'budgetcontrol') { setTimeout(renderBCCView, 30); }
     if (view === 'equipment') { setTimeout(renderEquipmentView, 30); }
@@ -14863,7 +14938,7 @@ Available Actions:
 
   // -------- COMMAND PALETTE (Cmd+K) --------
   const palItems = [
-    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','workforce','materials','equipment','plantproduction','crusherplant','batchingplant','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings','control'].map(v => ({label: v === 'plantproduction' ? 'Plant Production' : v === 'crusherplant' ? 'Crusher Plant' : v === 'batchingplant' ? 'Batching Plant' : v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
+    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','hrms','workforce','materials','equipment','plantproduction','crusherplant','batchingplant','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings','control'].map(v => ({label: v === 'hrms' ? 'HRMS' : v === 'plantproduction' ? 'Plant Production' : v === 'crusherplant' ? 'Crusher Plant' : v === 'batchingplant' ? 'Batching Plant' : v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
     ...State.projects.map(p => ({ label: p.name, sub: p.id + ' Â· ' + p.client, kind:'Project', action: () => { navTo('projects'); setTimeout(() => openProjectDetail(p.id), 100); }})),
     { label:'New Project', kind:'Action', action: () => actNewProject() },
     { label:'New Tender', kind:'Action', action: () => actNewTender() },
@@ -15511,6 +15586,233 @@ Available Actions:
   }
 
   // -------- TABLE RENDERERS --------
+  const HRMS_TABS = [
+    ['dashboard','Dashboard','layout-dashboard'],
+    ['master','Manpower Master','users-round'],
+    ['deployment','Project Deployment','map-pin'],
+    ['attendance','Attendance','calendar-check'],
+    ['payroll','Payroll/Wage Sheet','wallet-cards'],
+    ['leave','Leave','calendar-x'],
+    ['subcontractors','Subcontractor Manpower','handshake'],
+    ['training','Training & Safety','shield-check'],
+    ['documents','Documents','file-stack'],
+    ['reports','Reports','file-output']
+  ];
+  function ensureHRMSData() {
+    State.manpowerMaster ||= [];
+    State.manpowerDeployment ||= [];
+    State.manpowerAttendance ||= [];
+    State.manpowerPayroll ||= [];
+    State.manpowerLeave ||= [];
+    State.manpowerDocuments ||= [];
+    State.manpowerTraining ||= [];
+    State.manpowerSafety ||= [];
+    State.subcontractorManpower ||= [];
+    State.manpowerAdvanceDeduction ||= [];
+    State.manpowerTransferHistory ||= [];
+    State.hrmsCurrentTab ||= 'dashboard';
+    State.hrmsFilters ||= { q:'', project:'ALL', department:'ALL', employment:'ALL', skill:'ALL', status:'ALL' };
+    State.hrmsNextId ||= { manpower:1, deploy:1, attendance:1, payroll:1, leave:1, doc:1, training:1, safety:1, sub:1, advance:1, transfer:1 };
+    if (State.manpowerMaster.length) return;
+    State.manpowerMaster = [
+      { id:'MP-001', fullName:'Bikash Gurung', fatherName:'Hari Gurung', permanentAddress:'Lamjung', temporaryAddress:'Sanepa camp', contact:'9841001122', emergencyContact:'9841001133', citizenshipNo:'34-01-77-01234', pan:'609998877', dob:'1991-04-12', gender:'Male', bloodGroup:'B+', designation:'Site Supervisor', skillCategory:'Skilled', employmentType:'Permanent', department:'Civil', joiningDate:'2024-02-01', status:'Active', projectId:'PRJ-017', subcontractor:'', wageType:'Monthly', wageRate:68000, overtimeRate:450, bankMode:'Bank', photoName:'profile-bikash.jpg', documentName:'citizenship-pan.pdf' },
+      { id:'MP-002', fullName:'Maya Tamang', fatherName:'Dawa Tamang', permanentAddress:'Sindhupalchok', temporaryAddress:'Kalanki camp', contact:'9842002211', emergencyContact:'9842002212', citizenshipNo:'26-02-70-09111', pan:'', dob:'1996-09-20', gender:'Female', bloodGroup:'O+', designation:'Store Assistant', skillCategory:'Semi-skilled', employmentType:'Contract', department:'Store', joiningDate:'2025-01-15', status:'Active', projectId:'PRJ-021', subcontractor:'', wageType:'Monthly', wageRate:42000, overtimeRate:300, bankMode:'Cash', photoName:'', documentName:'agreement.pdf' },
+      { id:'MP-003', fullName:'Ramesh Chaudhary', fatherName:'Mohan Chaudhary', permanentAddress:'Bardiya', temporaryAddress:'Taplejung camp', contact:'9843003311', emergencyContact:'9843003312', citizenshipNo:'58-02-68-01022', pan:'', dob:'1988-12-02', gender:'Male', bloodGroup:'A+', designation:'Excavator Operator', skillCategory:'Operator', employmentType:'Daily Wage', department:'Equipment', joiningDate:'2025-11-04', status:'Active', projectId:'PRJ-030', subcontractor:'', wageType:'Daily', wageRate:2500, overtimeRate:500, bankMode:'Cash', photoName:'', documentName:'license.pdf' },
+      { id:'MP-004', fullName:'Pasang Sherpa', fatherName:'Nima Sherpa', permanentAddress:'Dolakha', temporaryAddress:'Headworks camp', contact:'9844004411', emergencyContact:'9844004412', citizenshipNo:'45-01-73-01888', pan:'604442111', dob:'1994-07-08', gender:'Male', bloodGroup:'AB+', designation:'Bar Bender', skillCategory:'Skilled', employmentType:'Subcontractor Manpower', department:'Civil', joiningDate:'2026-01-10', status:'Active', projectId:'PRJ-030', subcontractor:'Himal Rebar Works', wageType:'Subcontractor Rate', wageRate:1900, overtimeRate:350, bankMode:'Subcontractor', photoName:'', documentName:'safety-induction.pdf' },
+      { id:'MP-005', fullName:'Sita Rai', fatherName:'Kiran Rai', permanentAddress:'Khotang', temporaryAddress:'Pokhara site', contact:'9845005511', emergencyContact:'9845005512', citizenshipNo:'12-03-72-02219', pan:'608881234', dob:'1993-03-18', gender:'Female', bloodGroup:'O-', designation:'Safety Officer', skillCategory:'Supervisor', employmentType:'Permanent', department:'Safety', joiningDate:'2023-08-01', status:'Transferred', projectId:'PRJ-019', subcontractor:'', wageType:'Monthly', wageRate:72000, overtimeRate:0, bankMode:'Bank', photoName:'', documentName:'training-record.pdf' }
+    ];
+    State.manpowerDeployment = State.manpowerMaster.map((m,i) => ({ id:'DEP-' + String(i+1).padStart(3,'0'), manpowerId:m.id, projectId:m.projectId, site:i===2?'Headworks':'Main site', department:m.department, reportingPerson:i===2?'Project Manager':'Site In-charge', startDate:m.joiningDate, endDate:m.status==='Transferred'?'2026-04-30':'', status:m.status==='Active'?'Current':'Transferred', remarks:m.designation }));
+    State.manpowerAttendance = [
+      { id:'ATT-001', date:new Date().toISOString().slice(0,10), manpowerId:'MP-001', projectId:'PRJ-017', subcontractor:'', status:'Present', inTime:'08:00', outTime:'18:00', overtime:2, shift:'Day', approved:true },
+      { id:'ATT-002', date:new Date().toISOString().slice(0,10), manpowerId:'MP-003', projectId:'PRJ-030', subcontractor:'', status:'Present', inTime:'07:00', outTime:'19:00', overtime:3, shift:'Day', approved:true },
+      { id:'ATT-003', date:new Date().toISOString().slice(0,10), manpowerId:'MP-004', projectId:'PRJ-030', subcontractor:'Himal Rebar Works', status:'Half Day', inTime:'08:00', outTime:'13:00', overtime:0, shift:'Day', approved:true },
+      { id:'ATT-004', date:new Date(Date.now()-86400000).toISOString().slice(0,10), manpowerId:'MP-002', projectId:'PRJ-021', subcontractor:'', status:'Leave', inTime:'', outTime:'', overtime:0, shift:'Day', approved:false }
+    ];
+    State.manpowerPayroll = [
+      { id:'PAY-001', month:'2026-06', manpowerId:'MP-001', projectId:'PRJ-017', wageType:'Monthly', basic:68000, overtime:900, allowance:3500, foodDeduction:2500, advance:5000, loanDeduction:0, netPayable:64900, paymentMode:'Bank', status:'Prepared' },
+      { id:'PAY-002', month:'2026-06', manpowerId:'MP-003', projectId:'PRJ-030', wageType:'Daily', basic:65000, overtime:1500, allowance:2000, foodDeduction:3000, advance:7000, loanDeduction:0, netPayable:58500, paymentMode:'Cash', status:'Prepared' },
+      { id:'PAY-003', month:'2026-06', manpowerId:'MP-004', projectId:'PRJ-030', wageType:'Subcontractor Rate', basic:49400, overtime:0, allowance:0, foodDeduction:0, advance:0, loanDeduction:0, netPayable:49400, paymentMode:'Subcontractor Billing', status:'Under Review' }
+    ];
+    State.manpowerLeave = [{ id:'LV-001', manpowerId:'MP-002', requestDate:'2026-06-15', leaveType:'Personal', fromDate:'2026-06-16', toDate:'2026-06-16', duration:1, reason:'Family work', status:'Pending', approvedBy:'Project Manager', balance:5 }];
+    State.manpowerDocuments = [
+      { id:'DOC-MP-001', manpowerId:'MP-001', type:'Citizenship/ID Copy', fileName:'MP-001-citizenship.pdf', issueDate:'2024-02-01', expiryDate:'', status:'Verified' },
+      { id:'DOC-MP-002', manpowerId:'MP-003', type:'License Details', fileName:'operator-license.pdf', issueDate:'2025-11-04', expiryDate:'2026-07-20', status:'Expiring Soon' }
+    ];
+    State.manpowerTraining = [
+      { id:'TRN-001', manpowerId:'MP-003', trade:'Excavator Operator', experienceYears:9, trainingCompleted:'Equipment Operation', safetyInduction:'Completed', authorization:'Authorized', licenseDetails:'Heavy equipment license', expiryDate:'2026-07-20', remarks:'Renew before monsoon peak' },
+      { id:'TRN-002', manpowerId:'MP-004', trade:'Bar Bender', experienceYears:6, trainingCompleted:'Safety Induction', safetyInduction:'Completed', authorization:'N/A', licenseDetails:'', expiryDate:'2026-12-31', remarks:'Rebar yard induction done' }
+    ];
+    State.manpowerSafety = [
+      { id:'SAFE-001', manpowerId:'MP-001', ppeIssued:'Helmet, vest, shoes', induction:'Completed', toolboxAttendance:12, incident:'None', insurance:'Covered', permitStatus:'Valid', fitness:'Fit', remarks:'Clear' },
+      { id:'SAFE-002', manpowerId:'MP-004', ppeIssued:'Helmet, gloves, harness', induction:'Completed', toolboxAttendance:8, incident:'Minor cut - closed', insurance:'Subcontractor', permitStatus:'Valid', fitness:'Fit', remarks:'Monitor glove issue' }
+    ];
+    State.subcontractorManpower = [{ id:'SUB-MP-001', subcontractorName:'Himal Rebar Works', contactPerson:'Karma Lama', projectId:'PRJ-030', supplied:28, trade:'Bar bender / helper', workLocation:'Powerhouse rebar yard', rateType:'Per head per day', wageResponsibility:'Subcontractor', billingSupport:'Attendance sheet attached', remarks:'Peak pour support' }];
+    State.manpowerAdvanceDeduction = [{ id:'ADV-001', manpowerId:'MP-001', date:'2026-06-05', type:'Advance', amount:5000, approvedBy:'Accounts', reflectedInPayroll:true }];
+    State.manpowerTransferHistory = [{ id:'TRF-001', manpowerId:'MP-005', fromProject:'PRJ-019', toProject:'PRJ-030', transferDate:'2026-05-01', approvedBy:'HR/Admin', remarks:'Safety mobilisation for hydropower project' }];
+  }
+  function hrmsPerson(id) { ensureHRMSData(); return State.manpowerMaster.find(m => m.id === id) || {}; }
+  function hrmsProjectName(id) { const p = (State.projects || []).find(x => x.id === id); return p ? `${p.id} - ${p.name}` : (id || '-'); }
+  function hrmsBadge(v) {
+    const s = String(v || '').toLowerCase();
+    const cls = s.includes('active') || s.includes('present') || s.includes('verified') || s.includes('completed') || s.includes('approved') || s.includes('prepared') || s.includes('current') ? 'badge-ok' : s.includes('pending') || s.includes('review') || s.includes('soon') || s.includes('half') ? 'badge-warn' : s.includes('absent') || s.includes('terminated') || s.includes('rejected') ? 'badge-bad' : 'badge-info';
+    return `<span class="badge ${cls}">${esc(v || '-')}</span>`;
+  }
+  function hrmsFilteredManpower() {
+    ensureHRMSData();
+    const f = State.hrmsFilters || {};
+    const q = String(f.q || '').toLowerCase();
+    return State.manpowerMaster.filter(m => {
+      const hay = [m.id,m.fullName,m.fatherName,m.contact,m.pan,m.citizenshipNo,m.designation,m.subcontractor,m.projectId,m.status].join(' ').toLowerCase();
+      return (!q || hay.includes(q)) &&
+        (!f.project || f.project === 'ALL' || m.projectId === f.project) &&
+        (!f.department || f.department === 'ALL' || m.department === f.department) &&
+        (!f.employment || f.employment === 'ALL' || m.employmentType === f.employment) &&
+        (!f.skill || f.skill === 'ALL' || m.skillCategory === f.skill) &&
+        (!f.status || f.status === 'ALL' || m.status === f.status);
+    });
+  }
+  function hrmsOptions(values, selected, allLabel='All') {
+    return `<option value="ALL">${allLabel}</option>` + [...new Set(values.filter(Boolean))].sort().map(v => `<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(v)}</option>`).join('');
+  }
+  function renderHRMSView() {
+    ensureHRMSData();
+    const root = $('#hrmsRoot'); if (!root) return;
+    const f = State.hrmsFilters || {};
+    const rows = hrmsFilteredManpower();
+    const active = State.manpowerMaster.filter(m => m.status === 'Active').length;
+    const todays = State.manpowerAttendance.filter(a => a.date === new Date().toISOString().slice(0,10));
+    const approvedAttendance = State.manpowerAttendance.filter(a => a.approved);
+    const payrollDue = State.manpowerPayroll.reduce((s,p) => s + (+p.netPayable || 0), 0);
+    const expiringDocs = State.manpowerDocuments.filter(d => d.expiryDate && new Date(d.expiryDate) <= new Date(Date.now() + 30*86400000)).length;
+    root.innerHTML = `
+      <div class="grid grid-cols-5 gap-3 mb-5">
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">TOTAL MANPOWER</div><div class="font-display font-black text-2xl">${State.manpowerMaster.length}</div><div class="text-xs text-stone-500">${active} active</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">TODAY PRESENT</div><div class="font-display font-black text-2xl">${todays.filter(a => a.status === 'Present').length}</div><div class="text-xs text-stone-500">${todays.length} attendance rows</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">PAYROLL PAYABLE</div><div class="font-display font-black text-2xl">${fmtNPR(payrollDue)}</div><div class="text-xs text-stone-500">${State.manpowerPayroll.length} wage sheets</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">APPROVED ATTENDANCE</div><div class="font-display font-black text-2xl">${approvedAttendance.length}</div><div class="text-xs text-stone-500">used for salary calc</div></div>
+        <div class="kpi ${expiringDocs ? 'kpi-red' : ''}"><div class="font-mono text-[10px] text-stone-500">EXPIRY ALERTS</div><div class="font-display font-black text-2xl">${expiringDocs}</div><div class="text-xs text-stone-500">documents/training in 30 days</div></div>
+      </div>
+      <div class="card p-3 mb-4">
+        <div class="flex gap-2 flex-wrap items-center">
+          <input id="hrmsSearch" class="border border-stone-200 px-3 py-2 text-sm flex-1 min-w-[200px]" placeholder="Search name, ID, project, designation, subcontractor, mobile, PAN or status" value="${esc(f.q || '')}">
+          <select id="hrmsProjectFilter" class="border border-stone-200 px-2 py-2 text-xs">${hrmsOptions((State.projects || []).map(p=>p.id), f.project, 'All Projects')}</select>
+          <select id="hrmsDeptFilter" class="border border-stone-200 px-2 py-2 text-xs">${hrmsOptions(State.manpowerMaster.map(m=>m.department), f.department, 'All Departments')}</select>
+          <select id="hrmsEmpFilter" class="border border-stone-200 px-2 py-2 text-xs">${hrmsOptions(State.manpowerMaster.map(m=>m.employmentType), f.employment, 'All Employment')}</select>
+          <select id="hrmsSkillFilter" class="border border-stone-200 px-2 py-2 text-xs">${hrmsOptions(State.manpowerMaster.map(m=>m.skillCategory), f.skill, 'All Skills')}</select>
+          <select id="hrmsStatusFilter" class="border border-stone-200 px-2 py-2 text-xs">${hrmsOptions(State.manpowerMaster.map(m=>m.status), f.status, 'All Status')}</select>
+        </div>
+      </div>
+      <div class="card overflow-hidden mb-4"><div class="flex flex-wrap gap-1 p-2 border-b border-stone-200">${HRMS_TABS.map(t => `<button class="ims-tab ${State.hrmsCurrentTab===t[0]?'active':''}" data-hrms-tab="${t[0]}"><i data-lucide="${t[2]}" class="w-3 h-3"></i>${t[1]}</button>`).join('')}</div></div>
+      <div id="hrmsTabContent">${renderHRMSTab(State.hrmsCurrentTab, rows)}</div>
+    `;
+    root.querySelectorAll('[data-hrms-tab]').forEach(b => b.onclick = () => { State.hrmsCurrentTab = b.dataset.hrmsTab; saveState(); renderHRMSView(); });
+    [['hrmsSearch','q'],['hrmsProjectFilter','project'],['hrmsDeptFilter','department'],['hrmsEmpFilter','employment'],['hrmsSkillFilter','skill'],['hrmsStatusFilter','status']].forEach(([id,key]) => {
+      const el = $('#' + id); if (el) el.oninput = el.onchange = () => { State.hrmsFilters[key] = el.value; saveState(); renderHRMSView(); };
+    });
+    $('#view-hrms').onclick = hrmsHandleClick;
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+  function renderHRMSTab(tab, rows) {
+    if (tab === 'dashboard') return renderHRMSDashboard(rows);
+    if (tab === 'master') return renderHRMSMaster(rows);
+    if (tab === 'deployment') return renderHRMSDeployment();
+    if (tab === 'attendance') return renderHRMSAttendance();
+    if (tab === 'payroll') return renderHRMSPayroll();
+    if (tab === 'leave') return renderHRMSLeave();
+    if (tab === 'subcontractors') return renderHRMSSubcontractors();
+    if (tab === 'training') return renderHRMSTrainingSafety();
+    if (tab === 'documents') return renderHRMSDocuments();
+    return renderHRMSReports(rows);
+  }
+  function renderHRMSDashboard(rows) {
+    const byProject = [...new Set(State.manpowerMaster.map(m => m.projectId))].map(pid => ({ pid, count:State.manpowerMaster.filter(m => m.projectId === pid && m.status === 'Active').length, cost:State.manpowerPayroll.filter(p => p.projectId === pid).reduce((s,p)=>s+(+p.netPayable||0),0) }));
+    const byDept = [...new Set(State.manpowerMaster.map(m => m.department))].map(d => ({ d, count:State.manpowerMaster.filter(m => m.department === d).length }));
+    return `<div class="grid grid-cols-2 gap-4"><div class="card p-4"><div class="font-display font-bold mb-3">Project-wise Manpower Cost</div><table class="data"><thead><tr><th>Project</th><th>Active Manpower</th><th>Payroll Cost</th></tr></thead><tbody>${byProject.map(r=>`<tr><td>${esc(hrmsProjectName(r.pid))}</td><td>${r.count}</td><td>${fmtNPR(r.cost)}</td></tr>`).join('')}</tbody></table></div><div class="card p-4"><div class="font-display font-bold mb-3">Department Summary</div><table class="data"><thead><tr><th>Department</th><th>Manpower</th></tr></thead><tbody>${byDept.map(r=>`<tr><td>${esc(r.d)}</td><td>${r.count}</td></tr>`).join('')}</tbody></table></div></div><div class="card p-4 mt-4"><div class="font-display font-bold mb-3">Active Manpower List</div>${renderHRMSMaster(rows.slice(0,8), true)}</div>`;
+  }
+  function renderHRMSMaster(rows, compact=false) {
+    return `<table class="data"><thead><tr><th>ID</th><th>Name</th><th>Project</th><th>Designation</th><th>Employment</th><th>Department</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(m=>`<tr><td class="font-mono text-xs">${esc(m.id)}</td><td><b>${esc(m.fullName)}</b><div class="text-[10px] text-stone-500">Father: ${esc(m.fatherName || '-')} | Blood: ${esc(m.bloodGroup || '-')}</div></td><td class="text-xs">${esc(hrmsProjectName(m.projectId))}</td><td>${esc(m.designation)}</td><td>${esc(m.employmentType)}</td><td>${esc(m.department)}</td><td class="font-mono text-xs">${esc(m.contact)}</td><td>${hrmsBadge(m.status)}</td><td><button class="btn btn-ghost text-xs" data-hrms-view="${esc(m.id)}"><i data-lucide="eye" class="w-3 h-3"></i>View</button><button class="btn btn-ghost text-xs" data-hrms-edit="${esc(m.id)}"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button></td></tr>`).join('') || `<tr><td colspan="9" class="text-center text-stone-500 py-5">No manpower records match the filters.</td></tr>`}</tbody></table>${compact?'':'<div class="text-xs text-stone-500 mt-2">Duplicate Employee/Worker ID is blocked. Citizenship/PAN duplicates show validation warnings before save.</div>'}`;
+  }
+  function renderHRMSDeployment() {
+    return `<table class="data"><thead><tr><th>Deployment</th><th>Worker</th><th>Project</th><th>Site</th><th>Department</th><th>Reporting Person</th><th>Dates</th><th>Status</th><th>Remarks</th></tr></thead><tbody>${State.manpowerDeployment.map(d=>{ const m=hrmsPerson(d.manpowerId); return `<tr><td class="font-mono text-xs">${esc(d.id)}</td><td><b>${esc(m.fullName)}</b><div class="text-[10px] text-stone-500">${esc(d.manpowerId)}</div></td><td>${esc(hrmsProjectName(d.projectId))}</td><td>${esc(d.site)}</td><td>${esc(d.department)}</td><td>${esc(d.reportingPerson)}</td><td class="text-xs">${esc(d.startDate)} to ${esc(d.endDate || 'Current')}</td><td>${hrmsBadge(d.status)}</td><td class="text-xs">${esc(d.remarks)}</td></tr>`;}).join('')}</tbody></table>`;
+  }
+  function renderHRMSAttendance() {
+    return `<div class="flex justify-end mb-3"><button class="btn btn-amber text-xs" data-hrms-act="attendance"><i data-lucide="plus" class="w-3 h-3"></i>Daily Attendance</button></div><table class="data"><thead><tr><th>Date</th><th>Worker</th><th>Project</th><th>Status</th><th>Time</th><th>OT</th><th>Shift</th><th>Subcontractor</th><th>Approval</th></tr></thead><tbody>${State.manpowerAttendance.map(a=>{ const m=hrmsPerson(a.manpowerId); return `<tr><td class="font-mono text-xs">${esc(a.date)}</td><td><b>${esc(m.fullName)}</b><div class="text-[10px] text-stone-500">${esc(a.manpowerId)}</div></td><td>${esc(hrmsProjectName(a.projectId))}</td><td>${hrmsBadge(a.status)}</td><td class="font-mono text-xs">${esc(a.inTime || '-')} - ${esc(a.outTime || '-')}</td><td>${esc(a.overtime || 0)} hr</td><td>${esc(a.shift)}</td><td>${esc(a.subcontractor || '-')}</td><td>${hrmsBadge(a.approved ? 'Approved' : 'Pending')}</td></tr>`;}).join('')}</tbody></table>`;
+  }
+  function renderHRMSPayroll() {
+    return `<div class="flex justify-end mb-3"><button class="btn btn-amber text-xs" data-hrms-act="payroll"><i data-lucide="calculator" class="w-3 h-3"></i>Generate Wage Sheet</button></div><table class="data"><thead><tr><th>Month</th><th>Worker</th><th>Project</th><th>Wage Type</th><th>Basic</th><th>OT</th><th>Allowance</th><th>Deductions</th><th>Net Payable</th><th>Status</th></tr></thead><tbody>${State.manpowerPayroll.map(p=>{ const m=hrmsPerson(p.manpowerId); return `<tr><td class="font-mono text-xs">${esc(p.month)}</td><td><b>${esc(m.fullName)}</b><div class="text-[10px] text-stone-500">${esc(p.manpowerId)}</div></td><td>${esc(hrmsProjectName(p.projectId))}</td><td>${esc(p.wageType)}</td><td>${fmtNPR(p.basic)}</td><td>${fmtNPR(p.overtime)}</td><td>${fmtNPR(p.allowance)}</td><td>${fmtNPR((+p.foodDeduction||0)+(+p.advance||0)+(+p.loanDeduction||0))}</td><td><b>${fmtNPR(p.netPayable)}</b></td><td>${hrmsBadge(p.status)}</td></tr>`;}).join('')}</tbody></table>`;
+  }
+  function renderHRMSLeave() {
+    return `<table class="data"><thead><tr><th>Request</th><th>Worker</th><th>Type</th><th>Duration</th><th>Reason</th><th>Approved By</th><th>Balance</th><th>Status</th></tr></thead><tbody>${State.manpowerLeave.map(l=>{ const m=hrmsPerson(l.manpowerId); return `<tr><td class="font-mono text-xs">${esc(l.requestDate)}</td><td><b>${esc(m.fullName)}</b></td><td>${esc(l.leaveType)}</td><td>${esc(l.fromDate)} to ${esc(l.toDate)}<div class="text-[10px] text-stone-500">${esc(l.duration)} day(s)</div></td><td class="text-xs">${esc(l.reason)}</td><td>${esc(l.approvedBy)}</td><td>${esc(l.balance ?? '-')}</td><td>${hrmsBadge(l.status)}</td></tr>`;}).join('')}</tbody></table>`;
+  }
+  function renderHRMSSubcontractors() {
+    return `<table class="data"><thead><tr><th>Subcontractor</th><th>Project</th><th>Supplied</th><th>Trade</th><th>Location</th><th>Rate Type</th><th>Responsibility</th><th>Billing Support</th></tr></thead><tbody>${State.subcontractorManpower.map(s=>`<tr><td><b>${esc(s.subcontractorName)}</b><div class="text-[10px] text-stone-500">${esc(s.contactPerson)}</div></td><td>${esc(hrmsProjectName(s.projectId))}</td><td>${esc(s.supplied)}</td><td>${esc(s.trade)}</td><td>${esc(s.workLocation)}</td><td>${esc(s.rateType)}</td><td>${esc(s.wageResponsibility)}</td><td class="text-xs">${esc(s.billingSupport)}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function renderHRMSTrainingSafety() {
+    return `<div class="grid grid-cols-2 gap-4"><div class="card p-4"><div class="font-display font-bold mb-3">Skill & Training Record</div><table class="data"><thead><tr><th>Worker</th><th>Trade</th><th>Exp.</th><th>Training</th><th>Induction</th><th>License/Auth</th><th>Expiry</th></tr></thead><tbody>${State.manpowerTraining.map(t=>{ const m=hrmsPerson(t.manpowerId); return `<tr><td><b>${esc(m.fullName)}</b></td><td>${esc(t.trade)}</td><td>${esc(t.experienceYears)} yr</td><td class="text-xs">${esc(t.trainingCompleted)}</td><td>${hrmsBadge(t.safetyInduction)}</td><td class="text-xs">${esc(t.authorization)} ${esc(t.licenseDetails || '')}</td><td class="font-mono text-xs">${esc(t.expiryDate || '-')}</td></tr>`;}).join('')}</tbody></table></div><div class="card p-4"><div class="font-display font-bold mb-3">Safety & Compliance</div><table class="data"><thead><tr><th>Worker</th><th>PPE</th><th>Toolbox</th><th>Incident</th><th>Insurance</th><th>Permit</th><th>Fitness</th></tr></thead><tbody>${State.manpowerSafety.map(s=>{ const m=hrmsPerson(s.manpowerId); return `<tr><td><b>${esc(m.fullName)}</b></td><td class="text-xs">${esc(s.ppeIssued)}</td><td>${esc(s.toolboxAttendance)}</td><td class="text-xs">${esc(s.incident)}</td><td>${esc(s.insurance)}</td><td>${hrmsBadge(s.permitStatus)}</td><td>${hrmsBadge(s.fitness)}</td></tr>`;}).join('')}</tbody></table></div></div>`;
+  }
+  function renderHRMSDocuments() {
+    return `<table class="data"><thead><tr><th>Worker</th><th>Document</th><th>File</th><th>Issue Date</th><th>Expiry</th><th>Status</th></tr></thead><tbody>${State.manpowerDocuments.map(d=>{ const m=hrmsPerson(d.manpowerId); return `<tr><td><b>${esc(m.fullName)}</b><div class="text-[10px] text-stone-500">${esc(d.manpowerId)}</div></td><td>${esc(d.type)}</td><td class="font-mono text-xs">${esc(d.fileName)}</td><td>${esc(d.issueDate || '-')}</td><td>${esc(d.expiryDate || '-')}</td><td>${hrmsBadge(d.status)}</td></tr>`;}).join('')}</tbody></table>`;
+  }
+  function renderHRMSReports(rows) {
+    const reports = ['Total manpower by project','Active manpower list','Daily manpower report','Monthly manpower report','Skilled/unskilled summary','Department-wise summary','Subcontractor-wise summary','Attendance summary','Overtime summary','Salary/wage payable summary','Advance and deduction report','Project-wise manpower cost report','Transfer history','Demobilized manpower list'];
+    return `<div class="grid grid-cols-3 gap-4"><div class="card p-4 col-span-2"><div class="font-display font-bold mb-3">Report Builder</div><div class="grid grid-cols-2 gap-2">${reports.map(r=>`<button class="btn btn-ghost justify-between" data-hrms-report="${esc(r)}"><span>${esc(r)}</span><i data-lucide="download" class="w-3 h-3"></i></button>`).join('')}</div></div><div class="card p-4"><div class="font-display font-bold mb-3">Role Controls</div><table class="data"><tbody>${['Admin: add/edit/delete/audit log','Project Manager: manage project manpower','Accounts: payroll and payment records','Store/Safety: PPE and safety view','Duplicate ID/PAN/citizenship validations','Inactive manpower attendance blocked','Salary from approved attendance only','Overtime requires approval'].map(x=>`<tr><td class="text-xs">${esc(x)}</td></tr>`).join('')}</tbody></table></div></div><div class="card p-4 mt-4"><div class="font-display font-bold mb-3">Filtered Records Preview</div>${renderHRMSMaster(rows, true)}</div>`;
+  }
+  function hrmsHandleClick(e) {
+    const act = e.target.closest('[data-hrms-act]')?.dataset.hrmsAct;
+    const viewId = e.target.closest('[data-hrms-view]')?.dataset.hrmsView;
+    const editId = e.target.closest('[data-hrms-edit]')?.dataset.hrmsEdit;
+    const report = e.target.closest('[data-hrms-report]')?.dataset.hrmsReport;
+    if (act === 'new-manpower') return hrmsOpenManpowerForm();
+    if (act === 'attendance') return hrmsOpenAttendanceForm();
+    if (act === 'payroll') return hrmsOpenPayrollForm();
+    if (act === 'export') return hrmsExportCSV();
+    if (act === 'print') return hrmsPrint();
+    if (act === 'import') return toast('Import Ready','Use the Excel template columns shown in Manpower Master; CSV/XLSX import hook is ready for mapping.','info');
+    if (viewId) return hrmsOpenProfile(viewId);
+    if (editId) return hrmsOpenManpowerForm(editId);
+    if (report) { hrmsExportCSV(report); return; }
+  }
+  function hrmsManpowerFormBody(m={}) {
+    const pid = m.projectId || (State.activeProject !== 'ALL' ? State.activeProject : State.projects?.[0]?.id) || '';
+    const opts = (arr,val) => arr.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('');
+    return `<div class="form-grid-3"><div class="form-row"><label>Employee/Worker ID *</label><input name="id" value="${esc(m.id || 'MP-' + String(State.hrmsNextId.manpower || State.manpowerMaster.length + 1).padStart(3,'0'))}" ${m.id?'readonly':''}></div><div class="form-row"><label>Full Name *</label><input name="fullName" value="${esc(m.fullName || '')}"></div><div class="form-row"><label>Father's Name</label><input name="fatherName" value="${esc(m.fatherName || '')}"></div><div class="form-row"><label>Permanent Address</label><input name="permanentAddress" value="${esc(m.permanentAddress || '')}"></div><div class="form-row"><label>Temporary Address</label><input name="temporaryAddress" value="${esc(m.temporaryAddress || '')}"></div><div class="form-row"><label>Contact Number *</label><input name="contact" value="${esc(m.contact || '')}"></div><div class="form-row"><label>Emergency Contact</label><input name="emergencyContact" value="${esc(m.emergencyContact || '')}"></div><div class="form-row"><label>Citizenship/ID Number</label><input name="citizenshipNo" value="${esc(m.citizenshipNo || '')}"></div><div class="form-row"><label>PAN Number</label><input name="pan" value="${esc(m.pan || '')}"></div><div class="form-row"><label>Date of Birth</label><input type="date" name="dob" value="${esc(m.dob || '')}"></div><div class="form-row"><label>Gender</label><select name="gender">${opts(['Male','Female','Other'], m.gender)}</select></div><div class="form-row"><label>Blood Group</label><select name="bloodGroup">${opts(['A+','A-','B+','B-','AB+','AB-','O+','O-'], m.bloodGroup)}</select></div><div class="form-row"><label>Designation *</label><input name="designation" value="${esc(m.designation || '')}"></div><div class="form-row"><label>Skill Category</label><select name="skillCategory">${opts(['Skilled','Semi-skilled','Unskilled','Operator','Driver','Supervisor','Security','Temporary'], m.skillCategory)}</select></div><div class="form-row"><label>Employment Type *</label><select name="employmentType">${opts(['Permanent','Contract','Daily Wage','Monthly Wage','Subcontractor Manpower'], m.employmentType)}</select></div><div class="form-row"><label>Department</label><select name="department">${opts(['Civil','Mechanical','Electrical','Administration','Store','Equipment','Security','Camp','Crusher','Batching Plant','Safety'], m.department)}</select></div><div class="form-row"><label>Project *</label><select name="projectId">${(State.projects || []).map(p=>`<option value="${esc(p.id)}" ${p.id===pid?'selected':''}>${esc(p.id + ' - ' + p.name)}</option>`).join('')}</select></div><div class="form-row"><label>Joining Date *</label><input type="date" name="joiningDate" value="${esc(m.joiningDate || new Date().toISOString().slice(0,10))}"></div><div class="form-row"><label>Status</label><select name="status">${opts(['Active','Inactive','Transferred','Resigned','Terminated','Demobilized'], m.status || 'Active')}</select></div><div class="form-row"><label>Wage Type *</label><select name="wageType">${opts(['Daily','Monthly','Hourly','Lump Sum','Subcontractor Rate'], m.wageType)}</select></div><div class="form-row"><label>Basic Wage/Salary</label><input type="number" name="wageRate" value="${esc(m.wageRate || 0)}"></div><div class="form-row"><label>Overtime Rate</label><input type="number" name="overtimeRate" value="${esc(m.overtimeRate || 0)}"></div><div class="form-row"><label>Subcontractor</label><input name="subcontractor" value="${esc(m.subcontractor || '')}"></div><div class="form-row"><label>Photo Upload</label><input type="file" name="photoFile" accept="image/*"></div><div class="form-row"><label>Document Upload</label><input type="file" name="docFile"></div></div>`;
+  }
+  function hrmsOpenManpowerForm(id='') {
+    const existing = id ? hrmsPerson(id) : null;
+    openModal({ title: id ? 'Edit Manpower Record' : 'Add Manpower Record', wide:true, submitLabel:'Save Manpower', body:hrmsManpowerFormBody(existing || {}), onSubmit:(d, form) => {
+      const required = ['id','fullName','contact','designation','employmentType','projectId','joiningDate','wageType'];
+      if (required.some(k => !String(d[k] || '').trim())) { toast('Validation','Name, contact, designation, employment type, project, joining date and wage type are required.','bad'); return false; }
+      if (!existing && State.manpowerMaster.some(m => String(m.id).toLowerCase() === String(d.id).toLowerCase())) { toast('Duplicate ID','Employee/Worker ID already exists.','bad'); return false; }
+      const dupDoc = State.manpowerMaster.find(m => m.id !== d.id && ((d.citizenshipNo && m.citizenshipNo === d.citizenshipNo) || (d.pan && m.pan === d.pan)));
+      if (dupDoc && !confirm('Citizenship/PAN already exists for ' + dupDoc.fullName + '. Save with admin approval?')) return false;
+      const photo = document.querySelector('#modalBody [name=photoFile]')?.files?.[0]?.name || existing?.photoName || '';
+      const doc = document.querySelector('#modalBody [name=docFile]')?.files?.[0]?.name || existing?.documentName || '';
+      const rec = { ...existing, ...d, wageRate:+d.wageRate||0, overtimeRate:+d.overtimeRate||0, photoName:photo, documentName:doc };
+      if (existing) Object.assign(existing, rec); else { State.manpowerMaster.unshift(rec); State.hrmsNextId.manpower = (State.hrmsNextId.manpower || State.manpowerMaster.length) + 1; }
+      State.manpowerDeployment.unshift({ id:'DEP-' + Date.now(), manpowerId:rec.id, projectId:rec.projectId, site:'Main site', department:rec.department, reportingPerson:'Site In-charge', startDate:rec.joiningDate, endDate:'', status:'Current', remarks:rec.designation });
+      audit(existing ? 'update' : 'create', 'HRMS Manpower', rec.id + ' - ' + rec.fullName);
+      saveState(); renderHRMSView(); return true;
+    }});
+  }
+  function hrmsOpenAttendanceForm() {
+    openModal({ title:'Daily Attendance Entry', wide:true, submitLabel:'Save Attendance', body:`<div class="form-grid-3"><div class="form-row"><label>Date</label><input type="date" name="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="form-row"><label>Worker</label><select name="manpowerId">${State.manpowerMaster.map(m=>`<option value="${esc(m.id)}">${esc(m.id + ' - ' + m.fullName)}</option>`).join('')}</select></div><div class="form-row"><label>Status</label><select name="status">${['Present','Absent','Half Day','Leave','Site Transfer','Holiday'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="form-row"><label>In Time</label><input type="time" name="inTime" value="08:00"></div><div class="form-row"><label>Out Time</label><input type="time" name="outTime" value="17:00"></div><div class="form-row"><label>Overtime Hours</label><input type="number" name="overtime" value="0"></div><div class="form-row"><label>Shift</label><select name="shift"><option>Day</option><option>Night</option></select></div><div class="form-row"><label>Approved Attendance</label><select name="approved"><option value="true">Approved</option><option value="false">Pending</option></select></div></div>`, onSubmit:d => { const m=hrmsPerson(d.manpowerId); if (!m.id || ['Inactive','Demobilized','Terminated','Resigned'].includes(m.status)) { toast('Attendance Blocked','Inactive/demobilized manpower cannot receive attendance.','bad'); return false; } if (+d.overtime > 0 && d.approved !== 'true') { toast('OT Approval Required','Overtime must be approved before payroll calculation.','warn'); return false; } State.manpowerAttendance.unshift({ id:'ATT-' + Date.now(), ...d, projectId:m.projectId, subcontractor:m.subcontractor || '', overtime:+d.overtime||0, approved:d.approved === 'true' }); audit('create','HRMS Attendance', d.manpowerId + ' ' + d.date); saveState(); renderHRMSView(); return true; }});
+  }
+  function hrmsOpenPayrollForm() {
+    openModal({ title:'Generate Payroll / Wage Sheet', wide:true, submitLabel:'Generate', body:`<div class="form-grid-3"><div class="form-row"><label>Month</label><input type="month" name="month" value="${new Date().toISOString().slice(0,7)}"></div><div class="form-row"><label>Worker</label><select name="manpowerId">${State.manpowerMaster.map(m=>`<option value="${esc(m.id)}">${esc(m.id + ' - ' + m.fullName)}</option>`).join('')}</select></div><div class="form-row"><label>Allowance</label><input type="number" name="allowance" value="0"></div><div class="form-row"><label>Food/Camp Deduction</label><input type="number" name="foodDeduction" value="0"></div><div class="form-row"><label>Advance Payment</label><input type="number" name="advance" value="0"></div><div class="form-row"><label>Loan/Deduction</label><input type="number" name="loanDeduction" value="0"></div><div class="form-row"><label>Payment Mode</label><select name="paymentMode"><option>Bank</option><option>Cash</option><option>Subcontractor Billing</option></select></div></div>`, onSubmit:d => { const m=hrmsPerson(d.manpowerId); const att=State.manpowerAttendance.filter(a=>a.manpowerId===m.id && a.approved && String(a.date||'').startsWith(d.month)); if (!att.length) { toast('Approved Attendance Required','Salary should be calculated only from approved attendance.','bad'); return false; } const presentDays=att.reduce((s,a)=>s+(a.status==='Present'?1:a.status==='Half Day'?0.5:0),0); const ot=att.reduce((s,a)=>s+(+a.overtime||0),0) * (+m.overtimeRate||0); const basic=m.wageType==='Monthly' ? +m.wageRate||0 : presentDays*(+m.wageRate||0); const net=basic+ot+(+d.allowance||0)-(+d.foodDeduction||0)-(+d.advance||0)-(+d.loanDeduction||0); State.manpowerPayroll.unshift({ id:'PAY-' + Date.now(), month:d.month, manpowerId:m.id, projectId:m.projectId, wageType:m.wageType, basic, overtime:ot, allowance:+d.allowance||0, foodDeduction:+d.foodDeduction||0, advance:+d.advance||0, loanDeduction:+d.loanDeduction||0, netPayable:net, paymentMode:d.paymentMode, status:'Prepared' }); audit('create','HRMS Payroll', m.id + ' ' + d.month); saveState(); renderHRMSView(); return true; }});
+  }
+  function hrmsOpenProfile(id) {
+    const m = hrmsPerson(id);
+    openDrawer({ title:m.fullName || id, body:`<div class="space-y-3"><div class="card p-3"><div class="font-mono text-xs">${esc(m.id)}</div><div class="font-display font-bold text-lg">${esc(m.designation)}</div><div class="text-xs text-stone-500">${esc(hrmsProjectName(m.projectId))} | ${esc(m.department)} | ${esc(m.employmentType)}</div></div><div class="grid grid-cols-2 gap-2 text-xs"><div class="card p-3"><b>Contact</b><br>${esc(m.contact)}<br>Emergency: ${esc(m.emergencyContact || '-')}</div><div class="card p-3"><b>ID / PAN</b><br>${esc(m.citizenshipNo || '-')}<br>${esc(m.pan || '-')}</div><div class="card p-3"><b>Address</b><br>${esc(m.permanentAddress || '-')}<br>${esc(m.temporaryAddress || '-')}</div><div class="card p-3"><b>Wage</b><br>${esc(m.wageType)} | ${fmtNPR(m.wageRate)}<br>OT ${fmtNPR(m.overtimeRate)}</div></div><div class="card p-3 text-xs"><b>Documents</b><br>Photo: ${esc(m.photoName || 'Not uploaded')}<br>File: ${esc(m.documentName || 'Not uploaded')}</div><div class="flex gap-2"><button class="btn btn-ghost" onclick="hrmsOpenManpowerForm('${esc(m.id)}'); closeDrawer();"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button><button class="btn btn-amber" onclick="State.hrmsCurrentTab='attendance'; renderHRMSView(); closeDrawer();"><i data-lucide="calendar-check" class="w-3 h-3"></i>Attendance</button></div></div>` });
+  }
+  function hrmsExportCSV(title='HRMS Manpower Register') {
+    ensureHRMSData();
+    const rows = hrmsFilteredManpower().map(m => [m.id,m.fullName,m.fatherName,m.contact,m.citizenshipNo,m.pan,m.projectId,m.designation,m.skillCategory,m.employmentType,m.department,m.joiningDate,m.status,m.wageType,m.wageRate,m.subcontractor]);
+    bcDownloadCSV(title, ['ID','Full Name','Father Name','Contact','Citizenship','PAN','Project','Designation','Skill','Employment','Department','Joining','Status','Wage Type','Rate','Subcontractor'], rows, 'buildcore-hrms');
+    audit('export','HRMS CSV', rows.length + ' manpower records');
+  }
+  function hrmsPrint() { toast('Print Ready','Use browser print to save HRMS report as PDF.','info'); setTimeout(()=>window.print(), 300); }
+  window.hrmsOpenManpowerForm = hrmsOpenManpowerForm;
+
   function renderProjectsView() {
     const grid = $('#view-projects .grid.grid-cols-2');
     if (!grid) return;

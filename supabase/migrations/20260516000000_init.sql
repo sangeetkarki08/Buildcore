@@ -88,7 +88,11 @@ declare
   collection_tables text[] := array[
     'projects', 'tenders', 'materials', 'ncrs', 'ra_bills',
     'purchase_orders', 'dprs', 'variation_orders', 'risks',
-    'photos', 'assets', 'asset_categories', 'asset_locations',
+    'photos', 'manpower_master', 'manpower_deployment',
+    'manpower_attendance', 'manpower_payroll', 'manpower_leave',
+    'manpower_documents', 'manpower_training', 'manpower_safety',
+    'subcontractor_manpower', 'manpower_advance_deduction',
+    'manpower_transfer_history', 'assets', 'asset_categories', 'asset_locations',
     'asset_allocations', 'asset_transfers', 'asset_maintenance',
     'asset_breakdowns', 'asset_fuel_logs', 'asset_inspections',
     'asset_documents', 'asset_disposals', 'asset_notifications',
