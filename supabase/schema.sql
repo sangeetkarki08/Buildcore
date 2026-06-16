@@ -87,7 +87,10 @@ declare
   tbl text;
   collection_tables text[] := array[
     'projects', 'tenders', 'materials', 'ncrs', 'ra_bills',
-    'purchase_orders', 'dprs', 'variation_orders', 'risks',
+    'purchase_orders', 'vendors', 'vendor_documents',
+    'vendor_approvals', 'vendor_evaluations', 'vendor_rfqs',
+    'vendor_contracts', 'vendor_payments', 'vendor_blacklist',
+    'dprs', 'variation_orders', 'risks',
     'photos', 'manpower_master', 'manpower_deployment',
     'manpower_attendance', 'manpower_payroll', 'manpower_leave',
     'manpower_documents', 'manpower_training', 'manpower_safety',

@@ -528,6 +528,9 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="procurement">
         <i data-lucide="shopping-cart" class="nav-icon w-4 h-4 text-white/60"></i>Procurement
       </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="vendors">
+        <i data-lucide="handshake" class="nav-icon w-4 h-4 text-white/60"></i>Vendors
+      </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="billing">
         <i data-lucide="receipt" class="nav-icon w-4 h-4 text-white/60"></i>Billing
       </a>
@@ -1960,6 +1963,23 @@
         </div>
       </section>
 
+      <section id="view-vendors" class="view">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <div class="stamp mb-3"><i data-lucide="handshake" class="w-3 h-3"></i>VENDOR MANAGEMENT</div>
+            <h1 class="font-display font-black text-3xl title-mark">Vendors</h1>
+            <p class="text-sm text-stone-500 mt-3">Registration, approvals, documents, RFQs, POs, contracts, payments, performance and compliance</p>
+          </div>
+          <div class="flex gap-2 flex-wrap justify-end">
+            <button class="btn btn-ghost" data-vendor-act="import"><i data-lucide="upload" class="w-3.5 h-3.5"></i>Import Excel</button>
+            <button class="btn btn-ghost" data-vendor-act="export"><i data-lucide="download" class="w-3.5 h-3.5"></i>Excel</button>
+            <button class="btn btn-ghost" data-vendor-act="print"><i data-lucide="printer" class="w-3.5 h-3.5"></i>PDF</button>
+            <button class="btn btn-amber" data-vendor-act="new-vendor"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Onboard Vendor</button>
+          </div>
+        </div>
+        <div id="vendorRoot"></div>
+      </section>
+
       <!-- ============================================= -->
       <!-- ============  SUBCONTRACTORS  =============== -->
       <!-- ============================================= -->
@@ -3108,6 +3128,16 @@
       { id:'PO-2448', vendor:'Sigma MEP', items:'Cable trays 200mm Â· 480m', value:384000, status:'overdue' }
     ],
     vendors: [],
+    vendorDocuments: [],
+    vendorApprovals: [],
+    vendorEvaluations: [],
+    vendorRFQs: [],
+    vendorContracts: [],
+    vendorPayments: [],
+    vendorBlacklist: [],
+    vendorCurrentTab: 'dashboard',
+    vendorFilters: { q:'', category:'ALL', status:'ALL', type:'ALL', project:'ALL' },
+    vendorNextId: { vendor:1, doc:1, approval:1, eval:1, rfq:1, contract:1, payment:1, blacklist:1 },
     automations: {
       'material-reorder': true, 'ra-bill-auto': true, 'dpr-distribution': true, 'schedule-slip': true,
       'overdue-invoice': true, 'cube-fail': true, 'permit-expiry': true, 'cashflow-gap': true
@@ -3257,6 +3287,16 @@
     State.raBills = [];
     State.pos = [];
     State.vendors = [];
+    State.vendorDocuments = [];
+    State.vendorApprovals = [];
+    State.vendorEvaluations = [];
+    State.vendorRFQs = [];
+    State.vendorContracts = [];
+    State.vendorPayments = [];
+    State.vendorBlacklist = [];
+    State.vendorCurrentTab = 'dashboard';
+    State.vendorFilters = { q:'', category:'ALL', status:'ALL', type:'ALL', project:'ALL' };
+    State.vendorNextId = { vendor:1, doc:1, approval:1, eval:1, rfq:1, contract:1, payment:1, blacklist:1 };
     State.activity = [];
     State.audit = [];
     State.dprs = [];
@@ -3386,6 +3426,11 @@
       plantCurrentTab: State.plantCurrentTab, plantNextId: State.plantNextId,
       projectSites: State.projectSites, psNextId: State.psNextId,
       ncrs: State.ncrs, raBills: State.raBills, pos: State.pos, vendors: State.vendors, automations: State.automations,
+      vendorDocuments: State.vendorDocuments, vendorApprovals: State.vendorApprovals,
+      vendorEvaluations: State.vendorEvaluations, vendorRFQs: State.vendorRFQs,
+      vendorContracts: State.vendorContracts, vendorPayments: State.vendorPayments,
+      vendorBlacklist: State.vendorBlacklist, vendorCurrentTab: State.vendorCurrentTab,
+      vendorFilters: State.vendorFilters, vendorNextId: State.vendorNextId,
       dprs: State.dprs, dprTemplates: State.dprTemplates, dprNextTemplateId: State.dprNextTemplateId,
       labReports: State.labReports, labTestTypes: State.labTestTypes, clientSubmissions: State.clientSubmissions,
       labNextId: State.labNextId, labTestNextId: State.labTestNextId, clientSubmissionNextId: State.clientSubmissionNextId,
@@ -3452,7 +3497,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge â€” preserve seeded data structure
-      ['activeProject','currentView','session','projects','tenders','materials','boq','projectPackages','projectCalendars','wbsActivities','projectLocations','projectMilestones','approvalHistory','measurements','costRecords','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','crusherRecords','batchingRecords','plantCurrentTab','plantNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','manpowerMaster','manpowerDeployment','manpowerAttendance','manpowerPayroll','manpowerLeave','manpowerDocuments','manpowerTraining','manpowerSafety','subcontractorManpower','manpowerAdvanceDeduction','manpowerTransferHistory','hrmsCurrentTab','hrmsFilters','hrmsNextId','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','boq','projectPackages','projectCalendars','wbsActivities','projectLocations','projectMilestones','approvalHistory','measurements','costRecords','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','crusherRecords','batchingRecords','plantCurrentTab','plantNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','vendorDocuments','vendorApprovals','vendorEvaluations','vendorRFQs','vendorContracts','vendorPayments','vendorBlacklist','vendorCurrentTab','vendorFilters','vendorNextId','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','manpowerMaster','manpowerDeployment','manpowerAttendance','manpowerPayroll','manpowerLeave','manpowerDocuments','manpowerTraining','manpowerSafety','subcontractorManpower','manpowerAdvanceDeduction','manpowerTransferHistory','hrmsCurrentTab','hrmsFilters','hrmsNextId','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage Â· saved', new Date(snap.savedAt).toLocaleString());
@@ -3481,6 +3526,11 @@
         crusherRecords:State.crusherRecords, batchingRecords:State.batchingRecords,
         plantCurrentTab:State.plantCurrentTab, plantNextId:State.plantNextId,
         ncrs:State.ncrs, raBills:State.raBills, pos:State.pos, vendors:State.vendors, automations:State.automations,
+        vendorDocuments:State.vendorDocuments, vendorApprovals:State.vendorApprovals,
+        vendorEvaluations:State.vendorEvaluations, vendorRFQs:State.vendorRFQs,
+        vendorContracts:State.vendorContracts, vendorPayments:State.vendorPayments,
+        vendorBlacklist:State.vendorBlacklist, vendorCurrentTab:State.vendorCurrentTab,
+        vendorFilters:State.vendorFilters, vendorNextId:State.vendorNextId,
         dprs:State.dprs, dprTemplates:State.dprTemplates, dprNextTemplateId:State.dprNextTemplateId,
         labReports:State.labReports, labTestTypes:State.labTestTypes, clientSubmissions:State.clientSubmissions,
         labNextId:State.labNextId, labTestNextId:State.labTestNextId, clientSubmissionNextId:State.clientSubmissionNextId,
@@ -3977,6 +4027,214 @@
     seedVendorData();
     return (State.vendors || []).find(v => (v.name || '').toLowerCase() === String(name || '').toLowerCase() || (v.legalName || '').toLowerCase() === String(name || '').toLowerCase());
   }
+  const VENDOR_TABS = [
+    ['dashboard','Dashboard','layout-dashboard'],
+    ['master','Vendor Master','handshake'],
+    ['approval','Approval & KYC','badge-check'],
+    ['rfq','RFQ / Quotation','file-question'],
+    ['contracts','Contracts / POs','file-signature'],
+    ['payments','Payments','wallet-cards'],
+    ['performance','Performance','star'],
+    ['documents','Documents','file-stack'],
+    ['blacklist','Hold / Blacklist','ban'],
+    ['reports','Reports','file-output']
+  ];
+  function ensureVendorModuleData() {
+    seedVendorData();
+    State.vendorDocuments ||= [];
+    State.vendorApprovals ||= [];
+    State.vendorEvaluations ||= [];
+    State.vendorRFQs ||= [];
+    State.vendorContracts ||= [];
+    State.vendorPayments ||= [];
+    State.vendorBlacklist ||= [];
+    State.vendorCurrentTab ||= 'dashboard';
+    State.vendorFilters ||= { q:'', category:'ALL', status:'ALL', type:'ALL', project:'ALL' };
+    State.vendorNextId ||= { vendor:1, doc:1, approval:1, eval:1, rfq:1, contract:1, payment:1, blacklist:1 };
+    State.vendors.forEach((v,i) => {
+      v.type ||= ['Material Supplier','Subcontractor','Equipment Rental','Service Provider'][i % 4];
+      v.status ||= v.score >= 80 ? 'Approved' : 'Pending Approval';
+      v.projectId ||= ['PRJ-017','PRJ-021','PRJ-030'][i % 3];
+      v.gstVat ||= v.pan || '';
+      v.bank ||= v.bank || 'NMB Bank';
+      v.creditLimit ||= v.creditLimit || (500000 + i * 125000);
+      v.qualityGrade ||= v.score >= 90 ? 'A+' : v.score >= 82 ? 'A' : 'B';
+      v.onTimePct ||= Math.min(99, Math.max(72, (v.score || 75) + 4));
+      v.createdAt ||= new Date(Date.now() - (i + 5) * 86400000).toISOString().slice(0,10);
+    });
+    if (!State.vendorDocuments.length) {
+      State.vendorDocuments = [
+        { id:'VDOC-001', vendorId:'VND-018', type:'PAN/VAT Certificate', fileName:'shivam-pan-vat.pdf', issueDate:'2024-01-01', expiryDate:'', status:'Verified' },
+        { id:'VDOC-002', vendorId:'VND-022', type:'Tax Clearance', fileName:'panchakanya-tax-clearance.pdf', issueDate:'2026-01-15', expiryDate:'2026-07-15', status:'Valid' },
+        { id:'VDOC-003', vendorId:'VND-061', type:'Insurance / Rental Compliance', fileName:'komatsu-insurance.pdf', issueDate:'2025-08-01', expiryDate:'2026-06-28', status:'Expiring Soon' }
+      ];
+    }
+    if (!State.vendorApprovals.length) State.vendorApprovals = State.vendors.slice(0,5).map((v,i) => ({ id:'VAPP-' + String(i+1).padStart(3,'0'), vendorId:v.id, stage:i%2?'Accounts Review':'Approved Vendor List', requestedBy:'Procurement', requestedAt:v.createdAt, approvedBy:i%2?'Pending':'Procurement Head', status:i%2?'Pending':'Approved', remarks:v.type }));
+    if (!State.vendorEvaluations.length) State.vendorEvaluations = State.vendors.slice(0,6).map((v,i) => ({ id:'VEV-' + String(i+1).padStart(3,'0'), vendorId:v.id, date:'2026-06-' + String(3+i).padStart(2,'0'), quality:v.qualityGrade, delivery:v.onTimePct, priceScore:Math.max(65, (v.score || 75) - 3), safety:i%3?'Clear':'Observation', overall:v.score || 75, remarks:'Quarterly supplier scorecard' }));
+    if (!State.vendorRFQs.length) State.vendorRFQs = [
+      { id:'RFQ-001', projectId:'PRJ-017', item:'OPC 53 Cement - 1500 bags', vendorIds:['VND-018'], dueDate:'2026-06-20', quotedAmount:1065000, status:'Responded', selectedVendor:'Shivam Cement' },
+      { id:'RFQ-002', projectId:'PRJ-030', item:'Excavator spare parts', vendorIds:['VND-061'], dueDate:'2026-06-22', quotedAmount:485000, status:'Open', selectedVendor:'' },
+      { id:'RFQ-003', projectId:'PRJ-021', item:'TMT 16mm Fe-500 - 24MT', vendorIds:['VND-022'], dueDate:'2026-06-19', quotedAmount:2160000, status:'Commercial Review', selectedVendor:'Panchakanya Steel' }
+    ];
+    if (!State.vendorContracts.length) State.vendorContracts = [
+      { id:'VCTR-001', vendorId:'VND-018', projectId:'PRJ-017', scope:'Cement supply rate contract', startDate:'2026-04-01', endDate:'2026-09-30', value:12500000, retention:0, status:'Active' },
+      { id:'VCTR-002', vendorId:'VND-052', projectId:'PRJ-017', scope:'MEP works package', startDate:'2026-02-01', endDate:'2026-12-31', value:48000000, retention:2400000, status:'Active' }
+    ];
+    if (!State.vendorPayments.length) State.vendorPayments = [
+      { id:'VPAY-001', vendorId:'VND-018', projectId:'PRJ-017', invoice:'INV-SH-2604', dueDate:'2026-06-20', amount:820000, paid:0, mode:'Bank', status:'Due' },
+      { id:'VPAY-002', vendorId:'VND-022', projectId:'PRJ-017', invoice:'INV-PK-1408', dueDate:'2026-06-18', amount:1400000, paid:1400000, mode:'RTGS', status:'Paid' },
+      { id:'VPAY-003', vendorId:'VND-052', projectId:'PRJ-017', invoice:'INV-SG-0142', dueDate:'2026-06-22', amount:600000, paid:0, mode:'RTGS', status:'Under Verification' }
+    ];
+    if (!State.vendorBlacklist.length) State.vendorBlacklist = [{ id:'VBL-001', vendorId:'VND-044', date:'2026-05-18', reason:'Two delayed dispatches under monsoon supply plan', action:'Watchlist', approvedBy:'Procurement Head', status:'Watchlist' }];
+  }
+  function vendorById(id) { ensureVendorModuleData(); return (State.vendors || []).find(v => String(v.id) === String(id)) || {}; }
+  function vendorBadge(v) {
+    const s = String(v || '').toLowerCase();
+    const cls = s.includes('approved') || s.includes('active') || s.includes('paid') || s.includes('verified') || s.includes('valid') || s.includes('responded') ? 'badge-ok' : s.includes('pending') || s.includes('review') || s.includes('due') || s.includes('soon') || s.includes('watch') ? 'badge-warn' : s.includes('black') || s.includes('hold') || s.includes('reject') || s.includes('expired') ? 'badge-bad' : 'badge-info';
+    return `<span class="badge ${cls}">${esc(v || '-')}</span>`;
+  }
+  function vendorFilteredRows() {
+    ensureVendorModuleData();
+    const f = State.vendorFilters || {};
+    const q = String(f.q || '').toLowerCase();
+    return State.vendors.filter(v => {
+      const hay = [v.id,v.name,v.legalName,v.category,v.type,v.contact,v.phone,v.email,v.pan,v.gstVat,v.status,v.projectId].join(' ').toLowerCase();
+      return (!q || hay.includes(q)) &&
+        (!f.category || f.category === 'ALL' || v.category === f.category) &&
+        (!f.status || f.status === 'ALL' || v.status === f.status) &&
+        (!f.type || f.type === 'ALL' || v.type === f.type) &&
+        (!f.project || f.project === 'ALL' || v.projectId === f.project);
+    });
+  }
+  function vendorOptions(values, selected, allLabel='All') {
+    return `<option value="ALL">${allLabel}</option>` + [...new Set(values.filter(Boolean))].sort().map(v => `<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(v)}</option>`).join('');
+  }
+  function renderVendorsView() {
+    ensureVendorModuleData();
+    const root = $('#vendorRoot'); if (!root) return;
+    const f = State.vendorFilters || {};
+    const rows = vendorFilteredRows();
+    const approved = State.vendors.filter(v => v.status === 'Approved').length;
+    const duePayments = State.vendorPayments.filter(p => p.status !== 'Paid').reduce((s,p)=>s+(+p.amount||0)-(+p.paid||0),0);
+    const expiringDocs = State.vendorDocuments.filter(d => d.expiryDate && new Date(d.expiryDate) <= new Date(Date.now()+30*86400000)).length;
+    const activeContracts = State.vendorContracts.filter(c => c.status === 'Active').length;
+    root.innerHTML = `
+      <div class="grid grid-cols-5 gap-3 mb-5">
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">VENDORS</div><div class="font-display font-black text-2xl">${State.vendors.length}</div><div class="text-xs text-stone-500">${approved} approved</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">ACTIVE CONTRACTS</div><div class="font-display font-black text-2xl">${activeContracts}</div><div class="text-xs text-stone-500">rate and package contracts</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">OPEN RFQS</div><div class="font-display font-black text-2xl">${State.vendorRFQs.filter(r=>r.status !== 'Closed').length}</div><div class="text-xs text-stone-500">quotation tracking</div></div>
+        <div class="kpi"><div class="font-mono text-[10px] text-stone-500">PAYABLE DUE</div><div class="font-display font-black text-2xl">${fmtNPR(duePayments)}</div><div class="text-xs text-stone-500">invoice follow-up</div></div>
+        <div class="kpi ${expiringDocs ? 'kpi-red' : ''}"><div class="font-mono text-[10px] text-stone-500">DOCUMENT ALERTS</div><div class="font-display font-black text-2xl">${expiringDocs}</div><div class="text-xs text-stone-500">expiry in 30 days</div></div>
+      </div>
+      <div class="card p-3 mb-4"><div class="flex gap-2 flex-wrap items-center">
+        <input id="vendorSearch" class="border border-stone-200 px-3 py-2 text-sm flex-1 min-w-[220px]" placeholder="Search vendor, PAN/VAT, category, contact, phone, project or status" value="${esc(f.q || '')}">
+        <select id="vendorCategoryFilter" class="border border-stone-200 px-2 py-2 text-xs">${vendorOptions(State.vendors.map(v=>v.category), f.category, 'All Categories')}</select>
+        <select id="vendorTypeFilter" class="border border-stone-200 px-2 py-2 text-xs">${vendorOptions(State.vendors.map(v=>v.type), f.type, 'All Types')}</select>
+        <select id="vendorProjectFilter" class="border border-stone-200 px-2 py-2 text-xs">${vendorOptions((State.projects || []).map(p=>p.id), f.project, 'All Projects')}</select>
+        <select id="vendorStatusFilter" class="border border-stone-200 px-2 py-2 text-xs">${vendorOptions(State.vendors.map(v=>v.status), f.status, 'All Status')}</select>
+      </div></div>
+      <div class="card overflow-hidden mb-4"><div class="flex flex-wrap gap-1 p-2 border-b border-stone-200">${VENDOR_TABS.map(t => `<button class="ims-tab ${State.vendorCurrentTab===t[0]?'active':''}" data-vendor-tab="${t[0]}"><i data-lucide="${t[2]}" class="w-3 h-3"></i>${t[1]}</button>`).join('')}</div></div>
+      <div id="vendorTabContent">${renderVendorTab(State.vendorCurrentTab, rows)}</div>
+    `;
+    root.querySelectorAll('[data-vendor-tab]').forEach(b => b.onclick = () => { State.vendorCurrentTab = b.dataset.vendorTab; saveState(); renderVendorsView(); });
+    [['vendorSearch','q'],['vendorCategoryFilter','category'],['vendorTypeFilter','type'],['vendorProjectFilter','project'],['vendorStatusFilter','status']].forEach(([id,key]) => {
+      const el = $('#' + id); if (el) el.oninput = el.onchange = () => { State.vendorFilters[key] = el.value; saveState(); renderVendorsView(); };
+    });
+    $('#view-vendors').onclick = vendorHandleClick;
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+  function renderVendorTab(tab, rows) {
+    if (tab === 'dashboard') return renderVendorDashboard(rows);
+    if (tab === 'master') return renderVendorMaster(rows);
+    if (tab === 'approval') return renderVendorApprovals();
+    if (tab === 'rfq') return renderVendorRFQs();
+    if (tab === 'contracts') return renderVendorContracts();
+    if (tab === 'payments') return renderVendorPayments();
+    if (tab === 'performance') return renderVendorPerformance();
+    if (tab === 'documents') return renderVendorDocuments();
+    if (tab === 'blacklist') return renderVendorBlacklist();
+    return renderVendorReports(rows);
+  }
+  function renderVendorDashboard(rows) {
+    const byCategory = [...new Set(State.vendors.map(v=>v.category))].map(c => ({ c, count:State.vendors.filter(v=>v.category===c).length }));
+    const top = [...State.vendors].sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,5);
+    return `<div class="grid grid-cols-2 gap-4"><div class="card p-4"><div class="font-display font-bold mb-3">Category Summary</div><table class="data"><thead><tr><th>Category</th><th>Vendors</th></tr></thead><tbody>${byCategory.map(r=>`<tr><td>${esc(r.c)}</td><td>${r.count}</td></tr>`).join('')}</tbody></table></div><div class="card p-4"><div class="font-display font-bold mb-3">Top Rated Vendors</div><table class="data"><thead><tr><th>Vendor</th><th>Type</th><th>Score</th><th>Delivery</th></tr></thead><tbody>${top.map(v=>`<tr><td><b>${esc(v.name)}</b></td><td>${esc(v.type)}</td><td>${vendorBadge((v.score || 0) + '/100')}</td><td>${esc(v.onTimePct)}%</td></tr>`).join('')}</tbody></table></div></div><div class="card p-4 mt-4"><div class="font-display font-bold mb-3">Approved Vendor List</div>${renderVendorMaster(rows.filter(v=>v.status==='Approved').slice(0,8), true)}</div>`;
+  }
+  function renderVendorMaster(rows, compact=false) {
+    return `<table class="data"><thead><tr><th>Vendor ID</th><th>Name</th><th>Category / Type</th><th>Contact</th><th>PAN/VAT</th><th>Project</th><th>Credit</th><th>Score</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(v=>`<tr><td class="font-mono text-xs">${esc(v.id)}</td><td><b>${esc(v.name)}</b><div class="text-[10px] text-stone-500">${esc(v.legalName || '')}</div></td><td>${esc(v.category || '-')}<div class="text-[10px] text-stone-500">${esc(v.type || '-')}</div></td><td class="text-xs">${esc(v.contact || '-')}<br>${esc(v.phone || '')}</td><td class="font-mono text-xs">${esc(v.pan || v.gstVat || '-')}</td><td class="font-mono text-xs">${esc(v.projectId || '-')}</td><td>${fmtNPR(v.creditLimit || v.credit || 0)}</td><td>${esc(v.score || 0)}</td><td>${vendorBadge(v.status)}</td><td><button class="btn btn-ghost text-xs" data-vendor-view="${esc(v.id)}"><i data-lucide="eye" class="w-3 h-3"></i>View</button><button class="btn btn-ghost text-xs" data-vendor-edit="${esc(v.id)}"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button></td></tr>`).join('') || `<tr><td colspan="10" class="text-center text-stone-500 py-5">No vendor records match the filters.</td></tr>`}</tbody></table>${compact?'':'<div class="text-xs text-stone-500 mt-2">Duplicate vendor ID and duplicate PAN/VAT are blocked unless approved.</div>'}`;
+  }
+  function renderVendorApprovals() {
+    return `<table class="data"><thead><tr><th>Approval</th><th>Vendor</th><th>Stage</th><th>Requested</th><th>Approved By</th><th>Status</th><th>Remarks</th></tr></thead><tbody>${State.vendorApprovals.map(a=>{ const v=vendorById(a.vendorId); return `<tr><td class="font-mono text-xs">${esc(a.id)}</td><td><b>${esc(v.name)}</b></td><td>${esc(a.stage)}</td><td class="text-xs">${esc(a.requestedAt)}<br>${esc(a.requestedBy)}</td><td>${esc(a.approvedBy || '-')}</td><td>${vendorBadge(a.status)}</td><td class="text-xs">${esc(a.remarks)}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  function renderVendorRFQs() {
+    return `<table class="data"><thead><tr><th>RFQ</th><th>Project</th><th>Item / Scope</th><th>Vendors</th><th>Due</th><th>Quoted Amount</th><th>Selected</th><th>Status</th></tr></thead><tbody>${State.vendorRFQs.map(r=>`<tr><td class="font-mono text-xs">${esc(r.id)}</td><td class="font-mono text-xs">${esc(r.projectId)}</td><td>${esc(r.item)}</td><td class="text-xs">${(r.vendorIds||[]).map(id=>esc(vendorById(id).name || id)).join('<br>')}</td><td>${esc(r.dueDate)}</td><td>${fmtNPR(r.quotedAmount)}</td><td>${esc(r.selectedVendor || '-')}</td><td>${vendorBadge(r.status)}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function renderVendorContracts() {
+    return `<table class="data"><thead><tr><th>Contract</th><th>Vendor</th><th>Project</th><th>Scope</th><th>Dates</th><th>Value</th><th>Retention</th><th>Status</th></tr></thead><tbody>${State.vendorContracts.map(c=>{ const v=vendorById(c.vendorId); return `<tr><td class="font-mono text-xs">${esc(c.id)}</td><td><b>${esc(v.name)}</b></td><td class="font-mono text-xs">${esc(c.projectId)}</td><td>${esc(c.scope)}</td><td class="text-xs">${esc(c.startDate)} to ${esc(c.endDate)}</td><td>${fmtNPR(c.value)}</td><td>${fmtNPR(c.retention)}</td><td>${vendorBadge(c.status)}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  function renderVendorPayments() {
+    return `<table class="data"><thead><tr><th>Invoice</th><th>Vendor</th><th>Project</th><th>Due Date</th><th>Amount</th><th>Paid</th><th>Mode</th><th>Status</th></tr></thead><tbody>${State.vendorPayments.map(p=>{ const v=vendorById(p.vendorId); return `<tr><td class="font-mono text-xs">${esc(p.invoice || p.id)}</td><td><b>${esc(v.name)}</b></td><td class="font-mono text-xs">${esc(p.projectId)}</td><td>${esc(p.dueDate)}</td><td>${fmtNPR(p.amount)}</td><td>${fmtNPR(p.paid)}</td><td>${esc(p.mode)}</td><td>${vendorBadge(p.status)}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  function renderVendorPerformance() {
+    return `<table class="data"><thead><tr><th>Date</th><th>Vendor</th><th>Quality</th><th>Delivery</th><th>Price</th><th>Safety</th><th>Overall</th><th>Remarks</th></tr></thead><tbody>${State.vendorEvaluations.map(e=>{ const v=vendorById(e.vendorId); return `<tr><td class="font-mono text-xs">${esc(e.date)}</td><td><b>${esc(v.name)}</b></td><td>${esc(e.quality)}</td><td>${esc(e.delivery)}%</td><td>${esc(e.priceScore)}</td><td>${vendorBadge(e.safety)}</td><td><b>${esc(e.overall)}</b></td><td class="text-xs">${esc(e.remarks)}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  function renderVendorDocuments() {
+    return `<table class="data"><thead><tr><th>Vendor</th><th>Document</th><th>File</th><th>Issue</th><th>Expiry</th><th>Status</th></tr></thead><tbody>${State.vendorDocuments.map(d=>{ const v=vendorById(d.vendorId); return `<tr><td><b>${esc(v.name)}</b><div class="text-[10px] text-stone-500">${esc(d.vendorId)}</div></td><td>${esc(d.type)}</td><td class="font-mono text-xs">${esc(d.fileName)}</td><td>${esc(d.issueDate || '-')}</td><td>${esc(d.expiryDate || '-')}</td><td>${vendorBadge(d.status)}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  function renderVendorBlacklist() {
+    return `<table class="data"><thead><tr><th>Date</th><th>Vendor</th><th>Reason</th><th>Action</th><th>Approved By</th><th>Status</th></tr></thead><tbody>${State.vendorBlacklist.map(b=>{ const v=vendorById(b.vendorId); return `<tr><td class="font-mono text-xs">${esc(b.date)}</td><td><b>${esc(v.name)}</b></td><td class="text-xs">${esc(b.reason)}</td><td>${esc(b.action)}</td><td>${esc(b.approvedBy)}</td><td>${vendorBadge(b.status)}</td></tr>`; }).join('') || `<tr><td colspan="6" class="text-center text-stone-500 py-5">No blacklisted vendors. Watchlist records appear here.</td></tr>`}</tbody></table>`;
+  }
+  function renderVendorReports(rows) {
+    const reports = ['Approved vendor list','Vendor registration report','Vendor document expiry report','PAN/VAT compliance report','RFQ comparison report','PO vendor summary','Vendor payment ageing','Outstanding payable report','Vendor performance scorecard','Project-wise vendor spend','Category-wise vendor summary','Blacklisted / hold vendors','Contract expiry report'];
+    return `<div class="grid grid-cols-3 gap-4"><div class="card p-4 col-span-2"><div class="font-display font-bold mb-3">Report Builder</div><div class="grid grid-cols-2 gap-2">${reports.map(r=>`<button class="btn btn-ghost justify-between" data-vendor-report="${esc(r)}"><span>${esc(r)}</span><i data-lucide="download" class="w-3 h-3"></i></button>`).join('')}</div></div><div class="card p-4"><div class="font-display font-bold mb-3">Controls</div><table class="data"><tbody>${['Admin: add/edit/delete and blacklist','Procurement: RFQ, AVL and PO vendor use','Accounts: payment and credit exposure','Store: approved vendor lookup for GRN','Duplicate PAN/VAT validation','Expired documents trigger alerts','Blacklisted vendors blocked from PO selection','Audit log maintained for changes'].map(x=>`<tr><td class="text-xs">${esc(x)}</td></tr>`).join('')}</tbody></table></div></div><div class="card p-4 mt-4"><div class="font-display font-bold mb-3">Filtered Vendor Preview</div>${renderVendorMaster(rows, true)}</div>`;
+  }
+  function vendorHandleClick(e) {
+    const act = e.target.closest('[data-vendor-act]')?.dataset.vendorAct;
+    const viewId = e.target.closest('[data-vendor-view]')?.dataset.vendorView;
+    const editId = e.target.closest('[data-vendor-edit]')?.dataset.vendorEdit;
+    const report = e.target.closest('[data-vendor-report]')?.dataset.vendorReport;
+    if (act === 'new-vendor') return vendorOpenForm();
+    if (act === 'export') return vendorExportCSV();
+    if (act === 'print') return vendorPrint();
+    if (act === 'import') return toast('Import Ready','Use the vendor master Excel columns: ID, name, PAN/VAT, category, contact, bank, terms, score and status.','info');
+    if (viewId) return vendorOpenProfile(viewId);
+    if (editId) return vendorOpenForm(editId);
+    if (report) return vendorExportCSV(report);
+  }
+  function vendorFormBody(v={}) {
+    const opts = (arr,val) => arr.map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('');
+    return `<div class="form-grid-3"><div class="form-row"><label>Vendor ID *</label><input name="id" value="${esc(v.id || 'VND-' + String(80 + (State.vendors?.length || 0) + 1).padStart(3,'0'))}" ${v.id?'readonly':''}></div><div class="form-row"><label>Vendor Name *</label><input name="name" value="${esc(v.name || '')}"></div><div class="form-row"><label>Legal Name</label><input name="legalName" value="${esc(v.legalName || '')}"></div><div class="form-row"><label>Vendor Type</label><select name="type">${opts(['Material Supplier','Subcontractor','Equipment Rental','Service Provider','Consultant','Transporter'], v.type)}</select></div><div class="form-row"><label>Category *</label><input name="category" value="${esc(v.category || '')}" placeholder="Cement, Steel, MEP, Rental"></div><div class="form-row"><label>Status</label><select name="status">${opts(['Pending Approval','Approved','Active','On Hold','Blacklisted','Inactive'], v.status || 'Pending Approval')}</select></div><div class="form-row"><label>Contact Person</label><input name="contact" value="${esc(v.contact || '')}"></div><div class="form-row"><label>Phone *</label><input name="phone" value="${esc(v.phone || '')}"></div><div class="form-row"><label>Email</label><input name="email" value="${esc(v.email || '')}"></div><div class="form-row"><label>PAN/VAT *</label><input name="pan" value="${esc(v.pan || v.gstVat || '')}"></div><div class="form-row"><label>Address</label><input name="address" value="${esc(v.address || '')}"></div><div class="form-row"><label>Location</label><input name="location" value="${esc(v.location || '')}"></div><div class="form-row"><label>Project</label><select name="projectId">${(State.projects || []).map(p=>`<option value="${esc(p.id)}" ${p.id===(v.projectId || State.activeProject)?'selected':''}>${esc(p.id + ' - ' + p.name)}</option>`).join('')}</select></div><div class="form-row"><label>Payment Terms</label><input name="terms" value="${esc(v.terms || '30 days')}"></div><div class="form-row"><label>Bank Details</label><input name="bank" value="${esc(v.bank || '')}"></div><div class="form-row"><label>Credit Limit</label><input type="number" name="creditLimit" value="${esc(v.creditLimit || v.credit || 0)}"></div><div class="form-row"><label>Performance Score</label><input type="number" name="score" value="${esc(v.score || 75)}"></div><div class="form-row"><label>Document Upload</label><input type="file" name="docFile"></div><div class="form-row col-span-3"><label>Notes</label><textarea name="notes">${esc(v.notes || '')}</textarea></div></div>`;
+  }
+  function vendorOpenForm(id='') {
+    ensureVendorModuleData();
+    const existing = id ? vendorById(id) : null;
+    openModal({ title:id ? 'Edit Vendor' : 'Onboard Vendor', wide:true, submitLabel:'Save Vendor', body:vendorFormBody(existing || {}), onSubmit:d => {
+      if (!d.id || !d.name || !d.phone || !d.pan || !d.category) { toast('Validation','Vendor ID, name, phone, PAN/VAT and category are required.','bad'); return false; }
+      if (!existing && State.vendors.some(v => String(v.id).toLowerCase() === String(d.id).toLowerCase())) { toast('Duplicate Vendor ID','Vendor ID already exists.','bad'); return false; }
+      const dupPan = State.vendors.find(v => v.id !== d.id && String(v.pan || v.gstVat || '').toLowerCase() === String(d.pan || '').toLowerCase());
+      if (dupPan && !confirm('PAN/VAT already exists for ' + dupPan.name + '. Save with admin approval?')) return false;
+      const file = document.querySelector('#modalBody [name=docFile]')?.files?.[0]?.name || '';
+      const rec = { ...existing, ...d, legalName:d.legalName || d.name, gstVat:d.pan, creditLimit:+d.creditLimit||0, score:+d.score||0 };
+      if (existing?.id) Object.assign(existing, rec); else State.vendors.unshift(rec);
+      if (file) State.vendorDocuments.unshift({ id:'VDOC-' + Date.now(), vendorId:rec.id, type:'Uploaded Vendor Document', fileName:file, issueDate:new Date().toISOString().slice(0,10), expiryDate:'', status:'Received' });
+      State.vendorApprovals.unshift({ id:'VAPP-' + Date.now(), vendorId:rec.id, stage:rec.status === 'Approved' ? 'Approved Vendor List' : 'KYC Review', requestedBy:State.session?.user?.name || 'Procurement', requestedAt:new Date().toISOString().slice(0,10), approvedBy:rec.status === 'Approved' ? 'Procurement Head' : '', status:rec.status === 'Approved' ? 'Approved' : 'Pending', remarks:rec.category });
+      audit(existing?.id ? 'update' : 'create', 'Vendor', rec.id + ' - ' + rec.name);
+      saveState(); renderVendorsView(); renderProcurementView?.(); return true;
+    }});
+  }
+  function vendorOpenProfile(id) {
+    const v = vendorById(id);
+    const docs = State.vendorDocuments.filter(d=>d.vendorId===id);
+    const pay = State.vendorPayments.filter(p=>p.vendorId===id);
+    openDrawer({ title:v.name || id, body:`<div class="space-y-3"><div class="card p-3"><div class="font-mono text-xs">${esc(v.id)}</div><div class="font-display font-bold text-lg">${esc(v.legalName || v.name)}</div><div class="text-xs text-stone-500">${esc(v.category)} | ${esc(v.type)} | ${vendorBadge(v.status)}</div></div><div class="grid grid-cols-2 gap-2 text-xs"><div class="card p-3"><b>Contact</b><br>${esc(v.contact || '-')}<br>${esc(v.phone || '-')}<br>${esc(v.email || '-')}</div><div class="card p-3"><b>PAN/VAT</b><br>${esc(v.pan || v.gstVat || '-')}<br>Credit: ${fmtNPR(v.creditLimit || v.credit || 0)}</div><div class="card p-3"><b>Address</b><br>${esc(v.address || '-')}<br>${esc(v.location || '-')}</div><div class="card p-3"><b>Performance</b><br>Score ${esc(v.score || 0)} | ${esc(v.qualityGrade || '-')}<br>On-time ${esc(v.onTimePct || 0)}%</div></div><div class="card p-3 text-xs"><b>Documents</b><br>${docs.map(d=>esc(d.type + ' - ' + d.status)).join('<br>') || 'No documents uploaded'}</div><div class="card p-3 text-xs"><b>Payment Exposure</b><br>${pay.map(p=>esc((p.invoice || p.id) + ' - ' + p.status + ' - ' + fmtNPR((+p.amount||0)-(+p.paid||0)))).join('<br>') || 'No pending invoices'}</div><div class="flex gap-2"><button class="btn btn-ghost" onclick="vendorOpenForm('${esc(v.id)}'); closeDrawer();"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button><button class="btn btn-amber" onclick="State.vendorCurrentTab='payments'; renderVendorsView(); closeDrawer();"><i data-lucide="wallet-cards" class="w-3 h-3"></i>Payments</button></div></div>` });
+  }
+  function vendorExportCSV(title='Vendor Management Register') {
+    const rows = vendorFilteredRows().map(v => [v.id,v.name,v.legalName,v.type,v.category,v.contact,v.phone,v.email,v.pan || v.gstVat,v.projectId,v.terms,v.bank,v.creditLimit || v.credit || 0,v.score,v.status]);
+    bcDownloadCSV(title, ['Vendor ID','Name','Legal Name','Type','Category','Contact','Phone','Email','PAN/VAT','Project','Terms','Bank','Credit Limit','Score','Status'], rows, 'buildcore-vendors');
+    audit('export','Vendor CSV', rows.length + ' vendors');
+  }
+  function vendorPrint() { toast('Print Ready','Use browser print to save the vendor report as PDF.','info'); setTimeout(()=>window.print(), 300); }
+  window.vendorOpenForm = vendorOpenForm;
   function poNo(p) { return p.poNo || p.id || 'PO-DRAFT'; }
   function poVendor(p) { return p.supplier || p.vendor || p.vendorName || 'Unassigned vendor'; }
   function poLines(p) { return Array.isArray(p.items) ? p.items : [{ name:p.items || 'Items not detailed', qty:'', rate:0, total:p.value || p.total || 0 }]; }
@@ -12609,6 +12867,7 @@
       { view:'estimation',    icon:'calculator',         title:'BOQ & Estimate',sub:'Rates and quantities', color:'#15803D' },
       { view:'budgetcontrol', icon:'circle-dollar-sign', title:'Cost Control',  sub:'Budget, EAC, milestones', color:'#1E3A4C' },
       { view:'procurement',   icon:'shopping-cart',      title:'Procurement',   sub:'Vendors, POs, receipts', color:'#7C3AED' },
+      { view:'vendors',       icon:'handshake',          title:'Vendors',       sub:'AVL, KYC, scorecards', color:'#B45309' },
       { view:'billing',       icon:'receipt',            title:'Billing',       sub:'RA bills and certification', color:'#15803D' }
     ]},
     { label:'Review', tiles:[
@@ -12642,6 +12901,7 @@
     if (view === 'hrms') { ensureHRMSData(); return State.manpowerMaster?.filter(m => m.status === 'Active').length || 0; }
     if (view === 'workforce') return 142;
     if (view === 'procurement') return State.pos?.length || 0;
+    if (view === 'vendors') { ensureVendorModuleData(); return State.vendors?.length || 0; }
     if (view === 'tenders')   return State.tenders?.length || 0;
     if (view === 'billing')   return State.raBills?.length || 0;
     if (view === 'budgetcontrol') { seedBCCData(); return State.bccBoq?.length || 0; }
@@ -12711,6 +12971,14 @@
     const pendingPOs = (State.pos || []).filter(p => ['DRAFT','PARTIAL','OVERDUE'].includes(poStatusKey(p)));
     if (pendingPOs.length) add('warn', pendingPOs.length + ' purchase orders need action', 'Approve generated POs, receive site material, and review missing quantities.', 'procurement', 'shopping-cart', 'Open PO Track');
 
+    try { ensureVendorModuleData(); } catch(_) {}
+    const vendorDocs = (State.vendorDocuments || []).filter(d => d.expiryDate && new Date(d.expiryDate) <= new Date(Date.now() + 30*86400000));
+    const vendorApprovals = (State.vendorApprovals || []).filter(a => String(a.status || '').toLowerCase() === 'pending');
+    const vendorHold = (State.vendorBlacklist || []).filter(b => !String(b.status || '').toLowerCase().includes('closed'));
+    if (vendorDocs.length) add('warn', vendorDocs.length + ' vendor document alerts', 'PAN/VAT, tax, insurance or compliance files need renewal.', 'vendors', 'handshake', 'Open vendors');
+    if (vendorApprovals.length) add('warn', vendorApprovals.length + ' vendor approvals pending', 'KYC and approved-vendor-list workflow needs action.', 'vendors', 'badge-check', 'Open AVL');
+    if (vendorHold.length) add('bad', vendorHold.length + ' vendors on watchlist', 'Review hold, blacklist, or corrective action before releasing new POs.', 'vendors', 'ban', 'Open holds');
+
     const openNcrs = (State.ncrs || []).filter(n => n.status !== 'closed');
     if (openNcrs.length) add('warn', openNcrs.length + ' open NCRs', 'Close corrective actions and keep QA/QC evidence current.', 'quality', 'badge-check', 'Open QA');
 
@@ -12776,6 +13044,7 @@
       { view:'assets', icon:'qr-code', label:'Assets', value:(State.assets || []).length, detail:'asset lifecycle and QR tracking', color:'#1E3A4C' },
       { view:'aidocs', icon:'brain-circuit', label:'AI Docs', value:(State.aiDocAnswerHistory || []).length, detail:'answers with source references', color:'#1E3A4C' },
       { view:'procurement', icon:'shopping-cart', label:'Procurement', value:pendingPOs.length, detail:'PO approval, receipt, vendor detail', color:'#7C3AED' },
+      { view:'vendors', icon:'handshake', label:'Vendors', value:(State.vendors || []).length, detail:'approved list, KYC and scorecards', color:'#B45309' },
       { view:'quality', icon:'badge-check', label:'QA/QC', value:(State.labReports || []).length || openNcrs, detail:'lab reports and NCRs', color:openNcrs ? '#C0383B' : '#15803D' },
       { view:'clientportal', icon:'file-check-2', label:'Client Portal', value:pendingClient, detail:'pending approvals', color:pendingClient ? '#B45309' : '#15803D' },
       { view:'billing', icon:'receipt', label:'Billing', value:(State.raBills || []).length, detail:'net billed ' + fmtNPR(billed), color:'#E8742C' },
@@ -12870,7 +13139,7 @@
 
   function renderLauncher() {
     // Seed data so counts are accurate
-    try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); ensureHRMSData?.(); } catch(e){}
+    try { seedIMSData?.(); seedEqData?.(); seedEventsData?.(); seedTodosData?.(); ensureHRMSData?.(); ensureVendorModuleData?.(); } catch(e){}
     ensureERPUpgradeDefaults();
     ensureControlLayerDefaults();
     const codingRecords = controlRecords();
@@ -13345,12 +13614,12 @@
   // =====================================================================
   const ROLE_PERMS = {
     ceo:      { name:'Mr. Rajesh Tamang',     role:'CEO Â· Full Access',           avatar:'RT', projects:'ALL', modules:'ALL' },
-    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO Â· Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','hrms','analytics','audit','control','documents','aidocs','reports'] },
+    cfo:      { name:'Ms. Sunita Adhikari',   role:'CFO Â· Financial Oversight',   avatar:'SA', projects:'ALL', modules:['dashboard','projects','budgetcontrol','finance','billing','procurement','vendors','hrms','analytics','audit','control','documents','aidocs','reports'] },
     pm:       { name:'R. Tamang (PM)',        role:'Project Manager Â· Projects',  avatar:'RT', projects:['PRJ-017','PRJ-030'], modules:'ALL' },
     se:       { name:'S. Adhikari',           role:'Site Engineer Â· Site Ops',    avatar:'SA', projects:['PRJ-017','PRJ-021','PRJ-030'], modules:['dashboard','projects','schedule','budgetcontrol','dpr','hrms','workforce','materials','equipment','assets','quality','safety','documents','aidocs','control','events','todos'] },
     qc:       { name:'M. Khatri (QC)',        role:'QC Officer Â· Quality',        avatar:'MK', projects:['PRJ-017','PRJ-019','PRJ-030'], modules:['dashboard','projects','quality','safety','dpr','documents','aidocs','events','todos'] },
-    store:    { name:'Store Manager',          role:'Store Â· Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','equipment','assets','hrms','control','events','todos'] },
-    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator Â· BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','budgetcontrol','finance','documents','aidocs','control','events','todos'] },
+    store:    { name:'Store Manager',          role:'Store Â· Inventory & Procure', avatar:'SM', projects:'ALL', modules:['dashboard','materials','procurement','vendors','equipment','assets','hrms','control','events','todos'] },
+    estimator:{ name:'D. Rai (Estimator)',     role:'Estimator Â· BOQ & Tenders',   avatar:'DR', projects:'ALL', modules:['dashboard','projects','tenders','estimation','budgetcontrol','finance','vendors','documents','aidocs','control','events','todos'] },
     client:   { name:'Client Reviewer',        role:'Client Â· Approval Portal',    avatar:'CL', projects:'ALL', modules:['clientportal','dpr','quality','documents','aidocs','reports'] }
   };
 
@@ -14831,6 +15100,10 @@ Available Actions:
     (State.boq || []).forEach((r,i) => rows.push({ module:'BOQ/WBS', id:r.code || r.id || 'BOQ-' + (i+1), project:r.projectId, location:r.location, activity:r.wbs || r.scheduleActivity, cost:r.costCode || r.code, resource:r.resourceCode || r.workCategory, date:r.updatedAt || r.createdAt, user:r.updatedBy || r.createdBy, status:r.approvalStatus || 'draft' }));
     (State.dprs || []).forEach((r,i) => rows.push({ module:'DPR', id:r.id || 'DPR-' + (i+1), project:r.projectId || r.proj, location:r.location || r.site || r.wbs, activity:r.wbs || r.activity || r.work, cost:r.boqCode || r.costCode, resource:r.resourceCode || 'Labour/Equipment/Material', date:r.date || r.createdAt, user:r.by || r.engineer || r.responsible || r.preparedBy, status:r.approvalStatus || r.approval || r.status }));
     (State.stockMovements || []).forEach((r,i) => rows.push({ module:'Materials', id:r.ref || r.id || 'MOV-' + (i+1), project:r.projectId || r.proj || r.chargeProject, location:r.location || r.site || r.toSite || r.fromSite, activity:r.activity || r.chargeActivity, cost:r.boqCode || r.costCode || r.itemId, resource:r.resourceCode || r.itemId, date:r.date, user:r.issuedBy || r.createdBy || r.receiver, status:r.approval || r.status }));
+    (State.vendors || []).forEach((r,i) => rows.push({ module:'Vendors', id:r.id || 'VND-' + (i+1), project:r.projectId, location:r.location || r.address, activity:r.category || r.type, cost:r.terms || r.creditLimit, resource:r.type || r.category, date:r.createdAt, user:r.contact || r.name, status:r.status }));
+    (State.vendorRFQs || []).forEach((r,i) => rows.push({ module:'Vendor RFQ', id:r.id || 'RFQ-' + (i+1), project:r.projectId, location:r.selectedVendor, activity:r.item, cost:r.quotedAmount, resource:(r.vendorIds || []).join(','), date:r.dueDate, user:r.selectedVendor, status:r.status }));
+    (State.vendorContracts || []).forEach((r,i) => rows.push({ module:'Vendor Contract', id:r.id || 'VCTR-' + (i+1), project:r.projectId, location:r.scope, activity:r.scope, cost:r.value, resource:r.vendorId, date:r.startDate, user:vendorById(r.vendorId).name, status:r.status }));
+    (State.vendorPayments || []).forEach((r,i) => rows.push({ module:'Vendor Payment', id:r.id || r.invoice || 'VPAY-' + (i+1), project:r.projectId, location:r.invoice, activity:'Vendor invoice', cost:r.amount, resource:r.vendorId, date:r.dueDate, user:vendorById(r.vendorId).name, status:r.status }));
     (State.equipLogs || []).forEach((r,i) => rows.push({ module:'Equipment', id:r.id || 'EQLOG-' + (i+1), project:r.projectId || r.proj || r.chargeProject, location:r.site || r.location, activity:r.activity || r.workActivity, cost:r.costCode || r.equipmentId, resource:r.resourceCode || r.equipmentId, date:r.date, user:r.operator || r.createdBy, status:r.approval || r.status }));
     (State.manpowerMaster || []).forEach((r,i) => rows.push({ module:'HRMS Manpower', id:r.id || 'MP-' + (i+1), project:r.projectId, location:r.temporaryAddress || r.department, activity:r.designation || r.skillCategory, cost:r.wageType || r.department, resource:r.skillCategory || r.employmentType, date:r.joiningDate, user:r.fullName, status:r.status }));
     (State.manpowerAttendance || []).forEach((r,i) => rows.push({ module:'HRMS Attendance', id:r.id || 'ATT-' + (i+1), project:r.projectId, location:r.shift, activity:r.status, cost:'Attendance', resource:r.manpowerId, date:r.date, user:hrmsPerson(r.manpowerId).fullName, status:r.approved ? 'approved' : 'pending' }));
@@ -14907,6 +15180,7 @@ Available Actions:
     if (view === 'materials') { if (State.session?.inProjectMode) State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
     if (view === 'hrms')      { setTimeout(renderHRMSView, 30); }
     if (view === 'procurement') { setTimeout(renderProcurementView, 30); }
+    if (view === 'vendors')   { setTimeout(renderVendorsView, 30); }
     if (view === 'budgetcontrol') { setTimeout(renderBCCView, 30); }
     if (view === 'equipment') { setTimeout(renderEquipmentView, 30); }
     if (view === 'plantproduction') { setTimeout(renderPlantProductionView, 30); }
@@ -14938,7 +15212,7 @@ Available Actions:
 
   // -------- COMMAND PALETTE (Cmd+K) --------
   const palItems = [
-    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','hrms','workforce','materials','equipment','plantproduction','crusherplant','batchingplant','assets','quality','clientportal','safety','procurement','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings','control'].map(v => ({label: v === 'hrms' ? 'HRMS' : v === 'plantproduction' ? 'Plant Production' : v === 'crusherplant' ? 'Crusher Plant' : v === 'batchingplant' ? 'Batching Plant' : v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
+    ...['dashboard','projects','schedule','tenders','estimation','budgetcontrol','dpr','hrms','workforce','materials','equipment','plantproduction','crusherplant','batchingplant','assets','quality','clientportal','safety','procurement','vendors','subcontractors','billing','finance','analytics','audit','documents','aidocs','reports','clients','settings','control'].map(v => ({label: v === 'hrms' ? 'HRMS' : v === 'plantproduction' ? 'Plant Production' : v === 'crusherplant' ? 'Crusher Plant' : v === 'batchingplant' ? 'Batching Plant' : v.charAt(0).toUpperCase()+v.slice(1), kind:'Module', action: () => navTo(v)})),
     ...State.projects.map(p => ({ label: p.name, sub: p.id + ' Â· ' + p.client, kind:'Project', action: () => { navTo('projects'); setTimeout(() => openProjectDetail(p.id), 100); }})),
     { label:'New Project', kind:'Action', action: () => actNewProject() },
     { label:'New Tender', kind:'Action', action: () => actNewTender() },
