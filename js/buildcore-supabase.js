@@ -85,6 +85,44 @@
     bccMilestones:{ table: 'budget_milestones',      id: 'id' },
     bccApprovals: { table: 'budget_approvals',       id: 'id' },
     aiDocAnswerHistory:{ table: 'ai_doc_answer_history', id: 'id' },
+    boq:      { table: 'boq_items',         id: 'id'   },
+    labReports: { table: 'lab_reports', id: 'id' },
+    labTestTypes: { table: 'lab_test_types', id: 'id' },
+    clientSubmissions: { table: 'client_submissions', id: 'id' },
+    documents: { table: 'documents', id: 'id' },
+    projectPackages: { table: 'project_packages', id: 'id' },
+    projectCalendars: { table: 'project_calendars', id: 'id' },
+    wbsActivities: { table: 'wbs_activities', id: 'id' },
+    projectLocations: { table: 'project_locations', id: 'id' },
+    projectMilestones: { table: 'project_milestones', id: 'id' },
+    approvalHistory: { table: 'approval_history', id: 'id' },
+    measurements: { table: 'measurements', id: null },
+    costRecords: { table: 'cost_records', id: null },
+    items: { table: 'inventory_items', id: 'id' },
+    stockMovements: { table: 'stock_movements', id: 'id' },
+    subcontractors: { table: 'subcontractors', id: 'id' },
+    toolIssues: { table: 'tool_issues', id: 'id' },
+    sites: { table: 'stock_sites', id: 'id' },
+    equipment: { table: 'equipment', id: 'id' },
+    equipLogs: { table: 'equipment_logs', id: 'id' },
+    operators: { table: 'equipment_operators', id: 'id' },
+    maintenance: { table: 'equipment_maintenance', id: 'id' },
+    eqSites: { table: 'equipment_sites', id: 'id' },
+    crusherRecords: { table: 'crusher_records', id: 'id' },
+    batchingRecords: { table: 'batching_records', id: 'id' },
+    events: { table: 'events', id: 'id' },
+    todos: { table: 'todos', id: 'id' },
+    projectSites: { table: 'project_work_sites', id: 'id' },
+    estItems: { table: 'estimation_items', id: 'id' },
+    contracts: { table: 'contracts', id: 'id' },
+    expenses: { table: 'expenses', id: 'id' },
+    revenues: { table: 'revenues', id: 'id' },
+    universalCodingSchema: { table: 'universal_coding_schema', id: 'id' },
+    compatibilityMappings: { table: 'compatibility_mappings', id: 'id' },
+    migrationLogs: { table: 'migration_logs', id: 'id' },
+    approvalMatrix: { table: 'approval_matrix', id: null },
+    periodLocks: { table: 'period_locks', id: 'id' },
+    exportLogs: { table: 'export_logs', id: null },
     activity: { table: 'activity',          id: null   },
     audit:    { table: 'audit_log',         id: 'hash' }
   };
@@ -178,12 +216,18 @@
     }));
 
     try {
-      var s = await sb.from('app_settings').select('automations,active_project').maybeSingle();
+      var s = await sb.from('app_settings').select('automations,active_project,feature_flags,dpr_templates').maybeSingle();
       if (s && s.data) {
         if (s.data.automations && Object.keys(s.data.automations).length) {
           State.automations = s.data.automations;
         }
         if (s.data.active_project) State.activeProject = s.data.active_project;
+        if (s.data.feature_flags && Object.keys(s.data.feature_flags).length) {
+          State.featureFlags = s.data.feature_flags;
+        }
+        if (s.data.dpr_templates && Object.keys(s.data.dpr_templates).length) {
+          State.dprTemplates = s.data.dpr_templates;
+        }
         hadData = true;
       }
     } catch (e) { log('load app_settings error', e && e.message); }
@@ -217,6 +261,8 @@
         user_id: u.id,
         automations: State.automations || {},
         active_project: State.activeProject || null,
+        feature_flags: State.featureFlags || {},
+        dpr_templates: State.dprTemplates || {},
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });
       if (r.error) log('settings upsert', r.error.message);

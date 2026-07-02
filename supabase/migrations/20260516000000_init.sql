@@ -102,7 +102,17 @@ declare
     'budget_boq_items', 'budget_resources', 'budget_resource_recipes',
     'budget_cost_ledger', 'budget_b2b_packages', 'budget_contracts',
     'budget_overheads', 'budget_milestones', 'budget_approvals',
-    'ai_doc_answer_history', 'activity', 'audit_log'
+    'ai_doc_answer_history', 'boq_items', 'lab_reports', 'lab_test_types',
+    'client_submissions', 'documents', 'project_packages', 'project_calendars',
+    'wbs_activities', 'project_locations', 'project_milestones', 'approval_history',
+    'measurements', 'cost_records', 'inventory_items', 'stock_movements',
+    'subcontractors', 'tool_issues', 'stock_sites', 'equipment', 'equipment_logs',
+    'equipment_operators', 'equipment_maintenance', 'equipment_sites',
+    'crusher_records', 'batching_records', 'events', 'todos', 'project_work_sites',
+    'estimation_items', 'contracts', 'expenses', 'revenues',
+    'universal_coding_schema', 'compatibility_mappings', 'migration_logs',
+    'approval_matrix', 'period_locks', 'export_logs',
+    'activity', 'audit_log'
   ];
 begin
   foreach tbl in array collection_tables loop
@@ -747,8 +757,14 @@ create table if not exists public.app_settings (
   user_id        uuid primary key default auth.uid() references auth.users (id) on delete cascade,
   automations    jsonb not null default '{}'::jsonb,
   active_project text,
+  feature_flags  jsonb not null default '{}'::jsonb,
+  dpr_templates  jsonb not null default '{}'::jsonb,
   updated_at     timestamptz not null default now()
 );
+
+-- Backfill columns for workspaces created before feature_flags/dpr_templates existed.
+alter table public.app_settings add column if not exists feature_flags jsonb not null default '{}'::jsonb;
+alter table public.app_settings add column if not exists dpr_templates jsonb not null default '{}'::jsonb;
 
 alter table public.app_settings enable row level security;
 
