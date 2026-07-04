@@ -69,11 +69,12 @@ supabase/seed.sql                 (seeding is automatic — see below)
 Every collection the app tracks — projects, tenders, materials, BOQ,
 vendors, HRMS/manpower, assets, budget & cost control, AI document
 intelligence, inventory (IMS), equipment, plant production, quality/lab,
-documents, estimation/finance, events/todos, governance — is its own
-RLS-isolated table storing the record verbatim in a `data jsonb`
-column, so the front-end shape migrates losslessly. See the
+documents, estimation/finance, events/todos, governance, accounting
+foundation (chart of accounts, fiscal years, contractor master) — is
+its own RLS-isolated table storing the record verbatim in a `data
+jsonb` column, so the front-end shape migrates losslessly. See the
 `collection_tables` array in `supabase/schema.sql` for the full,
-authoritative list (91 tables as of this writing) and
+authoritative list (95 tables as of this writing) and
 `js/buildcore-supabase.js`'s `MAP` for the State-key ↔ table mapping.
 
 Typed, queryable **views** (`v_projects`, `v_tenders`, `v_materials`,
@@ -81,5 +82,5 @@ Typed, queryable **views** (`v_projects`, `v_tenders`, `v_materials`,
 `v_asset_maintenance`) expose real columns for reporting and external
 CRUD on the core business entities; every other table is still fully
 usable via its raw `data` JSONB column. Workspace scalars (automations
-map, active project, feature flags, DPR templates) live in
+map, active project, feature flags, DPR templates, tax config) live in
 `app_settings`.

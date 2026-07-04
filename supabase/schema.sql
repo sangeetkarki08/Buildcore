@@ -90,6 +90,7 @@ declare
     'purchase_orders', 'vendors', 'vendor_documents',
     'vendor_approvals', 'vendor_evaluations', 'vendor_rfqs',
     'vendor_contracts', 'vendor_payments', 'vendor_blacklist',
+    'coa_accounts', 'fiscal_years', 'contractor_master', 'contractor_documents',
     'dprs', 'variation_orders', 'risks',
     'photos', 'manpower_master', 'manpower_deployment',
     'manpower_attendance', 'manpower_payroll', 'manpower_leave',
@@ -759,12 +760,14 @@ create table if not exists public.app_settings (
   active_project text,
   feature_flags  jsonb not null default '{}'::jsonb,
   dpr_templates  jsonb not null default '{}'::jsonb,
+  tax_config     jsonb not null default '{}'::jsonb,
   updated_at     timestamptz not null default now()
 );
 
--- Backfill columns for workspaces created before feature_flags/dpr_templates existed.
+-- Backfill columns for workspaces created before feature_flags/dpr_templates/tax_config existed.
 alter table public.app_settings add column if not exists feature_flags jsonb not null default '{}'::jsonb;
 alter table public.app_settings add column if not exists dpr_templates jsonb not null default '{}'::jsonb;
+alter table public.app_settings add column if not exists tax_config jsonb not null default '{}'::jsonb;
 
 alter table public.app_settings enable row level security;
 

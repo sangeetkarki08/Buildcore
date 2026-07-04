@@ -48,6 +48,10 @@
     vendorContracts: { table: 'vendor_contracts', id: 'id' },
     vendorPayments: { table: 'vendor_payments', id: 'id' },
     vendorBlacklist: { table: 'vendor_blacklist', id: 'id' },
+    coaAccounts:         { table: 'coa_accounts',          id: 'id' },
+    fiscalYears:         { table: 'fiscal_years',          id: 'id' },
+    contractorMaster:    { table: 'contractor_master',     id: 'id' },
+    contractorDocuments: { table: 'contractor_documents',  id: 'id' },
     dprs:     { table: 'dprs',              id: 'id'   },
     vos:      { table: 'variation_orders',  id: 'id'   },
     risks:    { table: 'risks',             id: 'id'   },
@@ -216,7 +220,7 @@
     }));
 
     try {
-      var s = await sb.from('app_settings').select('automations,active_project,feature_flags,dpr_templates').maybeSingle();
+      var s = await sb.from('app_settings').select('automations,active_project,feature_flags,dpr_templates,tax_config').maybeSingle();
       if (s && s.data) {
         if (s.data.automations && Object.keys(s.data.automations).length) {
           State.automations = s.data.automations;
@@ -227,6 +231,9 @@
         }
         if (s.data.dpr_templates && Object.keys(s.data.dpr_templates).length) {
           State.dprTemplates = s.data.dpr_templates;
+        }
+        if (s.data.tax_config && Object.keys(s.data.tax_config).length) {
+          State.taxConfig = s.data.tax_config;
         }
         hadData = true;
       }
@@ -263,6 +270,7 @@
         active_project: State.activeProject || null,
         feature_flags: State.featureFlags || {},
         dpr_templates: State.dprTemplates || {},
+        tax_config: State.taxConfig || {},
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });
       if (r.error) log('settings upsert', r.error.message);
