@@ -52,6 +52,8 @@
     fiscalYears:         { table: 'fiscal_years',          id: 'id' },
     contractorMaster:    { table: 'contractor_master',     id: 'id' },
     contractorDocuments: { table: 'contractor_documents',  id: 'id' },
+    ledgerEntries:       { table: 'ledger_entries',        id: 'id' },
+    equipMonthlyPerformance: { table: 'equip_monthly_performance', id: 'id' },
     dprs:     { table: 'dprs',              id: 'id'   },
     vos:      { table: 'variation_orders',  id: 'id'   },
     risks:    { table: 'risks',             id: 'id'   },

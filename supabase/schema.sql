@@ -91,6 +91,7 @@ declare
     'vendor_approvals', 'vendor_evaluations', 'vendor_rfqs',
     'vendor_contracts', 'vendor_payments', 'vendor_blacklist',
     'coa_accounts', 'fiscal_years', 'contractor_master', 'contractor_documents',
+    'ledger_entries', 'equip_monthly_performance',
     'dprs', 'variation_orders', 'risks',
     'photos', 'manpower_master', 'manpower_deployment',
     'manpower_attendance', 'manpower_payroll', 'manpower_leave',

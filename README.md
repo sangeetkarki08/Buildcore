@@ -70,11 +70,12 @@ Every collection the app tracks — projects, tenders, materials, BOQ,
 vendors, HRMS/manpower, assets, budget & cost control, AI document
 intelligence, inventory (IMS), equipment, plant production, quality/lab,
 documents, estimation/finance, events/todos, governance, accounting
-foundation (chart of accounts, fiscal years, contractor master) — is
-its own RLS-isolated table storing the record verbatim in a `data
+foundation (chart of accounts, fiscal years, contractor master, a
+system-posted cost ledger), equipment monthly performance — is its
+own RLS-isolated table storing the record verbatim in a `data
 jsonb` column, so the front-end shape migrates losslessly. See the
 `collection_tables` array in `supabase/schema.sql` for the full,
-authoritative list (95 tables as of this writing) and
+authoritative list (97 tables as of this writing) and
 `js/buildcore-supabase.js`'s `MAP` for the State-key ↔ table mapping.
 
 Typed, queryable **views** (`v_projects`, `v_tenders`, `v_materials`,

@@ -1484,6 +1484,7 @@
             <button class="ims-tab active" data-eqtab="overview"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>Fleet Overview</button>
             <button class="ims-tab" data-eqtab="master"><i data-lucide="hard-hat" class="w-3 h-3"></i>Equipment Master</button>
             <button class="ims-tab" data-eqtab="logs"><i data-lucide="clipboard-list" class="w-3 h-3"></i>Logsheets</button>
+            <button class="ims-tab" data-eqtab="monthly"><i data-lucide="calendar-check" class="w-3 h-3"></i>Monthly Performance</button>
             <button class="ims-tab" data-eqtab="operators"><i data-lucide="user-circle" class="w-3 h-3"></i>Operators</button>
             <button class="ims-tab" data-eqtab="maintenance"><i data-lucide="wrench" class="w-3 h-3"></i>Maintenance</button>
             <button class="ims-tab" data-eqtab="compliance"><i data-lucide="shield-check" class="w-3 h-3"></i>Owned Compliance</button>
@@ -3223,6 +3224,7 @@
     equipLogs: [],    // daily log entries per equipment
     operators: [],    // operator master
     maintenance: [],  // maintenance records
+    equipMonthlyPerformance: [], // monthly rollup per equipment (recalculated from equipLogs/maintenance/ledgerEntries)
     eqSites: [        // job sites where equipment operates (distinct from warehouses)
       { id:'ST001', name:'Skyline Towers · Lalitpur', location:'Sanepa, Lalitpur', client:'NIC Asia / NCC', startDate:'2024-09-01', status:'Active' },
       { id:'ST002', name:'Ring Road Underpass · Kalanki', location:'Kalanki, KTM', client:'DoR Nepal', startDate:'2024-11-15', status:'Active' },
@@ -3232,7 +3234,8 @@
     ],
     eqCurrentTab: 'overview',
     eqSelectedEquip: '',  // currently-selected equipment ID in Logsheets tab
-    eqNextId: { equip:1, log:1, op:1, mt:1 },
+    eqMonthlySelected: '', // currently-selected month (YYYY-MM) in Monthly Performance tab
+    eqNextId: { equip:1, log:1, op:1, mt:1, perf:1 },
     // ============== PLANT PRODUCTION MONITORING ==============
     crusherRecords: [],
     batchingRecords: [],
@@ -3285,9 +3288,10 @@
     taxConfig: {},          // singleton: VAT rate + TDS rate table
     contractorMaster: [],   // Contractor/Subcontractor master data
     contractorDocuments: [],// registration, tax clearance, etc.
+    ledgerEntries: [],      // system-posted cost entries against Chart of Accounts (no manual form - posted by other modules)
     acctCurrentTab: 'coa',
     acctFilters: { q:'', category:'ALL', status:'ALL', fiscalYear:'ALL' },
-    acctNextId: { coa:1, fy:1, contractor:1, doc:1 },
+    acctNextId: { coa:1, fy:1, contractor:1, doc:1, ledger:1 },
     universalCodingSchema: [],
     featureFlags: {},
     compatibilityMappings: [],
@@ -3376,8 +3380,10 @@
     State.equipLogs = [];
     State.operators = [];
     State.maintenance = [];
+    State.equipMonthlyPerformance = [];
     State.eqSites = [];
-    State.eqNextId = { equip:1, log:1, op:1, mt:1 };
+    State.eqMonthlySelected = '';
+    State.eqNextId = { equip:1, log:1, op:1, mt:1, perf:1 };
     State.assets = [];
     State.assetAllocations = [];
     State.assetTransfers = [];
@@ -3409,9 +3415,10 @@
     State.taxConfig = {};
     State.contractorMaster = [];
     State.contractorDocuments = [];
+    State.ledgerEntries = [];
     State.acctCurrentTab = 'coa';
     State.acctFilters = { q:'', category:'ALL', status:'ALL', fiscalYear:'ALL' };
-    State.acctNextId = { coa:1, fy:1, contractor:1, doc:1 };
+    State.acctNextId = { coa:1, fy:1, contractor:1, doc:1, ledger:1 };
     State.universalCodingSchema = [];
     State.featureFlags = {};
     State.compatibilityMappings = [];
@@ -3459,7 +3466,8 @@
       sites: State.sites, imsCurrentTab: State.imsCurrentTab, imsNextId: State.imsNextId,
       scheduleActivities: State.scheduleActivities,
       equipment: State.equipment, equipLogs: State.equipLogs, operators: State.operators,
-      maintenance: State.maintenance, eqSites: State.eqSites, eqCurrentTab: State.eqCurrentTab,
+      maintenance: State.maintenance, equipMonthlyPerformance: State.equipMonthlyPerformance,
+      eqSites: State.eqSites, eqCurrentTab: State.eqCurrentTab,
       eqSelectedEquip: State.eqSelectedEquip, eqNextId: State.eqNextId,
       crusherRecords: State.crusherRecords, batchingRecords: State.batchingRecords,
       plantCurrentTab: State.plantCurrentTab, plantNextId: State.plantNextId,
@@ -3501,6 +3509,7 @@
       approvalMatrix: State.approvalMatrix, periodLocks: State.periodLocks, exportLogs: State.exportLogs,
       coaAccounts: State.coaAccounts, fiscalYears: State.fiscalYears, taxConfig: State.taxConfig,
       contractorMaster: State.contractorMaster, contractorDocuments: State.contractorDocuments,
+      ledgerEntries: State.ledgerEntries,
       acctCurrentTab: State.acctCurrentTab, acctFilters: State.acctFilters, acctNextId: State.acctNextId,
       vos: State.vos, risks: State.risks, photos: State.photos,
       activity: State.activity.slice(0,50).map(a => ({...a, t: (a.t instanceof Date ? a.t.toISOString() : a.t)})),
@@ -3539,7 +3548,7 @@
       // Hydrate Date strings back to Date objects in activity log
       if (snap.activity) snap.activity = snap.activity.map(a => ({...a, t: new Date(a.t)}));
       // Selective merge — preserve seeded data structure
-      ['activeProject','currentView','session','projects','tenders','materials','boq','projectPackages','projectCalendars','wbsActivities','projectLocations','projectMilestones','approvalHistory','measurements','costRecords','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','crusherRecords','batchingRecords','plantCurrentTab','plantNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','vendorDocuments','vendorApprovals','vendorEvaluations','vendorRFQs','vendorContracts','vendorPayments','vendorBlacklist','vendorCurrentTab','vendorFilters','vendorNextId','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','manpowerMaster','manpowerDeployment','manpowerAttendance','manpowerPayroll','manpowerLeave','manpowerDocuments','manpowerTraining','manpowerSafety','subcontractorManpower','manpowerAdvanceDeduction','manpowerTransferHistory','hrmsCurrentTab','hrmsFilters','hrmsNextId','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','coaAccounts','fiscalYears','taxConfig','contractorMaster','contractorDocuments','acctCurrentTab','acctFilters','acctNextId','vos','risks','photos','activity','audit'].forEach(k => {
+      ['activeProject','currentView','session','projects','tenders','materials','boq','projectPackages','projectCalendars','wbsActivities','projectLocations','projectMilestones','approvalHistory','measurements','costRecords','items','stockMovements','subcontractors','toolIssues','sites','imsCurrentTab','imsNextId','scheduleActivities','equipment','equipLogs','operators','maintenance','equipMonthlyPerformance','eqSites','eqCurrentTab','eqSelectedEquip','eqNextId','crusherRecords','batchingRecords','plantCurrentTab','plantNextId','projectSites','psNextId','ncrs','raBills','pos','vendors','vendorDocuments','vendorApprovals','vendorEvaluations','vendorRFQs','vendorContracts','vendorPayments','vendorBlacklist','vendorCurrentTab','vendorFilters','vendorNextId','automations','dprs','dprTemplates','dprNextTemplateId','labReports','labTestTypes','clientSubmissions','labNextId','labTestNextId','clientSubmissionNextId','documents','docCurrentTab','manpowerMaster','manpowerDeployment','manpowerAttendance','manpowerPayroll','manpowerLeave','manpowerDocuments','manpowerTraining','manpowerSafety','subcontractorManpower','manpowerAdvanceDeduction','manpowerTransferHistory','hrmsCurrentTab','hrmsFilters','hrmsNextId','aiDocSourceMode','aiDocSelectedProject','aiDocSelectedDocs','aiDocCategoryFilter','aiDocStatusFilter','aiDocQuestion','aiDocCurrentAnswer','aiDocAnswerHistory','assets','assetCategories','assetLocations','assetAllocations','assetTransfers','assetMaintenance','assetBreakdowns','assetFuelLogs','assetInspections','assetDocuments','assetDisposals','assetNotifications','assetCurrentTab','assetSelectedId','assetNextId','bccBoq','bccResources','bccRecipes','bccActuals','bccPackages','bccContracts','bccOverheads','bccMilestones','bccApprovals','bccCurrentTab','bccNextId','universalCodingSchema','featureFlags','compatibilityMappings','migrationLogs','approvalMatrix','periodLocks','exportLogs','coaAccounts','fiscalYears','taxConfig','contractorMaster','contractorDocuments','ledgerEntries','acctCurrentTab','acctFilters','acctNextId','vos','risks','photos','activity','audit'].forEach(k => {
         if (snap[k] !== undefined) State[k] = snap[k];
       });
       console.log('[BuildCore] State restored from localStorage · saved', new Date(snap.savedAt).toLocaleString());
@@ -3565,6 +3574,9 @@
         measurements:State.measurements, costRecords:State.costRecords,
         items:State.items, stockMovements:State.stockMovements, subcontractors:State.subcontractors, toolIssues:State.toolIssues,
         sites:State.sites, imsCurrentTab:State.imsCurrentTab, imsNextId:State.imsNextId,
+        equipment:State.equipment, equipLogs:State.equipLogs, operators:State.operators,
+        maintenance:State.maintenance, equipMonthlyPerformance:State.equipMonthlyPerformance,
+        eqSites:State.eqSites, eqCurrentTab:State.eqCurrentTab, eqSelectedEquip:State.eqSelectedEquip, eqNextId:State.eqNextId,
         crusherRecords:State.crusherRecords, batchingRecords:State.batchingRecords,
         plantCurrentTab:State.plantCurrentTab, plantNextId:State.plantNextId,
         ncrs:State.ncrs, raBills:State.raBills, pos:State.pos, vendors:State.vendors, automations:State.automations,
@@ -3604,6 +3616,7 @@
         approvalMatrix:State.approvalMatrix, periodLocks:State.periodLocks, exportLogs:State.exportLogs,
         coaAccounts:State.coaAccounts, fiscalYears:State.fiscalYears, taxConfig:State.taxConfig,
         contractorMaster:State.contractorMaster, contractorDocuments:State.contractorDocuments,
+        ledgerEntries:State.ledgerEntries,
         acctCurrentTab:State.acctCurrentTab, acctFilters:State.acctFilters, acctNextId:State.acctNextId,
         vos:State.vos, risks:State.risks, photos:State.photos,
         activity:State.activity, audit:State.audit }
@@ -4422,7 +4435,7 @@
         mk('5110','Material Cost','Expense','COA-5100','Direct Expense','',true),
         mk('5120','Labour Cost','Expense','COA-5100','Direct Expense','',true),
         mk('5130','Subcontract Cost','Expense','COA-5100','Direct Expense','',true),
-        mk('5140','Equipment Cost','Expense','COA-5100','Direct Expense','',true),
+        mk('5140','Equipment Cost','Expense','COA-5100','Direct Expense','EQUIPMENT_COST',true),
         mk('5200','Overhead / Indirect Expense','Expense','COA-5000','Indirect Expense'),
         mk('5210','Site Overheads','Expense','COA-5200','Indirect Expense'),
         mk('5220','Admin Overheads','Expense','COA-5200','Indirect Expense'),
@@ -4462,13 +4475,36 @@
     seedAccountingData();
     State.contractorMaster ||= [];
     State.contractorDocuments ||= [];
+    State.ledgerEntries ||= [];
     State.acctCurrentTab ||= 'coa';
     State.acctFilters ||= { q:'', category:'ALL', status:'ALL', fiscalYear:'ALL' };
-    State.acctNextId ||= { coa:1, fy:1, contractor:1, doc:1 };
+    State.acctNextId ||= { coa:1, fy:1, contractor:1, doc:1, ledger:1 };
+    State.acctNextId.ledger ||= 1;
+    // Backfill systemKey for workspaces seeded before EQUIPMENT_COST was added
+    const eqCost = State.coaAccounts.find(a => a.code === '5140');
+    if (eqCost && !eqCost.systemKey) eqCost.systemKey = 'EQUIPMENT_COST';
   }
   function coaById(id) { ensureAccountingModuleData(); return (State.coaAccounts || []).find(a => String(a.id) === String(id)); }
   function contractorById(id) { ensureAccountingModuleData(); return (State.contractorMaster || []).find(c => String(c.id) === String(id)); }
   function fiscalYearById(id) { ensureAccountingModuleData(); return (State.fiscalYears || []).find(f => String(f.id) === String(id)); }
+  // System-posted cost entry against the Chart of Accounts. No manual form - other modules
+  // (Equipment logs/maintenance, and future phases) call this to post cost, keyed by the
+  // target account's stable systemKey rather than its id/name.
+  function postLedgerEntry({ systemKey, amount, costCode='', projectId='', sourceModule='', sourceId='', description='', date='' }) {
+    ensureAccountingModuleData();
+    if (!amount) return null;
+    const account = State.coaAccounts.find(a => a.systemKey === systemKey);
+    const entry = {
+      id:'LDG-' + String(State.acctNextId.ledger++).padStart(6,'0'),
+      date: date || new Date().toISOString().slice(0,10),
+      coaAccountId: account?.id || '', systemKey, amount:+amount || 0,
+      costCode, projectId, sourceModule, sourceId, description,
+      createdAt: new Date().toISOString()
+    };
+    State.ledgerEntries.unshift(entry);
+    audit('create','Ledger Entry', (account?.name || systemKey) + ' · ' + fmtNPR(entry.amount) + ' · ' + description);
+    return entry;
+  }
   function acctBadge(v) {
     const s = String(v || '').toLowerCase();
     const cls = s.includes('active') || s.includes('valid') || s.includes('verified') ? 'badge-ok' : s.includes('pending') || s.includes('draft') || s.includes('expiring') ? 'badge-warn' : s.includes('black') || s.includes('inactive') || s.includes('expired') || s.includes('locked') ? 'badge-bad' : 'badge-info';
@@ -4529,6 +4565,7 @@
     const groups = typeOrder.map(type => ({ type, rows: State.coaAccounts.filter(a => a.type === type) }));
     return `<div class="card p-4"><div class="flex items-center justify-between mb-2"><div class="font-display font-bold">Chart of Accounts</div><div class="text-xs text-stone-500">System keys are permanent lookup anchors used by later accounting features</div></div>
       ${groups.map(g => `<div class="mb-4"><div class="font-mono text-[10px] text-stone-500 mb-1 mt-3">${g.type.toUpperCase()}</div><table class="data"><thead><tr><th>Code</th><th>Name</th><th>Nature</th><th>Cost Center</th><th>System Key</th><th>Status</th><th>Actions</th></tr></thead><tbody>${g.rows.map(a => `<tr><td class="font-mono text-xs">${esc(a.code)}</td><td style="padding-left:${a.parentId ? '20px' : '4px'}"><b>${esc(a.name)}</b></td><td class="text-xs">${esc(a.natureGroup || '-')}</td><td class="text-xs">${a.isCostCenterTaggable ? '<span class="badge badge-info">Yes</span>' : '-'}</td><td>${a.systemKey ? `<span class="badge badge-ok font-mono text-[10px]">${esc(a.systemKey)}</span>` : '-'}</td><td>${acctBadge(a.status)}</td><td><button class="btn btn-ghost text-xs" data-coa-edit="${esc(a.id)}"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button></td></tr>`).join('') || `<tr><td colspan="7" class="text-center text-stone-500 py-3">No accounts</td></tr>`}</tbody></table></div>`).join('')}
+      <div class="mt-4"><div class="font-display font-bold text-sm mb-2">Recent Postings</div><table class="data"><thead><tr><th>Date</th><th>Account</th><th>Amount</th><th>Cost Code</th><th>Source</th><th>Description</th></tr></thead><tbody>${(State.ledgerEntries || []).slice(0,20).map(e => `<tr><td class="text-xs">${esc(e.date)}</td><td class="text-xs">${esc(coaById(e.coaAccountId)?.name || e.systemKey)}</td><td class="text-right font-mono text-xs">${fmtNPR(e.amount)}</td><td class="font-mono text-xs">${esc(e.costCode || '-')}</td><td class="text-xs">${esc(e.sourceModule)} · ${esc(e.sourceId)}</td><td class="text-xs">${esc(e.description)}</td></tr>`).join('') || `<tr><td colspan="6" class="text-center text-stone-500 py-3">No postings yet - system-generated from Equipment logs, maintenance and future modules</td></tr>`}</tbody></table></div>
     </div>`;
   }
   function renderFiscalYearsTab() {
@@ -7407,7 +7444,7 @@
   }
   function eqSyncMaterialIssueLogs() {
     State.equipLogs = Array.isArray(State.equipLogs) ? State.equipLogs : [];
-    (State.stockMovements || []).filter(m => m.type === 'OUT' && m.recipientType === 'equipment').forEach(m => {
+    (State.stockMovements || []).filter(m => m.type === 'OUT' && m.recipientType === 'equipment' && m.sourceModule !== 'equipment-log' && m.sourceModule !== 'equipment-maintenance').forEach(m => {
       const sourceId = 'EQ-MAT-' + m.id;
       if (State.equipLogs.some(l => l.sourceId === sourceId)) return;
       const item = (State.items || []).find(i => Number(i.id) === Number(m.itemId)) || {};
@@ -7423,6 +7460,49 @@
       });
       if (State.eqNextId) State.eqNextId.log = Number(State.eqNextId.log || 1) + 1;
     });
+  }
+  // ---- Fuel/consumables -> Store stock link (mirrors plantEnsureItem/plantMovement/
+  //      plantPlannedMovements/plantValidateMovements/plantRemovePostedMovements) ----
+  function eqEnsureConsumableItems() {
+    State.items = Array.isArray(State.items) ? State.items : [];
+    const dieselItem = plantEnsureItem('FUEL-DIESEL','Diesel','Fuel','L',118,0);
+    const greaseItem = plantEnsureItem('LUBE-GREASE','Grease','Lubricant','kg',450,0);
+    const hydOilItem = plantEnsureItem('LUBE-HYD-OIL','Hydraulic Oil','Lubricant','L',380,0);
+    const engOilItem = plantEnsureItem('LUBE-ENG-OIL','Engine Oil','Lubricant','L',420,0);
+    return { dieselItemId:dieselItem.id, greaseItemId:greaseItem.id, hydraulicOilItemId:hydOilItem.id, engineOilItemId:engOilItem.id };
+  }
+  function eqLogMovement(itemId, qty, log, label, unitRate) {
+    return {
+      id:State.imsNextId.mov++, type:'OUT', itemId:Number(itemId), qty:Number(qty || 0), date:new Date(log.date).getTime(),
+      refNo:log.id + '-' + label, supplier:'', issuedTo:log.equipmentId, purpose:'Equipment daily log - ' + label,
+      recipientType:'equipment', recipientId:log.equipmentId, chargeProject:log.projectId || State.activeProject || '', projectId:log.projectId || State.activeProject || '',
+      siteId:plantActiveSiteId(), unitRate:Number(unitRate || 0), totalValue:Number(qty || 0) * Number(unitRate || 0),
+      sourceModule:'equipment-log', sourceId:log.id, notes:log.workDescription || ''
+    };
+  }
+  function eqLogPlannedMovements(log) {
+    const moves = [];
+    const add = (itemId, qty, label) => { if (Number(qty || 0) > 0 && itemId) { const it = State.items.find(i => Number(i.id) === Number(itemId)) || {}; moves.push(eqLogMovement(itemId, qty, log, label, it.costPrice || 0)); } };
+    add(log.dieselItemId, log.diesel, 'Diesel');
+    add(log.greaseItemId, log.grease, 'Grease');
+    add(log.hydraulicOilItemId, log.hydraulicOil, 'Hydraulic Oil');
+    add(log.engineOilItemId, log.engineOil, 'Engine Oil');
+    return moves;
+  }
+  function eqLogValidateMovements(log) {
+    const siteId = plantActiveSiteId();
+    const moves = eqLogPlannedMovements(log);
+    const shortages = moves.map(m => ({ m, available:plantStockAvailable(m.itemId, siteId, log.id) })).filter(x => Number(x.m.qty || 0) > x.available + 0.0001);
+    if (!shortages.length) return true;
+    const names = shortages.map(x => `${(State.items.find(i => Number(i.id) === Number(x.m.itemId)) || {}).name || x.m.itemId}: need ${fmtNum(x.m.qty)}, available ${fmtNum(x.available)}`).join('; ');
+    toast('Insufficient Stock', names, 'bad', 5200);
+    return false;
+  }
+  function eqLogRemovePostedMovements(logId) {
+    State.stockMovements = (State.stockMovements || []).filter(m => m.sourceId !== logId);
+  }
+  function eqLogConsumableValue(log) {
+    return eqLogPlannedMovements(log).reduce((s,m) => s + Number(m.totalValue || 0), 0);
   }
   function eqLogDeductions(eq, log) {
     const monthKey = String(log.date || new Date().toISOString()).slice(0,7);
@@ -7531,6 +7611,7 @@
     if (tab === 'overview')    return renderEqOverview(c);
     if (tab === 'master')      return renderEqMaster(c);
     if (tab === 'logs')        return renderEqLogs(c);
+    if (tab === 'monthly')     return renderEqMonthlyPerformance(c);
     if (tab === 'operators')   return renderEqOperators(c);
     if (tab === 'maintenance') return renderEqMaintenance(c);
     if (tab === 'compliance')  return renderEqCompliance(c);
@@ -7904,9 +7985,10 @@
     const logs = State.equipLogs.filter(l => l.equipmentId === sel).sort((a,b) => b.date.localeCompare(a.date));
     const lastMeter = logs.length ? logs[0].endMeter : eq.currentMeter;
     const op = State.operators.find(o => o.assignedEquipment === sel);
-    const blank = { id:'', equipmentId:sel, siteId:State.eqSites[0]?.id || '', date: new Date().toISOString().slice(0,10), operatorName: op ? op.name : '', supervisorName:'', startTime:'07:00', endTime:'17:00', startMeter:lastMeter, endMeter:lastMeter+8, workingHours:8, idleHours:0, diesel:0, grease:0, hydraulicOil:0, engineOil:0, workDescription:'', remarks:'' };
+    const consumableItemIds = eqEnsureConsumableItems();
+    const blank = { id:'', equipmentId:sel, siteId:State.eqSites[0]?.id || '', date: new Date().toISOString().slice(0,10), operatorName: op ? op.name : '', supervisorName:'', startTime:'07:00', endTime:'17:00', startMeter:lastMeter, endMeter:lastMeter+8, workingHours:8, idleHours:0, downtimeReason:'', costCode:'', diesel:0, grease:0, hydraulicOil:0, engineOil:0, workDescription:'', remarks:'', ...consumableItemIds };
     extras.forEach(k => blank[k] = '');
-    const l = existing || blank;
+    const l = existing ? { ...consumableItemIds, ...existing } : blank;
 
     openModal({
       title: (id ? 'Edit' : 'New') + ' Log Entry · ' + eq.name + ' (' + eq.id + ')',
@@ -7922,7 +8004,7 @@
           </div>
           <div class="ims-form-row">
             <div class="ims-field"><label>Supervisor</label><input name="supervisorName" value="${l.supervisorName||''}" placeholder="Eng. name"></div>
-            <div class="ims-field"></div>
+            <div class="ims-field"><label>Cost Code</label><input name="costCode" value="${esc(l.costCode || (State.projects || []).find(p => p.id === (l.projectId || State.activeProject))?.defaultCostCode || '')}" placeholder="Project cost centre"></div>
           </div>
 
           <div class="text-xs font-mono font-bold mt-3 mb-2" style="color:#E8742C">⏱ TIME & METER</div>
@@ -7945,7 +8027,7 @@
           </div>
           <div class="ims-form-row">
             <div class="ims-field"><label>Engine Oil (L)</label><input type="number" name="engineOil" min="0" step="0.1" value="${l.engineOil||0}"></div>
-            <div class="ims-field"></div>
+            <div class="ims-field"><label>Downtime Reason</label><select name="downtimeReason"><option value="">— None (working) —</option>${['Breakdown','No Work','No Operator','Weather','Other'].map(r => `<option ${r===l.downtimeReason?'selected':''}>${r}</option>`).join('')}</select></div>
           </div>
 
           ${extras.length ? `
@@ -7985,6 +8067,7 @@
         const fd = new FormData($('#eqLogForm'));
         const obj = id ? {...l} : { equipmentId: sel };
         fd.forEach((v,k) => obj[k] = v);
+        if (!id) Object.assign(obj, consumableItemIds);
         // Coerce numeric fields
         ['startMeter','endMeter','workingHours','idleHours','diesel','grease','hydraulicOil','engineOil','billableHours','clientRate','manpowerDeduction','otherDeduction'].forEach(k => obj[k] = Number(obj[k]||0));
         // Auto working hours = max(0, endMeter - startMeter)
@@ -8001,13 +8084,21 @@
           obj.clientDeductions = 0;
           obj.netBillAmount = 0;
         }
+        obj.id = id || ('LG' + String(State.eqNextId.log++).padStart(5,'0'));
+        if (!eqLogValidateMovements(obj)) return false;
         if (id) {
           Object.assign(l, obj);
           audit('update','Equip Log · ' + l.id, eq.id + ' · ' + obj.date);
         } else {
-          obj.id = 'LG' + String(State.eqNextId.log++).padStart(5,'0');
           State.equipLogs.push(obj);
           audit('create','Equip Log · ' + obj.id, eq.id + ' · ' + obj.date + ' · ' + obj.workingHours + 'h');
+        }
+        // Deduct diesel/grease/oils from Store stock (idempotent re-post keyed by sourceId)
+        eqLogRemovePostedMovements(obj.id);
+        State.stockMovements.push(...eqLogPlannedMovements(obj));
+        const consumableValue = eqLogConsumableValue(obj);
+        if (consumableValue > 0) {
+          postLedgerEntry({ systemKey:'EQUIPMENT_COST', amount:consumableValue, costCode:obj.costCode || obj.equipmentId, projectId:obj.projectId, sourceModule:'equipment-log', sourceId:obj.id, description:eq.name + ' daily consumables · ' + obj.date, date:obj.date });
         }
         // Update equipment's currentMeter
         eq.currentMeter = obj.endMeter;
@@ -8033,7 +8124,7 @@
     if (!l) return;
     openModal({ title:'Delete Log Entry', submitLabel:'Delete', submitClass:'btn-danger',
       body:`<div class="text-sm">Delete log entry for <b>${l.date}</b> (${l.workingHours} hrs)? Equipment meter will need manual review.</div>`,
-      onSubmit: () => { State.equipLogs = State.equipLogs.filter(x => x.id !== id); audit('delete','Equip Log · ' + id, l.date); saveState(); toast('Log Deleted', l.date,'warn'); renderEquipmentView(); }
+      onSubmit: () => { State.equipLogs = State.equipLogs.filter(x => x.id !== id); eqLogRemovePostedMovements(id); audit('delete','Equip Log · ' + id, l.date); saveState(); toast('Log Deleted', l.date,'warn'); renderEquipmentView(); }
     });
   }
 
@@ -8177,7 +8268,7 @@
     });
   }
   function eqEditMaintenance(id) {
-    const r = id ? State.maintenance.find(x => x.id === id) : { id:'', equipmentId:State.eqSelectedEquip || '', date: new Date().toISOString().slice(0,10), type:'Routine', description:'', parts:'', cost:0, nextDue:'', odometer:0, vendor:'', technician:'' };
+    const r = id ? State.maintenance.find(x => x.id === id) : { id:'', equipmentId:State.eqSelectedEquip || '', date: new Date().toISOString().slice(0,10), type:'Routine', description:'', parts:'', cost:0, nextDue:'', nextServiceDueMeter:0, odometer:0, vendor:'', technician:'', storePartItemId:'', storePartQty:0 };
     openModal({
       title: id ? 'Edit Maintenance Record' : 'Log Maintenance',
       wide: true,
@@ -8190,7 +8281,12 @@
             <div class="ims-field"><label>Type *</label><select name="type" required>${['Routine','Breakdown','Major Overhaul','Inspection','Calibration'].map(t => `<option ${t===r.type?'selected':''}>${t}</option>`).join('')}</select></div>
           </div>
           <div class="ims-field"><label>Description *</label><textarea name="description" rows="2" required placeholder="Work performed, symptoms, root cause">${r.description||''}</textarea></div>
-          <div class="ims-field"><label>Parts Used</label><input name="parts" value="${r.parts||''}" placeholder="Part nos, comma-separated"></div>
+          <div class="ims-field"><label>Parts Used (non-stock notes)</label><input name="parts" value="${r.parts||''}" placeholder="Part nos, comma-separated"></div>
+          <div class="ims-form-row-3">
+            <div class="ims-field"><label>Store Item (deducts stock)</label><select name="storePartItemId"><option value="">— None —</option>${plantItemOptions(r.storePartItemId)}</select></div>
+            <div class="ims-field"><label>Store Item Qty</label><input type="number" name="storePartQty" min="0" step="1" value="${r.storePartQty||0}"></div>
+            <div class="ims-field"><label>Next Service Due (meter)</label><input type="number" name="nextServiceDueMeter" min="0" value="${r.nextServiceDueMeter||0}"></div>
+          </div>
           <div class="ims-form-row-3">
             <div class="ims-field"><label>Odometer / Meter (hrs)</label><input type="number" name="odometer" min="0" value="${r.odometer||0}"></div>
             <div class="ims-field"><label>Cost (NPR)</label><input type="number" name="cost" min="0" step="100" value="${r.cost||0}"></div>
@@ -8208,11 +8304,37 @@
         fd.forEach((v,k) => obj[k] = v);
         obj.cost = Number(obj.cost||0);
         obj.odometer = Number(obj.odometer||0);
+        obj.storePartQty = Number(obj.storePartQty||0);
+        obj.nextServiceDueMeter = Number(obj.nextServiceDueMeter||0);
+        obj.id = id || ('MT' + String(State.eqNextId.mt++).padStart(3,'0'));
+        if (obj.storePartItemId && obj.storePartQty > 0) {
+          const available = plantStockAvailable(obj.storePartItemId, plantActiveSiteId(), obj.id);
+          if (obj.storePartQty > available) {
+            const it = State.items.find(i => Number(i.id) === Number(obj.storePartItemId)) || {};
+            toast('Insufficient Stock', (it.name || obj.storePartItemId) + ': need ' + fmtNum(obj.storePartQty) + ', available ' + fmtNum(available), 'bad', 5200);
+            return false;
+          }
+        }
         if (id) { Object.assign(r, obj); audit('update','Maintenance · ' + r.id, obj.description.slice(0,40)); }
-        else { obj.id = 'MT' + String(State.eqNextId.mt++).padStart(3,'0'); State.maintenance.push(obj); audit('create','Maintenance · ' + obj.id, obj.equipmentId + ' · ' + obj.type); }
+        else { State.maintenance.push(obj); audit('create','Maintenance · ' + obj.id, obj.equipmentId + ' · ' + obj.type); }
         const eq = State.equipment.find(e => e.id === obj.equipmentId);
         if (eq && obj.nextDue) eq.nextServiceDue = obj.nextDue;
         if (eq && obj.odometer) eq.currentMeter = Math.max(Number(eq.currentMeter||0), obj.odometer);
+        // Deduct store part stock (idempotent re-post keyed by sourceId)
+        State.stockMovements = (State.stockMovements || []).filter(m => m.sourceId !== obj.id || m.sourceModule !== 'equipment-maintenance');
+        if (obj.storePartItemId && obj.storePartQty > 0) {
+          const it = State.items.find(i => Number(i.id) === Number(obj.storePartItemId)) || {};
+          State.stockMovements.push({
+            id:State.imsNextId.mov++, type:'OUT', itemId:Number(obj.storePartItemId), qty:obj.storePartQty, date:new Date(obj.date).getTime(),
+            refNo:obj.id + '-Service', supplier:'', issuedTo:obj.equipmentId, purpose:'Equipment maintenance - ' + obj.type,
+            recipientType:'equipment', recipientId:obj.equipmentId, chargeProject:State.activeProject || '', projectId:State.activeProject || '',
+            siteId:plantActiveSiteId(), unitRate:Number(it.costPrice || 0), totalValue:obj.storePartQty * Number(it.costPrice || 0),
+            sourceModule:'equipment-maintenance', sourceId:obj.id, notes:obj.description || ''
+          });
+        }
+        if (obj.cost > 0) {
+          postLedgerEntry({ systemKey:'EQUIPMENT_COST', amount:obj.cost, costCode:eq?.defaultCostCode || obj.equipmentId, projectId:State.activeProject, sourceModule:'equipment-maintenance', sourceId:obj.id, description:'Maintenance · ' + obj.type + ' · ' + (eq?.name || obj.equipmentId), date:obj.date });
+        }
         saveState();
         toast(id ? 'Maintenance Updated' : 'Maintenance Logged','—','ok');
         renderEquipmentView();
@@ -8224,7 +8346,7 @@
     if (!r) return;
     openModal({ title:'Delete Maintenance Record', submitLabel:'Delete', submitClass:'btn-danger',
       body:`<div class="text-sm">Delete maintenance record from <b>${r.date}</b>?</div>`,
-      onSubmit: () => { State.maintenance = State.maintenance.filter(x => x.id !== id); audit('delete','Maintenance · ' + id, r.date); saveState(); toast('Record Deleted','—','warn'); renderEquipmentView(); }
+      onSubmit: () => { State.maintenance = State.maintenance.filter(x => x.id !== id); State.stockMovements = (State.stockMovements || []).filter(m => m.sourceId !== id || m.sourceModule !== 'equipment-maintenance'); audit('delete','Maintenance · ' + id, r.date); saveState(); toast('Record Deleted','—','warn'); renderEquipmentView(); }
     });
   }
 
@@ -8373,6 +8495,145 @@
     a.href = url; a.download = 'buildcore-utilization-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 200);
     toast('CSV Exported','Utilization report','ok');
+  }
+
+  // ----- TAB: MONTHLY PERFORMANCE -----
+  function eqMonthList() {
+    const months = new Set((State.equipLogs || []).map(l => String(l.date || '').slice(0,7)).filter(Boolean));
+    months.add(new Date().toISOString().slice(0,7));
+    return [...months].sort().reverse();
+  }
+  function eqRecalcMonthlyPerformance(equipmentId, monthKey) {
+    const eq = State.equipment.find(e => e.id === equipmentId);
+    if (!eq) return null;
+    const logs = (State.equipLogs || []).filter(l => l.equipmentId === equipmentId && String(l.date || '').slice(0,7) === monthKey);
+    const byDay = new Map();
+    logs.forEach(l => {
+      const d = l.date;
+      const cur = byDay.get(d) || { hours:0, breakdown:false, reason:'' };
+      cur.hours += Number(l.workingHours || 0);
+      if (l.downtimeReason === 'Breakdown') cur.breakdown = true;
+      if (l.downtimeReason && !cur.reason) cur.reason = l.downtimeReason;
+      byDay.set(d, cur);
+    });
+    let workingDays = 0, breakdownDays = 0, idleDays = 0, standbyDays = 0;
+    byDay.forEach(d => {
+      if (d.hours > 0) workingDays++;
+      else if (d.breakdown) breakdownDays++;
+      else if (d.reason) idleDays++;
+      else standbyDays++;
+    });
+    const scheduledDays = byDay.size || 1;
+    const totalHours = logs.reduce((s,l) => s + Number(l.workingHours || 0), 0);
+    const totalKm = logs.reduce((s,l) => s + Math.max(0, Number(l.kmEnd || 0) - Number(l.kmStart || 0)), 0);
+    const totalFuel = logs.reduce((s,l) => s + Number(l.diesel || 0), 0);
+    const usageBasis = totalKm > 0 ? totalKm : totalHours;
+    const fuelRatio = usageBasis > 0 ? totalFuel / usageBasis : 0;
+    const maintRecords = (State.maintenance || []).filter(m => m.equipmentId === equipmentId && String(m.date || '').slice(0,7) === monthKey);
+    // Cost is computed straight from the operational records (equipLogs/maintenance) rather
+    // than re-summed from State.ledgerEntries - the ledger is an audit trail of the same
+    // postings, not an independent measurement, so aggregating both would double-count.
+    const totalFuelCost = logs.reduce((s,l) => s + eqLogConsumableValue(l), 0);
+    const totalMaintCost = maintRecords.reduce((s,m) => s + Number(m.cost || 0), 0);
+    const totalSparesCost = 0; // reserved: store-part value is currently included in totalMaintCost's manually-entered cost
+    const availabilityPct = Math.max(0, Math.min(100, ((scheduledDays - breakdownDays) / scheduledDays) * 100));
+    const availableDays = scheduledDays - breakdownDays;
+    const utilizationPct = availableDays > 0 ? Math.min(100, (workingDays / availableDays) * 100) : 0;
+    const totalOperatingCost = totalFuelCost + totalMaintCost;
+    const costPerHour = totalHours > 0 ? totalOperatingCost / totalHours : 0;
+    const hireCost = eq.ownership === 'Rented' ? totalHours * eqRatePerHour(eq) : 0;
+
+    ensureAccountingModuleData();
+    let rec = State.equipMonthlyPerformance.find(p => p.equipmentId === equipmentId && p.monthKey === monthKey);
+    const patch = { equipmentId, monthKey, workingDays, idleDays, standbyDays, breakdownDays, totalHours, totalKm, totalFuel, fuelRatio, availabilityPct, utilizationPct, totalFuelCost, totalSparesCost, totalMaintCost, hireCost, totalOperatingCost, costPerHour, recalculatedAt:new Date().toISOString() };
+    if (rec) { Object.assign(rec, patch); }
+    else { rec = { id:'PERF-' + String(State.eqNextId.perf++).padStart(5,'0'), status:'Open', closedAt:'', ...patch }; State.equipMonthlyPerformance.push(rec); }
+    return rec;
+  }
+  function eqCloseMonth(equipmentId, monthKey) {
+    const rec = eqRecalcMonthlyPerformance(equipmentId, monthKey);
+    if (!rec) return;
+    rec.status = 'Closed';
+    rec.closedAt = new Date().toISOString();
+    const eq = State.equipment.find(e => e.id === equipmentId);
+    if (eq && eq.ownership === 'Rented') eqGenerateHireBill(equipmentId, monthKey);
+    audit('update','Monthly Performance Closed', equipmentId + ' · ' + monthKey);
+    saveState();
+    toast('Month Closed', equipmentId + ' · ' + monthKey, 'ok');
+    renderEqTab('monthly');
+  }
+  function eqGenerateHireBill(equipmentId, monthKey) {
+    const eq = State.equipment.find(e => e.id === equipmentId);
+    const rec = State.equipMonthlyPerformance.find(p => p.equipmentId === equipmentId && p.monthKey === monthKey);
+    if (!eq || !rec) return null;
+    const vendor = vendorByName(eq.vendor);
+    const invoice = 'EQ-HIRE-' + equipmentId + '-' + monthKey;
+    State.vendorPayments = State.vendorPayments || [];
+    let pay = State.vendorPayments.find(p => p.invoice === invoice);
+    const amount = Math.round(rec.hireCost || 0);
+    if (pay) { pay.amount = amount; }
+    else {
+      pay = { id:'VPAY-' + Date.now(), vendorId:vendor?.id || '', projectId:State.activeProject || '', invoice, dueDate:'', amount, paid:0, mode:'Bank', status:'Due' };
+      State.vendorPayments.unshift(pay);
+    }
+    audit('create','Hire Bill', equipmentId + ' · ' + monthKey + ' · ' + fmtNPR(amount));
+    return pay;
+  }
+  function renderEqMonthlyPerformance(c) {
+    const months = eqMonthList();
+    const monthKey = State.eqMonthlySelected || months[0];
+    State.eqMonthlySelected = monthKey;
+    const rows = State.equipment.map(eq => {
+      const rec = State.equipMonthlyPerformance.find(p => p.equipmentId === eq.id && p.monthKey === monthKey);
+      return { eq, rec };
+    });
+    c.innerHTML = `
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <div class="font-display font-bold text-lg">Monthly Performance</div>
+          <div class="text-xs text-stone-500">Working/idle/breakdown days, fuel ratio, utilization and operating cost per equipment - closed months bill hired equipment automatically</div>
+        </div>
+        <div class="flex gap-2 items-center">
+          <select id="eqMonthlySelect" class="border border-stone-200 px-2 py-2 text-xs">${months.map(m => `<option value="${m}" ${m===monthKey?'selected':''}>${m}</option>`).join('')}</select>
+          <button class="btn btn-ghost" data-eq-act="export-monthly"><i data-lucide="download" class="w-3.5 h-3.5"></i>Export CSV</button>
+        </div>
+      </div>
+      <table class="data">
+        <thead><tr>
+          <th>Equipment</th><th class="text-right">Working</th><th class="text-right">Idle</th><th class="text-right">Breakdown</th>
+          <th class="text-right">Hours</th><th class="text-right">Fuel (L)</th><th class="text-right">Fuel Ratio</th>
+          <th class="text-right">Availability</th><th class="text-right">Utilization</th><th class="text-right">Op Cost</th>
+          <th class="text-right">Cost/hr</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(({eq, rec}) => `<tr>
+            <td>${eqIco(eq.name)} <b>${eq.name}</b> <span class="font-mono text-[10px] text-stone-500">${eq.id}</span></td>
+            <td class="text-right font-mono text-xs">${rec?.workingDays ?? '-'}</td>
+            <td class="text-right font-mono text-xs">${rec?.idleDays ?? '-'}</td>
+            <td class="text-right font-mono text-xs">${rec?.breakdownDays ?? '-'}</td>
+            <td class="text-right font-mono text-xs">${rec ? fmtNum(rec.totalHours) : '-'}</td>
+            <td class="text-right font-mono text-xs">${rec ? fmtNum(rec.totalFuel) : '-'}</td>
+            <td class="text-right font-mono text-xs">${rec ? rec.fuelRatio.toFixed(2) : '-'}</td>
+            <td class="text-right font-mono text-xs">${rec ? rec.availabilityPct.toFixed(0) + '%' : '-'}</td>
+            <td class="text-right font-mono text-xs">${rec ? rec.utilizationPct.toFixed(0) + '%' : '-'}</td>
+            <td class="text-right font-mono text-xs">${rec ? fmtINR(rec.totalOperatingCost) : '-'}</td>
+            <td class="text-right font-mono text-xs">${rec && rec.totalHours > 0 ? fmtINR(rec.costPerHour) : '-'}</td>
+            <td>${rec ? acctBadge(rec.status) : '<span class="badge badge-warn">Not Calculated</span>'}</td>
+            <td><button class="btn btn-ghost text-xs" data-eq-perf-recalc="${eq.id}"><i data-lucide="refresh-cw" class="w-3 h-3"></i>Recalc</button>${rec && rec.status !== 'Closed' ? `<button class="btn btn-ghost text-xs" data-eq-perf-close="${eq.id}"><i data-lucide="lock" class="w-3 h-3"></i>Close</button>` : ''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+    const sel = $('#eqMonthlySelect');
+    if (sel) sel.onchange = () => { State.eqMonthlySelected = sel.value; renderEqTab('monthly'); };
+    c.querySelectorAll('[data-eq-perf-recalc]').forEach(b => b.onclick = () => { eqRecalcMonthlyPerformance(b.dataset.eqPerfRecalc, monthKey); saveState(); toast('Recalculated', b.dataset.eqPerfRecalc + ' · ' + monthKey, 'ok'); renderEqTab('monthly'); });
+    c.querySelectorAll('[data-eq-perf-close]').forEach(b => b.onclick = () => eqCloseMonth(b.dataset.eqPerfClose, monthKey));
+    const exportBtn = c.querySelector('[data-eq-act="export-monthly"]');
+    if (exportBtn) exportBtn.onclick = () => {
+      const headers = ['Equipment','Working Days','Idle Days','Breakdown Days','Hours','Fuel L','Fuel Ratio','Availability %','Utilization %','Op Cost','Cost/hr','Status'];
+      const data = rows.map(({eq, rec}) => [eq.id, rec?.workingDays||0, rec?.idleDays||0, rec?.breakdownDays||0, rec?.totalHours||0, rec?.totalFuel||0, rec?.fuelRatio?.toFixed(2)||0, rec?.availabilityPct?.toFixed(1)||0, rec?.utilizationPct?.toFixed(1)||0, rec?.totalOperatingCost||0, rec?.costPerHour?.toFixed(2)||0, rec?.status||'Not Calculated']);
+      bcDownloadCSV('Equipment Monthly Performance · ' + monthKey, headers, data, 'buildcore-equip-monthly-' + monthKey);
+    };
   }
 
   // =====================================================================
