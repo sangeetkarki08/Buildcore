@@ -19,3 +19,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Local safety-net backups
+*.backup-*.html

@@ -231,6 +231,7 @@
   .ims-tab { display:inline-flex; align-items:center; gap:6px; padding: 12px 14px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; background: transparent; transition: all .15s; }
   .ims-tab:hover { color: var(--ink); background: rgba(0,0,0,.02); }
   .ims-tab.active { color: var(--ink); border-bottom-color: var(--amber); background: rgba(232,116,44,.04); }
+  .ims-tab-sep { width:1px; align-self:center; height:20px; background: rgba(0,0,0,.08); margin: 0 2px; }
   /* IMS form */
   .ims-form { display: grid; gap: 12px; }
   .ims-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -478,7 +479,7 @@
 
     <!-- Nav -->
     <nav class="flex-1 overflow-y-auto py-2">
-      <div class="px-4 pt-3 pb-1 font-mono text-[10px] text-white/30 tracking-wider">WORKSPACE</div>
+      <div class="px-4 pt-3 pb-1 font-mono text-[10px] text-white/30 tracking-wider">ENGINEERING</div>
       <a class="nav-item active flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dashboard">
         <i data-lucide="layout-dashboard" class="nav-icon w-4 h-4 text-white/60"></i>Command Center
       </a>
@@ -491,45 +492,17 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="todos">
         <i data-lucide="check-square" class="nav-icon w-4 h-4 text-white/60"></i>Action List
       </a>
-
-      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">FIELD</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dpr">
         <i data-lucide="clipboard-list" class="nav-icon w-4 h-4 text-white/60"></i>DPR
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="hrms">
-        <i data-lucide="users-round" class="nav-icon w-4 h-4 text-white/60"></i>HRMS
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="materials">
-        <i data-lucide="package" class="nav-icon w-4 h-4 text-white/60"></i>Materials
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="equipment">
-        <i data-lucide="truck" class="nav-icon w-4 h-4 text-white/60"></i>Equipment
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="plantproduction">
-        <i data-lucide="factory" class="nav-icon w-4 h-4 text-white/60"></i>Plant Production
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="crusherplant">
-        <i data-lucide="factory" class="nav-icon w-4 h-4 text-white/60"></i>Crusher Plant
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="batchingplant">
-        <i data-lucide="building-2" class="nav-icon w-4 h-4 text-white/60"></i>Batching Plant
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="quality">
         <i data-lucide="badge-check" class="nav-icon w-4 h-4 text-white/60"></i>Quality & HSE
       </a>
-
-      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">COMMERCIAL</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="estimation">
         <i data-lucide="calculator" class="nav-icon w-4 h-4 text-white/60"></i>BOQ & Estimate
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="budgetcontrol">
         <i data-lucide="circle-dollar-sign" class="nav-icon w-4 h-4 text-white/60"></i>Cost Control
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="procurement">
-        <i data-lucide="shopping-cart" class="nav-icon w-4 h-4 text-white/60"></i>Procurement
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="vendors">
-        <i data-lucide="handshake" class="nav-icon w-4 h-4 text-white/60"></i>Vendors
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="accounting">
         <i data-lucide="book-text" class="nav-icon w-4 h-4 text-white/60"></i>Accounting
@@ -537,8 +510,6 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="billing">
         <i data-lucide="receipt" class="nav-icon w-4 h-4 text-white/60"></i>Billing
       </a>
-
-      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">KNOWLEDGE</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="documents">
         <i data-lucide="file-stack" class="nav-icon w-4 h-4 text-white/60"></i>Documents
       </a>
@@ -550,6 +521,21 @@
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="control">
         <i data-lucide="workflow" class="nav-icon w-4 h-4 text-white/60"></i>Control Layer
+      </a>
+
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">MANPOWER</div>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="hrms">
+        <i data-lucide="users-round" class="nav-icon w-4 h-4 text-white/60"></i>HRMS · Workforce
+      </a>
+
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">EQUIPMENT</div>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="equipment">
+        <i data-lucide="truck" class="nav-icon w-4 h-4 text-white/60"></i>Equipment & Plant
+      </a>
+
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">MATERIAL</div>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="materials">
+        <i data-lucide="package" class="nav-icon w-4 h-4 text-white/60"></i>Material & Procurement
       </a>
     </nav>
 
@@ -1441,19 +1427,24 @@
           <!-- populated by JS -->
         </div>
 
-        <!-- TAB STRIP -->
-        <div class="card">
-          <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs">
+        <!-- TAB STRIP (clustered: Stock | Movements | Purchasing | Reports) -->
+        <div class="card" id="imsMainCard">
+          <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs flex-wrap items-stretch">
             <button class="ims-tab active" data-imstab="overview"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>Stock Overview</button>
             <button class="ims-tab" data-imstab="items"><i data-lucide="boxes" class="w-3 h-3"></i>Item Master</button>
             <button class="ims-tab" data-imstab="stores"><i data-lucide="warehouse" class="w-3 h-3"></i>Stores</button>
             <button class="ims-tab" data-imstab="project-flow"><i data-lucide="route" class="w-3 h-3"></i>Project Flow</button>
+            <span class="ims-tab-sep"></span>
             <button class="ims-tab" data-imstab="stock-in"><i data-lucide="package-plus" class="w-3 h-3"></i>Stock IN (GRN)</button>
             <button class="ims-tab" data-imstab="stock-out"><i data-lucide="package-minus" class="w-3 h-3"></i>Stock OUT</button>
             <button class="ims-tab" data-imstab="subcontract"><i data-lucide="handshake" class="w-3 h-3"></i>Subcontract Issue</button>
             <button class="ims-tab" data-imstab="tools"><i data-lucide="hammer" class="w-3 h-3"></i>Tool Tracker</button>
+            <span class="ims-tab-sep"></span>
             <button class="ims-tab" data-imstab="po-gen"><i data-lucide="zap" class="w-3 h-3"></i>PO Generator</button>
             <button class="ims-tab" data-imstab="po-list"><i data-lucide="file-text" class="w-3 h-3"></i>Purchase Orders</button>
+            <button class="ims-tab" data-imstab="procurement"><i data-lucide="shopping-cart" class="w-3 h-3"></i>Procurement</button>
+            <button class="ims-tab" data-imstab="vendors"><i data-lucide="handshake" class="w-3 h-3"></i>Vendors</button>
+            <span class="ims-tab-sep"></span>
             <button class="ims-tab" data-imstab="reports"><i data-lucide="bar-chart-2" class="w-3 h-3"></i>Reports</button>
           </div>
           <div id="imsTabContent" class="p-5"><!-- populated by JS --></div>
@@ -1478,46 +1469,52 @@
         <!-- LIVE KPIs -->
         <div class="grid grid-cols-6 gap-3 mb-5" id="eqKpis"><!-- populated by JS --></div>
 
-        <!-- TAB STRIP -->
-        <div class="card">
-          <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs">
+        <!-- TAB STRIP (clustered: Overview | Operations | Plant | Compliance | Reports) -->
+        <div class="card" id="eqMainCard">
+          <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs flex-wrap items-stretch">
             <button class="ims-tab active" data-eqtab="overview"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>Fleet Overview</button>
             <button class="ims-tab" data-eqtab="master"><i data-lucide="hard-hat" class="w-3 h-3"></i>Equipment Master</button>
+            <span class="ims-tab-sep"></span>
             <button class="ims-tab" data-eqtab="logs"><i data-lucide="clipboard-list" class="w-3 h-3"></i>Logsheets</button>
             <button class="ims-tab" data-eqtab="monthly"><i data-lucide="calendar-check" class="w-3 h-3"></i>Monthly Performance</button>
             <button class="ims-tab" data-eqtab="operators"><i data-lucide="user-circle" class="w-3 h-3"></i>Operators</button>
+            <span class="ims-tab-sep"></span>
+            <button class="ims-tab" data-eqtab="plant-production"><i data-lucide="factory" class="w-3 h-3"></i>Plant Production</button>
+            <span class="ims-tab-sep"></span>
             <button class="ims-tab" data-eqtab="maintenance"><i data-lucide="wrench" class="w-3 h-3"></i>Maintenance</button>
             <button class="ims-tab" data-eqtab="compliance"><i data-lucide="shield-check" class="w-3 h-3"></i>Owned Compliance</button>
+            <span class="ims-tab-sep"></span>
             <button class="ims-tab" data-eqtab="utilization"><i data-lucide="activity" class="w-3 h-3"></i>Utilization Reports</button>
           </div>
           <div id="eqTabContent" class="p-5"><!-- populated by JS --></div>
         </div>
-      </section>
 
-      <section id="view-plantproduction" class="view">
-        <div class="flex items-end justify-between mb-6">
-          <div>
-            <div class="stamp mb-3"><i data-lucide="factory" class="w-3 h-3"></i>PLANT PRODUCTION MONITORING</div>
-            <h1 class="font-display font-black text-3xl title-mark">Crusher & Batching Plant Production</h1>
-            <p class="text-sm text-stone-500 mt-3">Daily output, material consumption, diesel, downtime, cost, and stock posting from transaction records</p>
+        <!-- MERGED SUBPANE: Plant Production (Crusher + Batching) - shown only when the Plant Production tab is active -->
+        <div id="view-plantproduction" class="ims-subpane" style="display:none">
+          <div class="flex items-end justify-between mb-6">
+            <div>
+              <div class="stamp mb-3"><i data-lucide="factory" class="w-3 h-3"></i>PLANT PRODUCTION MONITORING</div>
+              <h1 class="font-display font-black text-3xl title-mark">Crusher & Batching Plant Production</h1>
+              <p class="text-sm text-stone-500 mt-3">Daily output, material consumption, diesel, downtime, cost, and stock posting from transaction records</p>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-ghost" data-plant-act="export-csv"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>Excel CSV</button>
+              <button class="btn btn-ghost" data-plant-act="export-pdf"><i data-lucide="printer" class="w-3.5 h-3.5"></i>PDF</button>
+              <button class="btn btn-amber" data-plant-act="new"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Record</button>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <button class="btn btn-ghost" data-plant-act="export-csv"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>Excel CSV</button>
-            <button class="btn btn-ghost" data-plant-act="export-pdf"><i data-lucide="printer" class="w-3.5 h-3.5"></i>PDF</button>
-            <button class="btn btn-amber" data-plant-act="new"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Record</button>
-          </div>
-        </div>
 
-        <div class="grid grid-cols-6 gap-3 mb-5" id="plantKpis"></div>
+          <div class="grid grid-cols-6 gap-3 mb-5" id="plantKpis"></div>
 
-        <div class="card">
-          <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs">
-            <button class="ims-tab active" data-planttab="dashboard"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>Dashboard</button>
-            <button class="ims-tab" data-planttab="crusher"><i data-lucide="factory" class="w-3 h-3"></i>Crusher Plant</button>
-            <button class="ims-tab" data-planttab="batching"><i data-lucide="building-2" class="w-3 h-3"></i>Batching Plant</button>
-            <button class="ims-tab" data-planttab="reports"><i data-lucide="bar-chart-2" class="w-3 h-3"></i>Reports</button>
+          <div class="card">
+            <div class="px-5 py-0 border-b border-stone-100 flex gap-1 ims-tabs">
+              <button class="ims-tab active" data-planttab="dashboard"><i data-lucide="layout-dashboard" class="w-3 h-3"></i>Dashboard</button>
+              <button class="ims-tab" data-planttab="crusher"><i data-lucide="factory" class="w-3 h-3"></i>Crusher Plant</button>
+              <button class="ims-tab" data-planttab="batching"><i data-lucide="building-2" class="w-3 h-3"></i>Batching Plant</button>
+              <button class="ims-tab" data-planttab="reports"><i data-lucide="bar-chart-2" class="w-3 h-3"></i>Reports</button>
+            </div>
+            <div id="plantTabContent" class="p-5"></div>
           </div>
-          <div id="plantTabContent" class="p-5"></div>
         </div>
       </section>
 
@@ -2990,6 +2987,24 @@
         origWarn.apply(console, args);
       } catch(e) { /* swallow */ }
     };
+  })();
+
+  // Fold the standalone Procurement & Vendors pages into the Material module as
+  // merged tabs (navigation restructure) — relocate the existing sections in the
+  // DOM rather than duplicating their markup, so all existing render functions
+  // (which look them up by id) keep working unchanged.
+  (function relocateMergedModuleSubpanes() {
+    function moveAfter(id, anchorId) {
+      var el = document.getElementById(id);
+      var anchor = document.getElementById(anchorId);
+      if (!el || !anchor) return;
+      el.classList.remove('view');
+      el.classList.add('ims-subpane');
+      el.style.display = 'none';
+      anchor.insertAdjacentElement('afterend', el);
+    }
+    moveAfter('view-vendors', 'imsMainCard');
+    moveAfter('view-procurement', 'imsMainCard');
   })();
 
   // Initialize Lucide icons
@@ -4892,16 +4907,48 @@
   }
 
   // ============== IMS · MAIN RENDERER ==============
+  // Tabs "procurement" and "vendors" are merged-in subpanes (relocated standalone
+  // views, see relocateMergedModuleSubpanes) rather than content rendered into
+  // #imsTabContent — activating them swaps which container is visible.
+  function imsActivateTab(tab) {
+    State.imsCurrentTab = tab;
+    document.querySelectorAll('#imsMainCard .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.imstab === tab));
+    const mainCard = $('#imsMainCard');
+    const procPane = $('#view-procurement');
+    const vendPane = $('#view-vendors');
+    if (tab === 'procurement') {
+      if (mainCard) mainCard.style.display = 'none';
+      if (vendPane) vendPane.style.display = 'none';
+      if (procPane) { procPane.style.display = ''; renderProcurementView(); }
+    } else if (tab === 'vendors') {
+      if (mainCard) mainCard.style.display = 'none';
+      if (procPane) procPane.style.display = 'none';
+      if (vendPane) { vendPane.style.display = ''; renderVendorsView(); }
+    } else {
+      if (procPane) procPane.style.display = 'none';
+      if (vendPane) vendPane.style.display = 'none';
+      if (mainCard) mainCard.style.display = '';
+      renderIMSTab(tab);
+    }
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
   function renderIMS() {
     seedIMSData();
     renderIMSKPIs();
+    // Merged-in tabs stay gated by the same role permission the standalone
+    // Procurement/Vendors pages used to require.
+    const procTab = $('#imsMainCard [data-imstab="procurement"]');
+    const vendTab = $('#imsMainCard [data-imstab="vendors"]');
+    if (procTab) procTab.style.display = canAccessModule('procurement') ? '' : 'none';
+    if (vendTab) vendTab.style.display = canAccessModule('vendors') ? '' : 'none';
+    if ((State.imsCurrentTab === 'procurement' && !canAccessModule('procurement')) ||
+        (State.imsCurrentTab === 'vendors' && !canAccessModule('vendors'))) {
+      State.imsCurrentTab = 'overview';
+    }
     // Tab strip click handlers
-    document.querySelectorAll('#view-materials .ims-tab').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#view-materials .ims-tab').forEach(b => b.classList.toggle('active', b === btn));
-        State.imsCurrentTab = btn.dataset.imstab;
-        renderIMSTab(btn.dataset.imstab);
-      };
+    document.querySelectorAll('#imsMainCard .ims-tab').forEach(btn => {
+      btn.onclick = () => imsActivateTab(btn.dataset.imstab);
     });
     // Header action handlers
     document.querySelectorAll('#view-materials [data-ims]').forEach(btn => {
@@ -4914,9 +4961,7 @@
       };
     });
     // Render current tab
-    document.querySelectorAll('#view-materials .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.imstab === (State.imsCurrentTab || 'overview')));
-    renderIMSTab(State.imsCurrentTab || 'overview');
-    if (window.lucide) lucide.createIcons();
+    imsActivateTab(State.imsCurrentTab || 'overview');
   }
 
   function renderIMSKPIs() {
@@ -6154,9 +6199,7 @@
     toast('PO Drafted', poNo + ' · ' + supplier + ' · ' + fmtINR(total), 'ok');
     renderIMS();
     // jump to PO list
-    document.querySelectorAll('#view-materials .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.imstab === 'po-list'));
-    State.imsCurrentTab = 'po-list';
-    renderIMSTab('po-list');
+    imsActivateTab('po-list');
   }
   function imsGenerateAllPOs(groups) {
     let count = 0;
@@ -6172,9 +6215,7 @@
     saveState();
     toast('POs Generated', count + ' draft PO' + (count!==1?'s':'') + ' created', 'ok');
     renderIMS();
-    document.querySelectorAll('#view-materials .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.imstab === 'po-list'));
-    State.imsCurrentTab = 'po-list';
-    renderIMSTab('po-list');
+    imsActivateTab('po-list');
   }
 
   // ----- TAB 7: PURCHASE ORDERS LIST -----
@@ -7551,16 +7592,38 @@
   }
 
   // ----- Main render -----
+  // Tab "plant-production" is a merged-in subpane (relocated standalone view, see
+  // relocateMergedModuleSubpanes) rather than content rendered into #eqTabContent —
+  // activating it swaps which container is visible.
+  function eqActivateTab(tab) {
+    State.eqCurrentTab = tab;
+    document.querySelectorAll('#eqMainCard .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.eqtab === tab));
+    const mainCard = $('#eqMainCard');
+    const plantPane = $('#view-plantproduction');
+    if (tab === 'plant-production') {
+      if (mainCard) mainCard.style.display = 'none';
+      if (plantPane) { plantPane.style.display = ''; renderPlantProductionView(); }
+    } else {
+      if (plantPane) plantPane.style.display = 'none';
+      if (mainCard) mainCard.style.display = '';
+      renderEqTab(tab);
+    }
+    if (window.lucide) try { lucide.createIcons(); } catch(e){}
+  }
+
   function renderEquipmentView() {
     seedEqData();
     eqSyncMaterialIssueLogs();
     renderEqKPIs();
-    document.querySelectorAll('#view-equipment .ims-tab').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('#view-equipment .ims-tab').forEach(b => b.classList.toggle('active', b === btn));
-        State.eqCurrentTab = btn.dataset.eqtab;
-        renderEqTab(btn.dataset.eqtab);
-      };
+    // Merged-in tab stays gated by the same role permission the standalone
+    // Plant Production page used to require.
+    const plantTab = $('#eqMainCard [data-eqtab="plant-production"]');
+    if (plantTab) plantTab.style.display = canAccessModule('plantproduction') ? '' : 'none';
+    if (State.eqCurrentTab === 'plant-production' && !canAccessModule('plantproduction')) {
+      State.eqCurrentTab = 'overview';
+    }
+    document.querySelectorAll('#eqMainCard .ims-tab').forEach(btn => {
+      btn.onclick = () => eqActivateTab(btn.dataset.eqtab);
     });
     document.querySelectorAll('#view-equipment [data-eq]').forEach(btn => {
       btn.onclick = () => {
@@ -7568,17 +7631,10 @@
         if (act === 'export-csv') return eqExportCSV();
         if (act === 'export-pdf') return eqExportPDF();
         if (act === 'qr-scan') return toast('QR Scanner', 'Scan an equipment QR tag to open its logsheet', 'info');
-        if (act === 'quick-log') {
-          // Switch to logsheets tab
-          document.querySelectorAll('#view-equipment .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.eqtab === 'logs'));
-          State.eqCurrentTab = 'logs';
-          renderEqTab('logs');
-        }
+        if (act === 'quick-log') return eqActivateTab('logs');
       };
     });
-    document.querySelectorAll('#view-equipment .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.eqtab === (State.eqCurrentTab || 'overview')));
-    renderEqTab(State.eqCurrentTab || 'overview');
-    if (window.lucide) lucide.createIcons();
+    eqActivateTab(State.eqCurrentTab || 'overview');
   }
 
   function renderEqKPIs() {
@@ -7664,9 +7720,7 @@
     c.querySelectorAll('[data-eq-card-id]').forEach(card => {
       card.onclick = () => {
         State.eqSelectedEquip = card.dataset.eqCardId;
-        State.eqCurrentTab = 'logs';
-        document.querySelectorAll('#view-equipment .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.eqtab === 'logs'));
-        renderEqTab('logs');
+        eqActivateTab('logs');
       };
     });
   }
@@ -7732,9 +7786,7 @@
       if (btn.dataset.eqAct === 'del-equip') eqDeleteEquipment(id);
       if (btn.dataset.eqAct === 'logs-equip') {
         State.eqSelectedEquip = id;
-        State.eqCurrentTab = 'logs';
-        document.querySelectorAll('#view-equipment .ims-tab').forEach(b => b.classList.toggle('active', b.dataset.eqtab === 'logs'));
-        renderEqTab('logs');
+        eqActivateTab('logs');
       }
     });
   }
@@ -14632,13 +14684,21 @@
   }
   window.exitToPortfolio = exitToPortfolio;
 
+  // Sub-modules folded into Material/Equipment as tabs — a role with access to any
+  // child still needs to see the parent sidebar entry to reach that tab.
+  const NAV_CHILD_MODULES = {
+    materials: ['procurement', 'vendors'],
+    equipment: ['plantproduction', 'crusherplant', 'batchingplant']
+  };
   function filterSidebarByRole() {
     const perm = State.session?.user;
     if (!perm) return;
     document.querySelectorAll('.nav-item[data-view]').forEach(item => {
       const v = item.dataset.view;
       if (perm.modules === 'ALL') { item.style.display = ''; return; }
-      item.style.display = Array.isArray(perm.modules) && perm.modules.includes(v) ? '' : 'none';
+      const hasDirect = Array.isArray(perm.modules) && perm.modules.includes(v);
+      const hasChild = Array.isArray(perm.modules) && (NAV_CHILD_MODULES[v] || []).some(c => perm.modules.includes(c));
+      item.style.display = (hasDirect || hasChild) ? '' : 'none';
     });
   }
 
@@ -15977,14 +16037,16 @@ Available Actions:
   // -------- NAVIGATION --------
   function navTo(view) {
     const requestedView = view;
-    if (view === 'crusherplant') { State.plantCurrentTab = 'crusher'; view = 'plantproduction'; }
-    if (view === 'batchingplant') { State.plantCurrentTab = 'batching'; view = 'plantproduction'; }
-    if (!canAccessModule(view)) {
+    if (!canAccessModule(requestedView)) {
       const fallback = canAccessModule('clientportal') ? 'clientportal' : 'dashboard';
       toast('Access Restricted', 'This role can open only assigned project modules', 'warn');
       view = fallback;
-    }
-    $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === requestedView || (requestedView === view && n.dataset.view === view)));
+    } else if (requestedView === 'crusherplant') { State.plantCurrentTab = 'crusher'; State.eqCurrentTab = 'plant-production'; view = 'equipment'; }
+    else if (requestedView === 'batchingplant') { State.plantCurrentTab = 'batching'; State.eqCurrentTab = 'plant-production'; view = 'equipment'; }
+    else if (requestedView === 'plantproduction') { State.eqCurrentTab = 'plant-production'; view = 'equipment'; }
+    else if (requestedView === 'procurement') { State.imsCurrentTab = 'procurement'; view = 'materials'; }
+    else if (requestedView === 'vendors') { State.imsCurrentTab = 'vendors'; view = 'materials'; }
+    $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === view));
     $$('.view').forEach(v => v.classList.remove('active'));
     const target = $('#view-' + view);
     if (target) { target.classList.add('active'); State.currentView = view; }
@@ -15998,14 +16060,11 @@ Available Actions:
     if (view === 'audit') { renderAuditTable(); }
     if (view === 'control') { renderControlLayerView(); }
     if (view === 'schedule') { renderScheduleTable(); }
-    if (view === 'materials') { if (State.session?.inProjectMode) State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
+    if (view === 'materials') { if (State.session?.inProjectMode && requestedView === 'materials') State.imsCurrentTab = 'project-flow'; setTimeout(renderIMS, 30); }
     if (view === 'hrms')      { setTimeout(renderHRMSView, 30); }
-    if (view === 'procurement') { setTimeout(renderProcurementView, 30); }
-    if (view === 'vendors')   { setTimeout(renderVendorsView, 30); }
     if (view === 'accounting') { setTimeout(renderAccountingView, 30); }
     if (view === 'budgetcontrol') { setTimeout(renderBCCView, 30); }
     if (view === 'equipment') { setTimeout(renderEquipmentView, 30); }
-    if (view === 'plantproduction') { setTimeout(renderPlantProductionView, 30); }
     if (view === 'assets')    { setTimeout(renderAssetView, 30); }
     if (view === 'events')    { setTimeout(renderEventsView, 30); }
     if (view === 'todos')     { setTimeout(renderTodosView, 30); }
