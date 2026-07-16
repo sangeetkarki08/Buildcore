@@ -94,10 +94,10 @@
   .launcher-tile:active { transform: translateY(0); }
   .launcher-icon { width:42px; height:42px; display:flex; align-items:center; justify-content:center; border-radius:6px; }
   .launcher-count { font-family: var(--font-display); font-weight:900; font-size:22px; font-variant-numeric: tabular-nums; line-height:1; }
-  .nav-item { transition: all .15s ease; border-left: 2px solid transparent; }
-  .nav-item:hover { background: rgba(232,116,44,0.08); color: #fff; }
-  .nav-item.active { background: rgba(232,116,44,0.14); color: #fff; border-left-color: var(--amber); }
-  .nav-item.active .nav-icon { color: var(--amber); }
+  .nav-item { transition: all .15s ease; border-left: 3px solid transparent; color: rgba(255,255,255,.72); font-weight: 500; }
+  .nav-item:hover { background: rgba(232,116,44,0.10); color: #fff; }
+  .nav-item.active { background: var(--amber); color: #fff; font-weight: 700; border-left-color: #fff; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+  .nav-item.active .nav-icon { color: #fff; }
   img, video, canvas { max-width:100%; height:auto; object-fit:contain; }
   [data-lucide], .lucide, .nav-icon { width:1rem; height:1rem; flex:0 0 auto; stroke-width:2; }
   .btn [data-lucide], .ims-tab [data-lucide], .stamp [data-lucide] { width:.875rem; height:.875rem; }
@@ -198,12 +198,12 @@
 
   /* Table */
   table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.data th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--line); background: var(--paper-2); }
+  table.data th { text-align: left; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--steel); padding: 10px 12px; border-bottom: 2px solid var(--line-2); background: #EEF3F5; white-space: nowrap; }
   table.data td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
   table.data tr:hover td { background: #FBFAF4; }
 
   /* KPI */
-  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; position: relative; overflow: hidden; box-shadow: 0 1px 2px rgba(15,15,14,.04); }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; position: relative; overflow: hidden; box-shadow: 0 1px 2px rgba(15,15,14,.04); display: flex; flex-direction: column; justify-content: space-between; min-height: 88px; }
   .kpi::before { content:''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--amber); }
   .kpi.kpi-blue::before { background: var(--steel); }
   .kpi.kpi-green::before { background: var(--ok); }
@@ -212,11 +212,12 @@
   /* Section labels (blueprint-style) */
   .stamp {
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.18em;
-    color: var(--muted); padding: 4px 8px; border: 1px solid var(--line-2);
-    background: var(--paper);
+    color: var(--amber-2); padding: 5px 10px; border-radius: 4px; border: 1px solid rgba(232,116,44,.35);
+    background: rgba(232,116,44,.08);
   }
+  .stamp [data-lucide] { color: var(--amber-2); }
   .h-rule { height:1px; background: linear-gradient(to right, var(--ink) 0%, var(--ink) 70px, transparent 70px); }
 
   /* Progress bar */
@@ -279,10 +280,11 @@
   .modal-bg.show { display:flex; }
   .modal { background:#fff; border-radius:4px; max-width: 640px; width:90%; max-height: 86vh; overflow-y: auto; }
 
-  /* Drawing-style title underline */
-  .title-mark { position: relative; padding-bottom: 8px; }
+  /* Drawing-style title underline — hazard-stripe site-signage mark */
+  .title-mark { position: relative; padding-bottom: 12px; }
   .title-mark::after {
-    content: ''; position: absolute; left: 0; bottom: 0; width: 48px; height: 3px; background: var(--amber);
+    content: ''; position: absolute; left: 0; bottom: 0; width: 64px; height: 5px; border-radius: 2px;
+    background: repeating-linear-gradient(135deg, var(--amber) 0 8px, var(--ink) 8px 16px);
   }
 
   /* Sparkline svg style */
@@ -479,13 +481,15 @@
 
     <!-- Nav -->
     <nav class="flex-1 overflow-y-auto py-2">
-      <div class="px-4 pt-3 pb-1 font-mono text-[10px] text-white/30 tracking-wider">ENGINEERING</div>
+      <div class="px-4 pt-3 pb-1 font-mono text-[10px] text-white/30 tracking-wider">OVERVIEW</div>
       <a class="nav-item active flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dashboard">
         <i data-lucide="layout-dashboard" class="nav-icon w-4 h-4 text-white/60"></i>Command Center
       </a>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="projects">
         <i data-lucide="folder-kanban" class="nav-icon w-4 h-4 text-white/60"></i>Projects
       </a>
+
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">PLANNING &amp; EXECUTION</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="schedule">
         <i data-lucide="calendar-range" class="nav-icon w-4 h-4 text-white/60"></i>Schedule
       </a>
@@ -498,6 +502,8 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="quality">
         <i data-lucide="badge-check" class="nav-icon w-4 h-4 text-white/60"></i>Quality & HSE
       </a>
+
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">COMMERCIAL</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="estimation">
         <i data-lucide="calculator" class="nav-icon w-4 h-4 text-white/60"></i>BOQ & Estimate
       </a>
@@ -510,25 +516,13 @@
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="billing">
         <i data-lucide="receipt" class="nav-icon w-4 h-4 text-white/60"></i>Billing
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="documents">
-        <i data-lucide="file-stack" class="nav-icon w-4 h-4 text-white/60"></i>Documents
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="reports">
-        <i data-lucide="file-output" class="nav-icon w-4 h-4 text-white/60"></i>Reports
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="settings">
-        <i data-lucide="settings-2" class="nav-icon w-4 h-4 text-white/60"></i>Settings
-      </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="control">
-        <i data-lucide="workflow" class="nav-icon w-4 h-4 text-white/60"></i>Control Layer
-      </a>
 
-      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">MANPOWER</div>
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">WORKFORCE</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="hrms">
         <i data-lucide="users-round" class="nav-icon w-4 h-4 text-white/60"></i>HRMS · Workforce
       </a>
 
-      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">EQUIPMENT</div>
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">EQUIPMENT & PLANT</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="equipment">
         <i data-lucide="truck" class="nav-icon w-4 h-4 text-white/60"></i>Equipment & Plant
       </a>
@@ -536,6 +530,20 @@
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">MATERIAL</div>
       <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="materials">
         <i data-lucide="package" class="nav-icon w-4 h-4 text-white/60"></i>Material & Procurement
+      </a>
+
+      <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">RECORDS & ADMIN</div>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="documents">
+        <i data-lucide="file-stack" class="nav-icon w-4 h-4 text-white/60"></i>Documents
+      </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="reports">
+        <i data-lucide="file-output" class="nav-icon w-4 h-4 text-white/60"></i>Reports
+      </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="control">
+        <i data-lucide="workflow" class="nav-icon w-4 h-4 text-white/60"></i>Control Layer
+      </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="settings">
+        <i data-lucide="settings-2" class="nav-icon w-4 h-4 text-white/60"></i>Settings
       </a>
     </nav>
 
@@ -1495,7 +1503,7 @@
             <div>
               <div class="stamp mb-3"><i data-lucide="factory" class="w-3 h-3"></i>PLANT PRODUCTION MONITORING</div>
               <h1 class="font-display font-black text-3xl title-mark">Crusher & Batching Plant Production</h1>
-              <p class="text-sm text-stone-500 mt-3">Daily output, material consumption, diesel, downtime, cost, and stock posting from transaction records</p>
+              <p class="text-sm text-stone-500 mt-3">Daily output, material consumption, diesel, downtime and cost - tracked independently of Store stock</p>
             </div>
             <div class="flex gap-2">
               <button class="btn btn-ghost" data-plant-act="export-csv"><i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>Excel CSV</button>
