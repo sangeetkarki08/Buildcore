@@ -115,7 +115,7 @@
   .dash-hero > * { position:relative; z-index:1; }
   .dash-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 8px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); border-radius:4px; font-size:10px; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:.08em; }
   .dash-kpi-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
-  .dash-kpi { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; min-height:92px; display:flex; flex-direction:column; justify-content:space-between; box-shadow: 0 1px 2px rgba(15,15,14,.04); }
+  .dash-kpi { background:#fff; border:1px solid var(--line); border-radius:6px; padding:10px 13px; min-height:78px; display:flex; flex-direction:column; justify-content:space-between; box-shadow: 0 1px 2px rgba(15,15,14,.04); }
   .dash-kpi .label { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
   .dash-kpi .value { font-family:'Archivo',sans-serif; font-weight:800; font-size:23px; line-height:1; font-variant-numeric:tabular-nums; margin-top:8px; }
   .dash-panel { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; box-shadow: 0 1px 2px rgba(15,15,14,.04); }
@@ -196,14 +196,17 @@
   .btn-ghost:hover { background: var(--paper-2); }
   .btn-danger { background: var(--bad); color: #fff; }
 
-  /* Table */
-  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.data th { text-align: left; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--steel); padding: 10px 12px; border-bottom: 2px solid var(--line-2); background: #EEF3F5; white-space: nowrap; }
-  table.data td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-  table.data tr:hover td { background: #FBFAF4; }
+  /* Table — dense professional data-grid */
+  table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+  table.data th { text-align: left; font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--steel); padding: 7px 10px; border-bottom: 2px solid var(--line-2); border-right: 1px solid var(--line); background: #EEF3F5; white-space: nowrap; }
+  table.data th:last-child { border-right: none; }
+  table.data td { padding: 6px 10px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); vertical-align: middle; }
+  table.data td:last-child { border-right: none; }
+  table.data tbody tr:nth-child(even) td { background: #FAFAF7; }
+  table.data tr:hover td { background: #FDF0E6; }
 
   /* KPI */
-  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; position: relative; overflow: hidden; box-shadow: 0 1px 2px rgba(15,15,14,.04); display: flex; flex-direction: column; justify-content: space-between; min-height: 88px; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 11px 13px; position: relative; overflow: hidden; box-shadow: 0 1px 2px rgba(15,15,14,.04); display: flex; flex-direction: column; justify-content: space-between; min-height: 72px; }
   .kpi::before { content:''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--amber); }
   .kpi.kpi-blue::before { background: var(--steel); }
   .kpi.kpi-green::before { background: var(--ok); }
@@ -229,16 +232,16 @@
   .tab.active { color: var(--ink); border-bottom-color: var(--amber); }
   .tab:hover { color: var(--ink); }
   /* IMS tabs */
-  .ims-tab { display:inline-flex; align-items:center; gap:6px; padding: 12px 14px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; background: transparent; transition: all .15s; }
+  .ims-tab { display:inline-flex; align-items:center; gap:6px; padding: 9px 12px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; cursor: pointer; background: transparent; transition: all .15s; }
   .ims-tab:hover { color: var(--ink); background: rgba(0,0,0,.02); }
   .ims-tab.active { color: var(--ink); border-bottom-color: var(--amber); background: rgba(232,116,44,.04); }
   .ims-tab-sep { width:1px; align-self:center; height:20px; background: rgba(0,0,0,.08); margin: 0 2px; }
   /* IMS form */
-  .ims-form { display: grid; gap: 10px; }
-  .ims-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .ims-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .ims-form { display: grid; gap: 8px; }
+  .ims-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ims-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .ims-field label { display:block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 4px; }
-  .ims-field input, .ims-field select, .ims-field textarea { width: 100%; border: 1px solid var(--line); border-radius: 5px; padding: 7px 10px; font-size: 13px; background: #fff; font-family: inherit; }
+  .ims-field input, .ims-field select, .ims-field textarea { width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: 6px 9px; font-size: 12.5px; background: #fff; font-family: inherit; }
   .ims-field input:focus, .ims-field select:focus, .ims-field textarea:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 3px rgba(232,116,44,.12); }
   .dpr-entry-table input, .dpr-entry-table select { width:100%; border:1px solid var(--line); padding:6px 8px; font-size:12px; background:#fff; }
   .dpr-entry-table input:focus, .dpr-entry-table select:focus { outline:none; border-color:var(--amber); box-shadow:0 0 0 2px rgba(232,116,44,.10); }
@@ -312,19 +315,19 @@
   .modal-backdrop.show { opacity: 1; pointer-events: auto; }
   .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -48%); background: var(--paper); border: 1px solid var(--line-2); border-radius: 10px; box-shadow: 0 24px 60px rgba(0,0,0,.22); z-index: 1100; min-width: 520px; max-width: 720px; width: 90%; max-height: 88vh; overflow: hidden; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
   .modal.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
-  .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--line-1); display: flex; align-items: center; justify-content: space-between; background: var(--paper-2); }
-  .modal-head h3 { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 17px; }
-  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
-  .modal-foot { padding: 12px 20px; border-top: 1px solid var(--line-1); display: flex; justify-content: flex-end; gap: 8px; background: var(--paper-2); }
-  .modal-close { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line-2); border-radius: 6px; cursor: pointer; background: var(--paper); }
+  .modal-head { padding: 13px 18px; border-bottom: 1px solid var(--line-1); display: flex; align-items: center; justify-content: space-between; background: var(--paper-2); }
+  .modal-head h3 { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 16px; }
+  .modal-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+  .modal-foot { padding: 10px 18px; border-top: 1px solid var(--line-1); display: flex; justify-content: flex-end; gap: 8px; background: var(--paper-2); }
+  .modal-close { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line-2); border-radius: 5px; cursor: pointer; background: var(--paper); }
   .modal-close:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .form-row { margin-bottom: 12px; }
-  .form-row label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 5px; }
-  .form-row input, .form-row select, .form-row textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 5px; font-family: 'Manrope', sans-serif; font-size: 13px; background: #fff; color: var(--ink); }
+  .form-row { margin-bottom: 9px; }
+  .form-row label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 4px; }
+  .form-row input, .form-row select, .form-row textarea { width: 100%; padding: 6px 9px; border: 1px solid var(--line-2); border-radius: 4px; font-family: 'Manrope', sans-serif; font-size: 12.5px; background: #fff; color: var(--ink); }
   .form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline: 2px solid var(--amber); outline-offset: -1px; border-color: var(--amber); }
-  .form-row textarea { min-height: 64px; resize: vertical; font-family: 'Manrope', sans-serif; }
-  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
-  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px 12px; }
+  .form-row textarea { min-height: 56px; resize: vertical; font-family: 'Manrope', sans-serif; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 12px; }
 
   /* Toast */
   .toast-stack { position: fixed; top: 18px; right: 18px; z-index: 1200; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
@@ -396,7 +399,7 @@
       <div class="login-logo">B</div>
       <div>
         <div class="font-display font-black text-2xl">BUILDCORE</div>
-        <div class="font-mono text-[10px] text-stone-400 tracking-wider">CONTRACTOR OS · v4.8</div>
+        <div class="font-mono text-[10px] text-stone-400 tracking-wider">CONTRACTOR OS · v4.9</div>
       </div>
     </div>
     <div class="login-tagline">Company sign-in — your project role is verified when you enter a project</div>
@@ -464,7 +467,7 @@
         <div class="logo-mark">B</div>
         <div>
           <div class="font-display font-black text-lg text-white leading-none">BUILDCORE</div>
-          <div class="font-mono text-[10px] text-white/40 mt-1 tracking-wider">CONTRACTOR OS · v4.8</div>
+          <div class="font-mono text-[10px] text-white/40 mt-1 tracking-wider">CONTRACTOR OS · v4.9</div>
         </div>
       </div>
     </div>
@@ -482,67 +485,67 @@
     <!-- Nav -->
     <nav class="flex-1 overflow-y-auto py-2">
       <div class="px-4 pt-3 pb-1 font-mono text-[10px] text-white/30 tracking-wider">OVERVIEW</div>
-      <a class="nav-item active flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dashboard">
+      <a class="nav-item active flex items-center gap-3 px-4 py-1.5 text-sm" data-view="dashboard">
         <i data-lucide="layout-dashboard" class="nav-icon w-4 h-4 text-white/60"></i>Command Center
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="projects">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="projects">
         <i data-lucide="folder-kanban" class="nav-icon w-4 h-4 text-white/60"></i>Projects
       </a>
 
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">PLANNING &amp; EXECUTION</div>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="schedule">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="schedule">
         <i data-lucide="calendar-range" class="nav-icon w-4 h-4 text-white/60"></i>Schedule
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="todos">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="todos">
         <i data-lucide="check-square" class="nav-icon w-4 h-4 text-white/60"></i>Action List
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="dpr">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="dpr">
         <i data-lucide="clipboard-list" class="nav-icon w-4 h-4 text-white/60"></i>DPR
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="quality">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="quality">
         <i data-lucide="badge-check" class="nav-icon w-4 h-4 text-white/60"></i>Quality & HSE
       </a>
 
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">COMMERCIAL</div>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="estimation">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="estimation">
         <i data-lucide="calculator" class="nav-icon w-4 h-4 text-white/60"></i>BOQ & Estimate
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="budgetcontrol">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="budgetcontrol">
         <i data-lucide="circle-dollar-sign" class="nav-icon w-4 h-4 text-white/60"></i>Cost Control
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="accounting">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="accounting">
         <i data-lucide="book-text" class="nav-icon w-4 h-4 text-white/60"></i>Accounting
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="billing">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="billing">
         <i data-lucide="receipt" class="nav-icon w-4 h-4 text-white/60"></i>Billing
       </a>
 
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">WORKFORCE</div>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="hrms">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="hrms">
         <i data-lucide="users-round" class="nav-icon w-4 h-4 text-white/60"></i>HRMS · Workforce
       </a>
 
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">EQUIPMENT & PLANT</div>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="equipment">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="equipment">
         <i data-lucide="truck" class="nav-icon w-4 h-4 text-white/60"></i>Equipment & Plant
       </a>
 
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">MATERIAL</div>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="materials">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="materials">
         <i data-lucide="package" class="nav-icon w-4 h-4 text-white/60"></i>Material & Procurement
       </a>
 
       <div class="px-4 pt-4 pb-1 font-mono text-[10px] text-white/30 tracking-wider">RECORDS & ADMIN</div>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="documents">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="documents">
         <i data-lucide="file-stack" class="nav-icon w-4 h-4 text-white/60"></i>Documents
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="reports">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="reports">
         <i data-lucide="file-output" class="nav-icon w-4 h-4 text-white/60"></i>Reports
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="control">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="control">
         <i data-lucide="workflow" class="nav-icon w-4 h-4 text-white/60"></i>Control Layer
       </a>
-      <a class="nav-item flex items-center gap-3 px-4 py-2.5 text-sm" data-view="settings">
+      <a class="nav-item flex items-center gap-3 px-4 py-1.5 text-sm" data-view="settings">
         <i data-lucide="settings-2" class="nav-icon w-4 h-4 text-white/60"></i>Settings
       </a>
     </nav>
