@@ -14608,6 +14608,7 @@
       <div class="pb-stat"><span class="l">SPI · CPI</span><span class="v" style="color:${proj.spi < 0.9 || proj.cpi < 0.9 ? '#FFB088' : '#A5E2B1'}">${proj.spi.toFixed(2)} · ${proj.cpi.toFixed(2)}</span></div>
       <span style="opacity:.5">·</span>
       <span class="badge" style="background:${sc};color:#fff;border:none;font-size:10px">${proj.status}</span>
+      ${proj.sample || proj.previewOnly ? '' : `<button class="pb-back" onclick="actEditProject('${proj.id}')" title="Edit project details"><i data-lucide="pencil" class="w-3 h-3"></i>Edit Project</button>`}
       <div style="margin-left:auto;font-size:11px;opacity:.7">
         👤 ${State.session.user.name} · ${State.session.user.role}
       </div>
@@ -16232,6 +16233,7 @@ Available Actions:
         saveState();
         flushSaveState();
         syncActiveProjectUI?.();
+        renderProjectBanner?.();
         renderPortfolioScreen?.();
         renderLauncher?.();
         toast('Project Updated', p.name + ' - ' + p.id, 'ok');
