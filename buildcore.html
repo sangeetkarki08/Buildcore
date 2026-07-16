@@ -115,11 +115,11 @@
   .dash-hero > * { position:relative; z-index:1; }
   .dash-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 8px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); border-radius:4px; font-size:10px; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:.08em; }
   .dash-kpi-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
-  .dash-kpi { background:#fff; border:1px solid var(--line); border-radius:6px; padding:13px 14px; min-height:104px; display:flex; flex-direction:column; justify-content:space-between; }
+  .dash-kpi { background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 14px; min-height:92px; display:flex; flex-direction:column; justify-content:space-between; box-shadow: 0 1px 2px rgba(15,15,14,.04); }
   .dash-kpi .label { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
-  .dash-kpi .value { font-family:'Archivo',sans-serif; font-weight:900; font-size:25px; line-height:1; font-variant-numeric:tabular-nums; margin-top:8px; }
-  .dash-panel { background:#fff; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
-  .dash-panel-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; border-bottom:1px solid var(--line); background:#FBFAF4; }
+  .dash-kpi .value { font-family:'Archivo',sans-serif; font-weight:800; font-size:23px; line-height:1; font-variant-numeric:tabular-nums; margin-top:8px; }
+  .dash-panel { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; box-shadow: 0 1px 2px rgba(15,15,14,.04); }
+  .dash-panel-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-bottom:1px solid var(--line); background:#FBFAF4; }
   .dash-panel-title { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:800; color:var(--steel); text-transform:uppercase; letter-spacing:.08em; }
   .dash-main-grid { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(320px,.8fr); gap:16px; }
   .dash-project-row { display:grid; grid-template-columns:1.1fr .8fr .65fr .65fr .7fr .55fr; gap:12px; align-items:center; padding:12px 14px; border-top:1px solid var(--line); cursor:pointer; }
@@ -174,11 +174,11 @@
   }
 
   /* Cards */
-  .card { background: #fff; border: 1px solid var(--line); border-radius: 4px; }
-  .card-flat { background: var(--paper-2); border: 1px solid var(--line); border-radius: 4px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 1px 2px rgba(15,15,14,.04); }
+  .card-flat { background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; }
 
   /* Badges */
-  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
   .badge-ok { background: #DCFCE7; color: #14532D; }
   .badge-warn { background: #FEF3C7; color: #78350F; }
   .badge-bad { background: #FEE2E2; color: #7F1D1D; }
@@ -187,10 +187,10 @@
   .badge-amber { background: #FFEDD5; color: #7C2D12; }
 
   /* Buttons */
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 3px; font-weight: 600; font-size: 13px; transition: all .15s; cursor: pointer; border: 1px solid transparent; }
-  .btn-primary { background: var(--ink); color: #fff; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 13px; transition: all .15s; cursor: pointer; border: 1px solid transparent; }
+  .btn-primary { background: var(--ink); color: #fff; box-shadow: 0 1px 2px rgba(15,15,14,.18); }
   .btn-primary:hover { background: var(--amber-2); }
-  .btn-amber { background: var(--amber); color: #fff; }
+  .btn-amber { background: var(--amber); color: #fff; box-shadow: 0 1px 2px rgba(196,90,24,.22); }
   .btn-amber:hover { background: var(--amber-2); }
   .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-2); }
   .btn-ghost:hover { background: var(--paper-2); }
@@ -198,12 +198,12 @@
 
   /* Table */
   table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.data th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--paper-2); }
-  table.data td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  table.data th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--line); background: var(--paper-2); }
+  table.data td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
   table.data tr:hover td { background: #FBFAF4; }
 
   /* KPI */
-  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; position: relative; overflow: hidden; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; position: relative; overflow: hidden; box-shadow: 0 1px 2px rgba(15,15,14,.04); }
   .kpi::before { content:''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--amber); }
   .kpi.kpi-blue::before { background: var(--steel); }
   .kpi.kpi-green::before { background: var(--ok); }
@@ -220,7 +220,7 @@
   .h-rule { height:1px; background: linear-gradient(to right, var(--ink) 0%, var(--ink) 70px, transparent 70px); }
 
   /* Progress bar */
-  .pbar { height: 6px; background: var(--paper-2); border-radius: 1px; overflow: hidden; }
+  .pbar { height: 6px; background: var(--paper-2); border-radius: 3px; overflow: hidden; }
   .pbar > div { height: 100%; background: var(--amber); }
 
   /* Tabs */
@@ -233,11 +233,11 @@
   .ims-tab.active { color: var(--ink); border-bottom-color: var(--amber); background: rgba(232,116,44,.04); }
   .ims-tab-sep { width:1px; align-self:center; height:20px; background: rgba(0,0,0,.08); margin: 0 2px; }
   /* IMS form */
-  .ims-form { display: grid; gap: 12px; }
-  .ims-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .ims-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .ims-form { display: grid; gap: 10px; }
+  .ims-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ims-form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
   .ims-field label { display:block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 4px; }
-  .ims-field input, .ims-field select, .ims-field textarea { width: 100%; border: 1px solid var(--line); padding: 8px 10px; font-size: 13px; background: #fff; font-family: inherit; }
+  .ims-field input, .ims-field select, .ims-field textarea { width: 100%; border: 1px solid var(--line); border-radius: 5px; padding: 7px 10px; font-size: 13px; background: #fff; font-family: inherit; }
   .ims-field input:focus, .ims-field select:focus, .ims-field textarea:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 3px rgba(232,116,44,.12); }
   .dpr-entry-table input, .dpr-entry-table select { width:100%; border:1px solid var(--line); padding:6px 8px; font-size:12px; background:#fff; }
   .dpr-entry-table input:focus, .dpr-entry-table select:focus { outline:none; border-color:var(--amber); box-shadow:0 0 0 2px rgba(232,116,44,.10); }
@@ -248,7 +248,7 @@
   .ims-stat .lbl { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: .4px; font-weight: 600; }
   .ims-stat .val { font-family: var(--font-display); font-weight: 900; font-size: 22px; margin-top: 4px; font-variant-numeric: tabular-nums; }
   .ims-row-action { display: inline-flex; gap: 4px; }
-  .ims-icon-btn { padding: 4px 6px; background: transparent; border: 1px solid var(--line); cursor: pointer; font-size: 11px; }
+  .ims-icon-btn { padding: 4px 7px; background: transparent; border: 1px solid var(--line); border-radius: 5px; cursor: pointer; font-size: 11px; }
   .ims-icon-btn:hover { background: #f5f3ef; border-color: var(--ink-3, #7a7a7a); }
   .ims-icon-btn.danger:hover { background: #fee2e2; border-color: #C0383B; color: #C0383B; }
 
@@ -308,25 +308,25 @@
   /* Modal */
   .modal-backdrop { position: fixed; inset: 0; background: rgba(15,15,14,0.55); z-index: 1090; opacity: 0; pointer-events: none; transition: opacity .18s ease; backdrop-filter: blur(2px); }
   .modal-backdrop.show { opacity: 1; pointer-events: auto; }
-  .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -48%); background: var(--paper); border: 1px solid var(--line-2); border-radius: 2px; box-shadow: 0 24px 60px rgba(0,0,0,.25); z-index: 1100; min-width: 520px; max-width: 720px; width: 90%; max-height: 88vh; overflow: hidden; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+  .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -48%); background: var(--paper); border: 1px solid var(--line-2); border-radius: 10px; box-shadow: 0 24px 60px rgba(0,0,0,.22); z-index: 1100; min-width: 520px; max-width: 720px; width: 90%; max-height: 88vh; overflow: hidden; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
   .modal.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
-  .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--line-1); display: flex; align-items: center; justify-content: space-between; background: var(--paper-2); }
-  .modal-head h3 { font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 18px; }
-  .modal-body { padding: 22px; overflow-y: auto; flex: 1; }
-  .modal-foot { padding: 14px 22px; border-top: 1px solid var(--line-1); display: flex; justify-content: flex-end; gap: 8px; background: var(--paper-2); }
-  .modal-close { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line-2); cursor: pointer; background: var(--paper); }
+  .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--line-1); display: flex; align-items: center; justify-content: space-between; background: var(--paper-2); }
+  .modal-head h3 { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 17px; }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .modal-foot { padding: 12px 20px; border-top: 1px solid var(--line-1); display: flex; justify-content: flex-end; gap: 8px; background: var(--paper-2); }
+  .modal-close { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line-2); border-radius: 6px; cursor: pointer; background: var(--paper); }
   .modal-close:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .form-row { margin-bottom: 14px; }
+  .form-row { margin-bottom: 12px; }
   .form-row label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin-bottom: 5px; }
-  .form-row input, .form-row select, .form-row textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 2px; font-family: 'Manrope', sans-serif; font-size: 13px; background: #fff; color: var(--ink); }
+  .form-row input, .form-row select, .form-row textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 5px; font-family: 'Manrope', sans-serif; font-size: 13px; background: #fff; color: var(--ink); }
   .form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline: 2px solid var(--amber); outline-offset: -1px; border-color: var(--amber); }
-  .form-row textarea { min-height: 70px; resize: vertical; font-family: 'Manrope', sans-serif; }
-  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .form-row textarea { min-height: 64px; resize: vertical; font-family: 'Manrope', sans-serif; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px 12px; }
 
   /* Toast */
   .toast-stack { position: fixed; top: 18px; right: 18px; z-index: 1200; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-  .toast { background: var(--ink); color: #fff; padding: 12px 16px; min-width: 280px; max-width: 380px; border-left: 3px solid var(--amber); box-shadow: 0 8px 24px rgba(0,0,0,.18); font-size: 13px; opacity: 0; transform: translateX(20px); transition: opacity .22s ease, transform .22s ease; pointer-events: auto; }
+  .toast { background: var(--ink); color: #fff; padding: 12px 16px; min-width: 280px; max-width: 380px; border-radius: 6px; border-left: 3px solid var(--amber); box-shadow: 0 8px 24px rgba(0,0,0,.18); font-size: 13px; opacity: 0; transform: translateX(20px); transition: opacity .22s ease, transform .22s ease; pointer-events: auto; }
   .toast.show { opacity: 1; transform: translateX(0); }
   .toast.ok { border-left-color: #15803D; }
   .toast.warn { border-left-color: #B45309; }
@@ -5724,7 +5724,6 @@
           State.stockMovements.push(obj);
           audit('create', 'Movement · ' + obj.refNo, effType + ' · ' + obj.qty + ' to ' + (obj.issuedTo||'site'));
         }
-        if (effType === 'OUT' && ['plant','crusherplant','batchingplant'].includes(obj.recipientType)) plantSyncDieselIssues();
         if (effType === 'OUT' && obj.recipientType === 'equipment') eqSyncMaterialIssueLogs();
         saveState();
         if (effType === 'OUT' && obj.clientBillable && obj.submitClientApproval === 'yes') {
@@ -6611,42 +6610,39 @@
     State.items = Array.isArray(State.items) ? State.items : [];
     let it = State.items.find(i => String(i.sku || '').toUpperCase() === sku.toUpperCase() || String(i.name || '').toLowerCase() === name.toLowerCase());
     if (!it) {
-      it = { id:State.imsNextId.items++, sku, name, category, unit, reorderLevel:0, costPrice:Number(costPrice || 0), supplier:'Plant production', notes:'Auto-created for plant production monitoring' };
+      it = { id:State.imsNextId.items++, sku, name, category, unit, reorderLevel:0, costPrice:Number(costPrice || 0), supplier:'Equipment consumables', notes:'Auto-created for equipment fuel/consumable tracking' };
       State.items.push(it);
     }
     if (openingQty > 0 && stockOf(Number(it.id), plantActiveSiteId()) <= 0) {
       State.stockMovements.push({
         id:State.imsNextId.mov++, type:'IN', itemId:Number(it.id), qty:Number(openingQty), date:Date.now()-3*86400000,
         refNo:'PLANT-OPEN-' + sku, supplier:'Opening balance', siteId:plantActiveSiteId(), unitRate:Number(costPrice || it.costPrice || 0),
-        totalValue:Number(openingQty) * Number(costPrice || it.costPrice || 0), sourceModule:'plant-opening', notes:'Opening stock for production validation'
+        totalValue:Number(openingQty) * Number(costPrice || it.costPrice || 0), sourceModule:'plant-opening', notes:'Opening stock for validation'
       });
     }
     return it;
   }
+  function plantStockAvailable(itemId, siteId, sourceId) {
+    return (State.stockMovements || [])
+      .filter(m => Number(m.itemId) === Number(itemId) && Number(m.siteId || 0) === Number(siteId || plantActiveSiteId()) && String(m.sourceId || '') !== String(sourceId || ''))
+      .reduce((s,m) => s + (m.type === 'IN' ? Number(m.qty || 0) : -Number(m.qty || 0)), 0);
+  }
+  function plantItemOptions(selected, filter='') {
+    const rx = filter ? new RegExp(filter, 'i') : null;
+    return (State.items || []).filter(i => !rx || rx.test((i.category || '') + ' ' + (i.name || '') + ' ' + (i.sku || ''))).map(i => `<option value="${i.id}" ${Number(selected)===Number(i.id)?'selected':''}>${esc(i.sku || '')} - ${esc(i.name || '')} (${esc(i.unit || '')})</option>`).join('');
+  }
   function plantEnsureDefaults() {
-    seedIMSData();
     State.crusherRecords = Array.isArray(State.crusherRecords) ? State.crusherRecords : [];
     State.batchingRecords = Array.isArray(State.batchingRecords) ? State.batchingRecords : [];
     State.plantNextId = State.plantNextId || { crusher:1, batching:1 };
-    const items = {
-      diesel: plantEnsureItem('FUEL-DIESEL','Diesel','Fuel','L',118,1200),
-      agg40: plantEnsureItem('AGG-040','Aggregate 40mm','Aggregates','cft',58,0),
-      agg20: plantEnsureItem('AGG-020','Aggregate 20mm','Aggregates','cft',62,0),
-      agg10: plantEnsureItem('AGG-010','Aggregate 10mm','Aggregates','cft',64,0),
-      dust: plantEnsureItem('AGG-DUST','Crusher Dust / M-Sand','Aggregates','cft',46,0),
-      feed: plantEnsureItem('RAW-STONE','Raw Stone Feed','Raw Material','cft',34,5000),
-      cement: State.items.find(i => /cement/i.test(i.category || i.name || '')) || plantEnsureItem('CEM-001','OPC 53 Grade Cement','Cement','bag',712,300),
-      sand: State.items.find(i => /sand/i.test(i.name || '')) || plantEnsureItem('SND-001','River Sand','Aggregates','cft',48,1000),
-      admixture: plantEnsureItem('ADM-001','Concrete Admixture','Concrete Material','L',180,250)
-    };
     if (!State.crusherRecords.length) {
       const d = new Date().toISOString().slice(0,10);
       const rec = {
         id:'CRP-0001', date:d, plantName:'Crusher Plant CP-01', location:'Main yard - Lalitpur', operatorName:'Ram Bahadur Tamang',
-        shift:'Day', workingHours:8, breakdownHours:0.5, idleHours:0.25, dieselConsumed:92, electricityConsumed:0,
-        feedMaterialType:'Raw stone', feedMaterialItemId:items.feed.id, feedQty:950, dieselItemId:items.diesel.id,
-        agg40Qty:180, agg40ItemId:items.agg40.id, agg20Qty:320, agg20ItemId:items.agg20.id, agg10Qty:210, agg10ItemId:items.agg10.id,
-        dustQty:155, dustItemId:items.dust.id, otherSize:'', otherQty:0, otherItemId:items.dust.id, wastageQty:85,
+        shift:'Day', workingHours:8, breakdownHours:0.5, idleHours:0.25, dieselConsumed:92, dieselRate:118, electricityConsumed:0,
+        feedMaterialType:'Raw stone', feedQty:950,
+        agg40Qty:180, agg20Qty:320, agg10Qty:210,
+        dustQty:155, otherSize:'', otherQty:0, wastageQty:85,
         directCost:18500, remarks:'Routine day production', projectId:State.activeProject || 'PRJ-017'
       };
       rec.totalProduction = plantCrusherTotal(rec);
@@ -6655,16 +6651,15 @@
       rec.productionCostPerUnit = plantCrusherCostPerUnit(rec);
       State.crusherRecords.push(rec);
       State.plantNextId.crusher = 2;
-      plantPostProduction('crusher', rec, true);
     }
     if (!State.batchingRecords.length) {
       const d = new Date().toISOString().slice(0,10);
       const rec = {
         id:'BPL-0001', date:d, plantName:'Batching Plant BP-01', location:'Skyline Towers - Block A', operatorName:'Hari Prasad Sharma',
         concreteGrade:'M25', pourLocation:'Block A L4 slab', shift:'Day', workingHours:7.5, breakdownHours:0.25, idleHours:0.5,
-        concreteQty:42, cementQty:126, cementItemId:items.cement.id, sandQty:520, sandItemId:items.sand.id,
-        aggregateQty:640, aggregateItemId:items.agg20.id, admixtureQty:38, admixtureItemId:items.admixture.id, waterQty:7600,
-        dieselConsumed:46, dieselItemId:items.diesel.id, electricityConsumed:0, equipmentUsed:'TM-01, TM-02, concrete pump',
+        concreteQty:42, cementQty:126, cementRate:712, sandQty:520, sandRate:48,
+        aggregateQty:640, aggregateRate:62, admixtureQty:38, admixtureRate:180, waterQty:7600,
+        dieselConsumed:46, dieselRate:118, electricityConsumed:0, equipmentUsed:'TM-01, TM-02, concrete pump',
         batchNo:'BP01-M25-' + d.replace(/-/g,''), rejectedQty:1.2, directCost:12400, remarks:'Linked to slab pour', projectId:'PRJ-017'
       };
       rec.productionRate = plantRate(rec.concreteQty, rec.workingHours);
@@ -6672,9 +6667,7 @@
       rec.productionCostPerM3 = plantBatchingCostPerM3(rec);
       State.batchingRecords.push(rec);
       State.plantNextId.batching = 2;
-      plantPostProduction('batching', rec, true);
     }
-    plantSyncDieselIssues();
     saveState();
   }
   function plantRate(a,b) { return Number(b || 0) > 0 ? Number(a || 0) / Number(b || 0) : 0; }
@@ -6682,61 +6675,9 @@
     const p = (State.projects || []).find(x => x.id === (projectId || State.activeProject));
     return p ? `${p.id} - ${p.name}` : (projectId || State.activeProject || 'All projects');
   }
-  function plantIsDieselItem(itemId) {
-    const it = (State.items || []).find(i => Number(i.id) === Number(itemId)) || {};
-    return /diesel|fuel/i.test((it.name || '') + ' ' + (it.category || '') + ' ' + (it.sku || ''));
-  }
-  function plantRecipientParts(m) {
-    const raw = String(m.recipientId || m.issuedTo || '');
-    const parts = raw.includes('|') ? raw.split('|') : [];
-    const kind = parts[0] || (/batch/i.test(raw) ? 'Batching' : 'Crusher');
-    const plantName = parts.slice(1).join('|') || raw.replace(/^Plant:\s*/i,'') || (kind === 'Batching' ? 'Batching Plant BP-01' : 'Crusher Plant CP-01');
-    return { kind:/batch/i.test(kind) ? 'batching' : 'crusher', plantName };
-  }
-  function plantSyncDieselIssues() {
-    const dieselIssues = (State.stockMovements || []).filter(m => m.type === 'OUT' && ['plant','crusherplant','batchingplant'].includes(m.recipientType) && m.sourceModule !== 'plant-production' && plantIsDieselItem(m.itemId));
-    const groups = new Map();
-    dieselIssues.forEach(m => {
-      const parts = plantRecipientParts(m);
-      const date = new Date(m.date || Date.now()).toISOString().slice(0,10);
-      const key = parts.kind + '|' + parts.plantName + '|' + date;
-      const g = groups.get(key) || { ...parts, date, qty:0, itemId:m.itemId, projectId:m.projectId || m.chargeProject || State.activeProject || 'PRJ-017' };
-      g.qty += Number(m.qty || 0);
-      groups.set(key, g);
-    });
-    groups.forEach(g => {
-      const list = g.kind === 'crusher' ? State.crusherRecords : State.batchingRecords;
-      let rec = list.find(r => r.date === g.date && String(r.plantName || '').toLowerCase() === g.plantName.toLowerCase());
-      if (!rec && g.kind === 'crusher') {
-        rec = { id:'CRP-' + String(State.plantNextId.crusher++).padStart(4,'0'), date:g.date, plantName:g.plantName, location:'', operatorName:'', shift:'Day', workingHours:0, breakdownHours:0, idleHours:0, dieselConsumed:0, electricityConsumed:0, feedMaterialType:'', feedMaterialItemId:0, feedQty:0, dieselItemId:g.itemId, agg40Qty:0, agg40ItemId:0, agg20Qty:0, agg20ItemId:0, agg10Qty:0, agg10ItemId:0, dustQty:0, dustItemId:0, otherSize:'', otherQty:0, otherItemId:0, wastageQty:0, directCost:0, remarks:'Auto-created from diesel stock issue', projectId:g.projectId };
-        State.crusherRecords.push(rec);
-      }
-      if (!rec && g.kind === 'batching') {
-        rec = { id:'BPL-' + String(State.plantNextId.batching++).padStart(4,'0'), date:g.date, plantName:g.plantName, location:'', operatorName:'', concreteGrade:'', pourLocation:'', shift:'Day', workingHours:0, breakdownHours:0, idleHours:0, concreteQty:0, cementQty:0, cementItemId:0, sandQty:0, sandItemId:0, aggregateQty:0, aggregateItemId:0, admixtureQty:0, admixtureItemId:0, waterQty:0, dieselConsumed:0, dieselItemId:g.itemId, electricityConsumed:0, equipmentUsed:'', batchNo:'', rejectedQty:0, directCost:0, remarks:'Auto-created from diesel stock issue', projectId:g.projectId };
-        State.batchingRecords.push(rec);
-      }
-      if (!rec) return;
-      rec.dieselIssuedQty = g.qty;
-      rec.dieselItemId = rec.dieselItemId || g.itemId;
-      rec.projectId = rec.projectId || g.projectId;
-      if (Number(rec.dieselConsumed || 0) < g.qty) rec.dieselConsumed = g.qty;
-      if (g.kind === 'crusher') {
-        rec.totalProduction = plantCrusherTotal(rec);
-        rec.productionRate = plantRate(rec.totalProduction, rec.workingHours);
-        rec.dieselPerUnit = plantRate(rec.dieselConsumed, rec.totalProduction);
-        rec.productionCostPerUnit = plantCrusherCostPerUnit(rec);
-      } else {
-        rec.productionRate = plantRate(rec.concreteQty, rec.workingHours);
-        rec.materialPerM3 = plantBatchingMaterialPerM3(rec);
-        rec.productionCostPerM3 = plantBatchingCostPerM3(rec);
-      }
-      plantPostProduction(g.kind, rec, true);
-    });
-  }
   function plantCrusherTotal(r) { return ['agg40Qty','agg20Qty','agg10Qty','dustQty','otherQty'].reduce((s,k) => s + Number(r[k] || 0), 0); }
   function plantCrusherCostPerUnit(r) {
-    const dieselItem = State.items.find(i => Number(i.id) === Number(r.dieselItemId)) || {};
-    const dieselCost = Number(r.dieselConsumed || 0) * Number(dieselItem.costPrice || stockAvgRateOf(Number(r.dieselItemId)) || 0);
+    const dieselCost = Number(r.dieselConsumed || 0) * Number(r.dieselRate || 0);
     return plantRate(Number(r.directCost || 0) + dieselCost, plantCrusherTotal(r));
   }
   function plantBatchingMaterialPerM3(r) {
@@ -6747,75 +6688,12 @@
     } : { cement:0, sand:0, aggregate:0, admixture:0, water:0, diesel:0 };
   }
   function plantBatchingCostPerM3(r) {
-    const materialIds = ['cement','sand','aggregate','admixture'].map(k => [r[k+'ItemId'], r[k+'Qty']]);
-    const materialCost = materialIds.reduce((s,[id,qty]) => {
-      const it = State.items.find(i => Number(i.id) === Number(id)) || {};
-      return s + Number(qty || 0) * Number(it.costPrice || stockAvgRateOf(Number(id)) || 0);
-    }, 0);
-    const dieselItem = State.items.find(i => Number(i.id) === Number(r.dieselItemId)) || {};
-    const dieselCost = Number(r.dieselConsumed || 0) * Number(dieselItem.costPrice || stockAvgRateOf(Number(r.dieselItemId)) || 0);
+    const materialCost = ['cement','sand','aggregate','admixture'].reduce((s,k) => s + Number(r[k+'Qty'] || 0) * Number(r[k+'Rate'] || 0), 0);
+    const dieselCost = Number(r.dieselConsumed || 0) * Number(r.dieselRate || 0);
     return plantRate(Number(r.directCost || 0) + materialCost + dieselCost, r.concreteQty);
-  }
-  function plantStockAvailable(itemId, siteId, sourceId) {
-    return (State.stockMovements || [])
-      .filter(m => Number(m.itemId) === Number(itemId) && Number(m.siteId || 0) === Number(siteId || plantActiveSiteId()) && String(m.sourceId || '') !== String(sourceId || ''))
-      .reduce((s,m) => s + (m.type === 'IN' ? Number(m.qty || 0) : -Number(m.qty || 0)), 0);
-  }
-  function plantMovement(type, itemId, qty, rec, label, unitRate=0) {
-    return {
-      id:State.imsNextId.mov++, type, itemId:Number(itemId), qty:Number(qty || 0), date:new Date(rec.date).getTime(), refNo:rec.id + '-' + label,
-      supplier:type === 'IN' ? rec.plantName : '', issuedTo:type === 'OUT' ? rec.plantName : '', purpose:'Plant production - ' + label,
-      recipientType:'plant', recipientId:rec.plantName, chargeProject:rec.projectId || State.activeProject || '', projectId:rec.projectId || State.activeProject || '',
-      siteId:plantActiveSiteId(), unitRate:Number(unitRate || 0), totalValue:Number(qty || 0) * Number(unitRate || 0),
-      sourceModule:'plant-production', sourceId:rec.id, notes:rec.remarks || ''
-    };
-  }
-  function plantPlannedMovements(kind, rec) {
-    const moves = [];
-    const addIn = (itemId, qty, label) => { if (Number(qty || 0) > 0 && itemId) { const it = State.items.find(i => Number(i.id) === Number(itemId)) || {}; moves.push(plantMovement('IN', itemId, qty, rec, label, it.costPrice || 0)); } };
-    const addOut = (itemId, qty, label) => { if (Number(qty || 0) > 0 && itemId) { const it = State.items.find(i => Number(i.id) === Number(itemId)) || {}; moves.push(plantMovement('OUT', itemId, qty, rec, label, it.costPrice || 0)); } };
-    if (kind === 'crusher') {
-      addOut(rec.feedMaterialItemId, rec.feedQty, 'Feed');
-      addOut(rec.dieselItemId, Math.max(0, Number(rec.dieselConsumed || 0) - Number(rec.dieselIssuedQty || 0)), 'Diesel');
-      addIn(rec.agg40ItemId, rec.agg40Qty, '40mm');
-      addIn(rec.agg20ItemId, rec.agg20Qty, '20mm');
-      addIn(rec.agg10ItemId, rec.agg10Qty, '10mm');
-      addIn(rec.dustItemId, rec.dustQty, 'Dust');
-      addIn(rec.otherItemId, rec.otherQty, rec.otherSize || 'Other');
-    } else {
-      addOut(rec.cementItemId, rec.cementQty, 'Cement');
-      addOut(rec.sandItemId, rec.sandQty, 'Sand');
-      addOut(rec.aggregateItemId, rec.aggregateQty, 'Aggregate');
-      addOut(rec.admixtureItemId, rec.admixtureQty, 'Admixture');
-      addOut(rec.dieselItemId, Math.max(0, Number(rec.dieselConsumed || 0) - Number(rec.dieselIssuedQty || 0)), 'Diesel');
-    }
-    return moves;
-  }
-  function plantValidateMovements(kind, rec) {
-    const siteId = plantActiveSiteId();
-    const moves = plantPlannedMovements(kind, rec).filter(m => m.type === 'OUT');
-    const shortages = moves.map(m => ({ m, available:plantStockAvailable(m.itemId, siteId, rec.id) })).filter(x => Number(x.m.qty || 0) > x.available + 0.0001);
-    if (!shortages.length) return true;
-    const names = shortages.map(x => `${(State.items.find(i => Number(i.id) === Number(x.m.itemId)) || {}).name || x.m.itemId}: need ${fmtNum(x.m.qty)}, available ${fmtNum(x.available)}`).join('; ');
-    toast(kind === 'batching' ? 'Production cannot be saved because required material stock is insufficient.' : 'Insufficient stock', names, 'bad', 5200);
-    return false;
-  }
-  function plantRemovePostedMovements(sourceId) {
-    State.stockMovements = (State.stockMovements || []).filter(m => String(m.sourceId || '') !== String(sourceId));
-  }
-  function plantPostProduction(kind, rec, skipValidation=false) {
-    if (!skipValidation && !plantValidateMovements(kind, rec)) return false;
-    plantRemovePostedMovements(rec.id);
-    State.stockMovements.push(...plantPlannedMovements(kind, rec));
-    return true;
-  }
-  function plantItemOptions(selected, filter='') {
-    const rx = filter ? new RegExp(filter, 'i') : null;
-    return (State.items || []).filter(i => !rx || rx.test((i.category || '') + ' ' + (i.name || '') + ' ' + (i.sku || ''))).map(i => `<option value="${i.id}" ${Number(selected)===Number(i.id)?'selected':''}>${esc(i.sku || '')} - ${esc(i.name || '')} (${esc(i.unit || '')})</option>`).join('');
   }
   function renderPlantProductionView() {
     plantEnsureDefaults();
-    plantSyncDieselIssues();
     renderPlantKPIs();
     document.querySelectorAll('#view-plantproduction .ims-tab').forEach(btn => {
       btn.onclick = () => { State.plantCurrentTab = btn.dataset.planttab; renderPlantProductionView(); };
@@ -6850,7 +6728,7 @@
     const cr = plantSummary(State.crusherRecords || [], 'totalProduction');
     const bp = plantSummary(State.batchingRecords || [], 'concreteQty');
     $('#plantKpis').innerHTML = `
-      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">CRUSHER TODAY</div><div class="font-display font-black text-2xl tabular">${fmtNum(cr.today)}</div><div class="text-xs text-stone-500 mt-1">stock generated</div></div>
+      <div class="kpi"><div class="font-mono text-[10px] text-stone-500">CRUSHER TODAY</div><div class="font-display font-black text-2xl tabular">${fmtNum(cr.today)}</div><div class="text-xs text-stone-500 mt-1">aggregate produced</div></div>
       <div class="kpi kpi-green"><div class="font-mono text-[10px] text-stone-500">CRUSHER MONTH</div><div class="font-display font-black text-2xl tabular">${fmtNum(cr.month)}</div><div class="text-xs text-stone-500 mt-1">${fmtNum(cr.rate)}/hr</div></div>
       <div class="kpi"><div class="font-mono text-[10px] text-stone-500">BATCHING TODAY</div><div class="font-display font-black text-2xl tabular">${fmtNum(bp.today)}<span class="text-sm">m3</span></div><div class="text-xs text-stone-500 mt-1">concrete produced</div></div>
       <div class="kpi kpi-blue"><div class="font-mono text-[10px] text-stone-500">BATCHING MONTH</div><div class="font-display font-black text-2xl tabular">${fmtNum(bp.month)}<span class="text-sm">m3</span></div><div class="text-xs text-stone-500 mt-1">${fmtNum(bp.rate)} m3/hr</div></div>
@@ -6872,10 +6750,10 @@
     const consumed = (State.batchingRecords || []).reduce((s,r) => s + Number(r.cementQty||0) + Number(r.sandQty||0) + Number(r.aggregateQty||0) + Number(r.admixtureQty||0), 0);
     c.innerHTML = `
       <div class="grid grid-cols-4 gap-3 mb-5">
-        <div class="card p-4"><div class="font-mono text-[10px] text-stone-500">STOCK GENERATED BY CRUSHER</div><div class="font-display font-black text-2xl">${fmtNum(cr.month)}</div><div class="text-xs text-stone-500 mt-1">from posted aggregate IN movements</div></div>
+        <div class="card p-4"><div class="font-mono text-[10px] text-stone-500">AGGREGATE PRODUCED</div><div class="font-display font-black text-2xl">${fmtNum(cr.month)}</div><div class="text-xs text-stone-500 mt-1">crusher output this month</div></div>
         <div class="card p-4"><div class="font-mono text-[10px] text-stone-500">CONCRETE PRODUCED</div><div class="font-display font-black text-2xl">${fmtNum(bp.month)} m3</div><div class="text-xs text-stone-500 mt-1">linked to pour locations</div></div>
         <div class="card p-4"><div class="font-mono text-[10px] text-stone-500">MATERIAL CONSUMED</div><div class="font-display font-black text-2xl">${fmtNum(consumed)}</div><div class="text-xs text-stone-500 mt-1">cement, sand, aggregate, admixture</div></div>
-        <div class="card p-4"><div class="font-mono text-[10px] text-stone-500">PRODUCTION COST</div><div class="font-display font-black text-2xl">${fmtINR(cr.cost + bp.cost)}</div><div class="text-xs text-stone-500 mt-1">derived from records and item rates</div></div>
+        <div class="card p-4"><div class="font-mono text-[10px] text-stone-500">PRODUCTION COST</div><div class="font-display font-black text-2xl">${fmtINR(cr.cost + bp.cost)}</div><div class="text-xs text-stone-500 mt-1">derived from production records and material rates</div></div>
       </div>
       <div class="grid grid-cols-2 gap-4">
         ${plantRecentCard('Crusher Plant', State.crusherRecords, 'totalProduction', 'factory')}
@@ -6889,10 +6767,10 @@
       </tbody></table></div>`;
   }
   function renderCrusherPlant(c) {
-    c.innerHTML = `<div class="flex justify-between items-center mb-4"><div><div class="font-display font-bold text-lg">Crusher Plant Production Monitoring</div><div class="text-xs text-stone-500">Daily production, feed, diesel, downtime, cost, and automatic aggregate stock IN</div></div><button class="btn btn-amber" onclick="plantEditCrusher()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Crusher Record</button></div>${plantRecordTable('crusher')}`;
+    c.innerHTML = `<div class="flex justify-between items-center mb-4"><div><div class="font-display font-bold text-lg">Crusher Plant Production Monitoring</div><div class="text-xs text-stone-500">Daily production, feed, diesel, downtime and cost - tracked independently of Store stock</div></div><button class="btn btn-amber" onclick="plantEditCrusher()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Crusher Record</button></div>${plantRecordTable('crusher')}`;
   }
   function renderBatchingPlant(c) {
-    c.innerHTML = `<div class="flex justify-between items-center mb-4"><div><div class="font-display font-bold text-lg">Batching Plant Production Monitoring</div><div class="text-xs text-stone-500">Concrete production, material consumption per m3, diesel, downtime, and stock deduction</div></div><button class="btn btn-amber" onclick="plantEditBatching()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Batching Record</button></div>${plantRecordTable('batching')}`;
+    c.innerHTML = `<div class="flex justify-between items-center mb-4"><div><div class="font-display font-bold text-lg">Batching Plant Production Monitoring</div><div class="text-xs text-stone-500">Concrete production, material consumption per m3, diesel and downtime - tracked independently of Store stock</div></div><button class="btn btn-amber" onclick="plantEditBatching()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>New Batching Record</button></div>${plantRecordTable('batching')}`;
   }
   function plantRecordTable(kind) {
     const rows = kind === 'crusher' ? State.crusherRecords : State.batchingRecords;
@@ -6901,21 +6779,21 @@
       </tbody></table>`;
   }
   function plantOpenTypePicker() {
-    openModal({ title:'New Production Record', hideFooter:true, body:`<div class="grid grid-cols-2 gap-3"><button class="card p-5 text-left lift" onclick="closeModal(); plantEditCrusher();"><div class="font-display font-bold text-lg">Crusher Plant</div><div class="text-xs text-stone-500 mt-1">Aggregate production and stock generation</div></button><button class="card p-5 text-left lift" onclick="closeModal(); plantEditBatching();"><div class="font-display font-bold text-lg">Batching Plant</div><div class="text-xs text-stone-500 mt-1">Concrete production and material consumption</div></button></div>` });
+    openModal({ title:'New Production Record', hideFooter:true, body:`<div class="grid grid-cols-2 gap-3"><button class="card p-5 text-left lift" onclick="closeModal(); plantEditCrusher();"><div class="font-display font-bold text-lg">Crusher Plant</div><div class="text-xs text-stone-500 mt-1">Aggregate production tracking</div></button><button class="card p-5 text-left lift" onclick="closeModal(); plantEditBatching();"><div class="font-display font-bold text-lg">Batching Plant</div><div class="text-xs text-stone-500 mt-1">Concrete production and material consumption</div></button></div>` });
   }
   function plantEditCrusher(id='') {
     plantEnsureDefaults();
-    const defaults = { date:new Date().toISOString().slice(0,10), plantName:'Crusher Plant CP-01', location:'Main yard - Lalitpur', operatorName:'', shift:'Day', workingHours:8, breakdownHours:0, idleHours:0, dieselConsumed:0, electricityConsumed:0, feedMaterialType:'Raw stone', feedMaterialItemId:(State.items.find(i=>/raw stone/i.test(i.name))||{}).id, feedQty:0, dieselItemId:(State.items.find(i=>/diesel/i.test(i.name))||{}).id, agg40Qty:0, agg40ItemId:(State.items.find(i=>/40mm/i.test(i.name))||{}).id, agg20Qty:0, agg20ItemId:(State.items.find(i=>/20mm/i.test(i.name))||{}).id, agg10Qty:0, agg10ItemId:(State.items.find(i=>/10mm/i.test(i.name))||{}).id, dustQty:0, dustItemId:(State.items.find(i=>/dust|m-sand/i.test(i.name))||{}).id, otherSize:'', otherQty:0, otherItemId:(State.items.find(i=>/aggregate/i.test(i.category))||{}).id, wastageQty:0, directCost:0, remarks:'', projectId:State.activeProject || 'PRJ-017' };
+    const defaults = { date:new Date().toISOString().slice(0,10), plantName:'Crusher Plant CP-01', location:'Main yard - Lalitpur', operatorName:'', shift:'Day', workingHours:8, breakdownHours:0, idleHours:0, dieselConsumed:0, dieselRate:118, electricityConsumed:0, feedMaterialType:'Raw stone', feedQty:0, agg40Qty:0, agg20Qty:0, agg10Qty:0, dustQty:0, otherSize:'', otherQty:0, wastageQty:0, directCost:0, remarks:'', projectId:State.activeProject || 'PRJ-017' };
     const r = id ? State.crusherRecords.find(x => x.id === id) : defaults;
     if (!r) return;
     openModal({ title:id?'Edit Crusher Production':'New Crusher Production', wide:true, submitLabel:'Save Production', body:`<form id="plantCrusherForm" class="ims-form">
       <div class="ims-form-row-3"><div class="ims-field"><label>Date *</label><input type="date" name="date" value="${r.date}" required></div><div class="ims-field"><label>Plant name *</label><input name="plantName" value="${esc(r.plantName)}" required></div><div class="ims-field"><label>Location/site *</label><input name="location" value="${esc(r.location)}" required></div></div>
       <div class="ims-form-row-3"><div class="ims-field"><label>Operator name</label><input name="operatorName" value="${esc(r.operatorName||'')}"></div><div class="ims-field"><label>Shift</label><select name="shift"><option ${r.shift==='Day'?'selected':''}>Day</option><option ${r.shift==='Night'?'selected':''}>Night</option></select></div><div class="ims-field"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${r.projectId===p.id?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div></div>
       <div class="ims-form-row-3"><div class="ims-field"><label>Working hours</label><input type="number" step="0.01" name="workingHours" value="${r.workingHours||0}"></div><div class="ims-field"><label>Breakdown hours</label><input type="number" step="0.01" name="breakdownHours" value="${r.breakdownHours||0}"></div><div class="ims-field"><label>Idle hours</label><input type="number" step="0.01" name="idleHours" value="${r.idleHours||0}"></div></div>
-      <div class="ims-form-row-3"><div class="ims-field"><label>Diesel consumed (L)</label><input type="number" step="0.01" name="dieselConsumed" value="${r.dieselConsumed||0}"></div><div class="ims-field"><label>Diesel stock item</label><select name="dieselItemId">${plantItemOptions(r.dieselItemId,'diesel|fuel')}</select></div><div class="ims-field"><label>Electricity consumed</label><input type="number" step="0.01" name="electricityConsumed" value="${r.electricityConsumed||0}"></div></div>
-      <div class="ims-form-row-3"><div class="ims-field"><label>Feed material type</label><input name="feedMaterialType" value="${esc(r.feedMaterialType||'')}"></div><div class="ims-field"><label>Feed material item</label><select name="feedMaterialItemId">${plantItemOptions(r.feedMaterialItemId,'raw|stone|aggregate')}</select></div><div class="ims-field"><label>Feed material quantity</label><input type="number" step="0.01" name="feedQty" value="${r.feedQty||0}"></div></div>
-      <div class="ims-form-row-3"><div class="ims-field"><label>40 mm produced</label><input type="number" step="0.01" name="agg40Qty" value="${r.agg40Qty||0}"><select name="agg40ItemId">${plantItemOptions(r.agg40ItemId,'40mm|aggregate')}</select></div><div class="ims-field"><label>20 mm produced</label><input type="number" step="0.01" name="agg20Qty" value="${r.agg20Qty||0}"><select name="agg20ItemId">${plantItemOptions(r.agg20ItemId,'20mm|aggregate')}</select></div><div class="ims-field"><label>10 mm produced</label><input type="number" step="0.01" name="agg10Qty" value="${r.agg10Qty||0}"><select name="agg10ItemId">${plantItemOptions(r.agg10ItemId,'10mm|aggregate')}</select></div></div>
-      <div class="ims-form-row-3"><div class="ims-field"><label>Sand / crusher dust</label><input type="number" step="0.01" name="dustQty" value="${r.dustQty||0}"><select name="dustItemId">${plantItemOptions(r.dustItemId,'dust|sand|aggregate')}</select></div><div class="ims-field"><label>Other custom size</label><input name="otherSize" value="${esc(r.otherSize||'')}" placeholder="e.g. 6mm"><input type="number" step="0.01" name="otherQty" value="${r.otherQty||0}"><select name="otherItemId">${plantItemOptions(r.otherItemId,'aggregate')}</select></div><div class="ims-field"><label>Wastage / rejected</label><input type="number" step="0.01" name="wastageQty" value="${r.wastageQty||0}"></div></div>
+      <div class="ims-form-row-3"><div class="ims-field"><label>Diesel consumed (L)</label><input type="number" step="0.01" name="dieselConsumed" value="${r.dieselConsumed||0}"></div><div class="ims-field"><label>Diesel rate (NPR/L)</label><input type="number" step="0.01" name="dieselRate" value="${r.dieselRate||0}"></div><div class="ims-field"><label>Electricity consumed</label><input type="number" step="0.01" name="electricityConsumed" value="${r.electricityConsumed||0}"></div></div>
+      <div class="ims-form-row-3"><div class="ims-field"><label>Feed material type</label><input name="feedMaterialType" value="${esc(r.feedMaterialType||'')}"></div><div class="ims-field"><label>Feed material quantity</label><input type="number" step="0.01" name="feedQty" value="${r.feedQty||0}"></div><div class="ims-field"><label>Wastage / rejected</label><input type="number" step="0.01" name="wastageQty" value="${r.wastageQty||0}"></div></div>
+      <div class="ims-form-row-3"><div class="ims-field"><label>40 mm produced</label><input type="number" step="0.01" name="agg40Qty" value="${r.agg40Qty||0}"></div><div class="ims-field"><label>20 mm produced</label><input type="number" step="0.01" name="agg20Qty" value="${r.agg20Qty||0}"></div><div class="ims-field"><label>10 mm produced</label><input type="number" step="0.01" name="agg10Qty" value="${r.agg10Qty||0}"></div></div>
+      <div class="ims-form-row-3"><div class="ims-field"><label>Sand / crusher dust produced</label><input type="number" step="0.01" name="dustQty" value="${r.dustQty||0}"></div><div class="ims-field"><label>Other custom size</label><input name="otherSize" value="${esc(r.otherSize||'')}" placeholder="e.g. 6mm"></div><div class="ims-field"><label>Other size quantity</label><input type="number" step="0.01" name="otherQty" value="${r.otherQty||0}"></div></div>
       <div class="ims-form-row"><div class="ims-field"><label>Direct production cost</label><input type="number" step="0.01" name="directCost" value="${r.directCost||0}"></div><div class="ims-field"><label>Remarks</label><textarea name="remarks" rows="2">${esc(r.remarks||'')}</textarea></div></div>
     </form>`, onSubmit:() => plantSaveCrusher(id) });
   }
@@ -6927,20 +6805,19 @@
     return obj;
   }
   function plantSaveCrusher(id='') {
-    const rec = plantReadForm('plantCrusherForm', ['workingHours','breakdownHours','idleHours','dieselConsumed','electricityConsumed','feedMaterialItemId','feedQty','dieselItemId','agg40Qty','agg40ItemId','agg20Qty','agg20ItemId','agg10Qty','agg10ItemId','dustQty','dustItemId','otherQty','otherItemId','wastageQty','directCost']);
+    const rec = plantReadForm('plantCrusherForm', ['workingHours','breakdownHours','idleHours','dieselConsumed','dieselRate','electricityConsumed','feedQty','agg40Qty','agg20Qty','agg10Qty','dustQty','otherQty','wastageQty','directCost']);
     rec.id = id || 'CRP-' + String(State.plantNextId.crusher++).padStart(4,'0');
     rec.totalProduction = plantCrusherTotal(rec);
     rec.productionRate = plantRate(rec.totalProduction, rec.workingHours);
     rec.dieselPerUnit = plantRate(rec.dieselConsumed, rec.totalProduction);
     rec.productionCostPerUnit = plantCrusherCostPerUnit(rec);
-    if (!plantPostProduction('crusher', rec)) return false;
     const idx = State.crusherRecords.findIndex(x => x.id === rec.id);
     if (idx >= 0) State.crusherRecords[idx] = rec; else State.crusherRecords.push(rec);
-    saveState(); toast('Crusher Production Saved', rec.id + ' posted to stock movements', 'ok'); renderPlantProductionView();
+    saveState(); toast('Crusher Production Saved', rec.id, 'ok'); renderPlantProductionView();
   }
   function plantEditBatching(id='') {
     plantEnsureDefaults();
-    const defaults = { date:new Date().toISOString().slice(0,10), plantName:'Batching Plant BP-01', location:'Skyline Towers - Block A', operatorName:'', concreteGrade:'M25', pourLocation:'', shift:'Day', workingHours:8, breakdownHours:0, idleHours:0, concreteQty:0, cementQty:0, cementItemId:(State.items.find(i=>/cement/i.test(i.category||i.name))||{}).id, sandQty:0, sandItemId:(State.items.find(i=>/sand/i.test(i.name))||{}).id, aggregateQty:0, aggregateItemId:(State.items.find(i=>/20mm|aggregate/i.test(i.name))||{}).id, admixtureQty:0, admixtureItemId:(State.items.find(i=>/admixture/i.test(i.name))||{}).id, waterQty:0, dieselConsumed:0, dieselItemId:(State.items.find(i=>/diesel/i.test(i.name))||{}).id, electricityConsumed:0, equipmentUsed:'', batchNo:'', rejectedQty:0, directCost:0, remarks:'', projectId:State.activeProject || 'PRJ-017' };
+    const defaults = { date:new Date().toISOString().slice(0,10), plantName:'Batching Plant BP-01', location:'Skyline Towers - Block A', operatorName:'', concreteGrade:'M25', pourLocation:'', shift:'Day', workingHours:8, breakdownHours:0, idleHours:0, concreteQty:0, cementQty:0, cementRate:712, sandQty:0, sandRate:48, aggregateQty:0, aggregateRate:62, admixtureQty:0, admixtureRate:180, waterQty:0, dieselConsumed:0, dieselRate:118, electricityConsumed:0, equipmentUsed:'', batchNo:'', rejectedQty:0, directCost:0, remarks:'', projectId:State.activeProject || 'PRJ-017' };
     const r = id ? State.batchingRecords.find(x => x.id === id) : defaults;
     if (!r) return;
     openModal({ title:id?'Edit Batching Production':'New Batching Production', wide:true, submitLabel:'Save Production', body:`<form id="plantBatchingForm" class="ims-form">
@@ -6949,29 +6826,28 @@
       <div class="ims-form-row-3"><div class="ims-field"><label>Shift</label><select name="shift"><option ${r.shift==='Day'?'selected':''}>Day</option><option ${r.shift==='Night'?'selected':''}>Night</option></select></div><div class="ims-field"><label>Project</label><select name="projectId">${State.projects.map(p=>`<option value="${p.id}" ${r.projectId===p.id?'selected':''}>${p.id} - ${esc(p.name)}</option>`).join('')}</select></div><div class="ims-field"><label>Batch number</label><input name="batchNo" value="${esc(r.batchNo||'')}"></div></div>
       <div class="ims-form-row-3"><div class="ims-field"><label>Working hours</label><input type="number" step="0.01" name="workingHours" value="${r.workingHours||0}"></div><div class="ims-field"><label>Breakdown hours</label><input type="number" step="0.01" name="breakdownHours" value="${r.breakdownHours||0}"></div><div class="ims-field"><label>Idle hours</label><input type="number" step="0.01" name="idleHours" value="${r.idleHours||0}"></div></div>
       <div class="ims-form-row-3"><div class="ims-field"><label>Concrete produced (m3)</label><input type="number" step="0.01" name="concreteQty" value="${r.concreteQty||0}"></div><div class="ims-field"><label>Rejected quantity</label><input type="number" step="0.01" name="rejectedQty" value="${r.rejectedQty||0}"></div><div class="ims-field"><label>Direct production cost</label><input type="number" step="0.01" name="directCost" value="${r.directCost||0}"></div></div>
-      <div class="ims-form-row-3"><div class="ims-field"><label>Cement consumed</label><input type="number" step="0.01" name="cementQty" value="${r.cementQty||0}"><select name="cementItemId">${plantItemOptions(r.cementItemId,'cement')}</select></div><div class="ims-field"><label>Sand consumed</label><input type="number" step="0.01" name="sandQty" value="${r.sandQty||0}"><select name="sandItemId">${plantItemOptions(r.sandItemId,'sand')}</select></div><div class="ims-field"><label>Aggregate consumed</label><input type="number" step="0.01" name="aggregateQty" value="${r.aggregateQty||0}"><select name="aggregateItemId">${plantItemOptions(r.aggregateItemId,'aggregate|20mm')}</select></div></div>
-      <div class="ims-form-row-3"><div class="ims-field"><label>Admixture consumed</label><input type="number" step="0.01" name="admixtureQty" value="${r.admixtureQty||0}"><select name="admixtureItemId">${plantItemOptions(r.admixtureItemId,'admixture')}</select></div><div class="ims-field"><label>Water consumed</label><input type="number" step="0.01" name="waterQty" value="${r.waterQty||0}"></div><div class="ims-field"><label>Diesel consumed</label><input type="number" step="0.01" name="dieselConsumed" value="${r.dieselConsumed||0}"><select name="dieselItemId">${plantItemOptions(r.dieselItemId,'diesel|fuel')}</select></div></div>
-      <div class="ims-form-row"><div class="ims-field"><label>Electricity consumed</label><input type="number" step="0.01" name="electricityConsumed" value="${r.electricityConsumed||0}"></div><div class="ims-field"><label>Transit mixer / equipment used</label><input name="equipmentUsed" value="${esc(r.equipmentUsed||'')}"></div></div>
-      <div class="ims-field"><label>Remarks</label><textarea name="remarks" rows="2">${esc(r.remarks||'')}</textarea></div>
+      <div class="ims-form-row-3"><div class="ims-field"><label>Cement consumed (bag)</label><input type="number" step="0.01" name="cementQty" value="${r.cementQty||0}"></div><div class="ims-field"><label>Cement rate (NPR/bag)</label><input type="number" step="0.01" name="cementRate" value="${r.cementRate||0}"></div><div class="ims-field"><label>Sand consumed (cft)</label><input type="number" step="0.01" name="sandQty" value="${r.sandQty||0}"></div></div>
+      <div class="ims-form-row-3"><div class="ims-field"><label>Sand rate (NPR/cft)</label><input type="number" step="0.01" name="sandRate" value="${r.sandRate||0}"></div><div class="ims-field"><label>Aggregate consumed (cft)</label><input type="number" step="0.01" name="aggregateQty" value="${r.aggregateQty||0}"></div><div class="ims-field"><label>Aggregate rate (NPR/cft)</label><input type="number" step="0.01" name="aggregateRate" value="${r.aggregateRate||0}"></div></div>
+      <div class="ims-form-row-3"><div class="ims-field"><label>Admixture consumed (L)</label><input type="number" step="0.01" name="admixtureQty" value="${r.admixtureQty||0}"></div><div class="ims-field"><label>Admixture rate (NPR/L)</label><input type="number" step="0.01" name="admixtureRate" value="${r.admixtureRate||0}"></div><div class="ims-field"><label>Water consumed (L)</label><input type="number" step="0.01" name="waterQty" value="${r.waterQty||0}"></div></div>
+      <div class="ims-form-row-3"><div class="ims-field"><label>Diesel consumed (L)</label><input type="number" step="0.01" name="dieselConsumed" value="${r.dieselConsumed||0}"></div><div class="ims-field"><label>Diesel rate (NPR/L)</label><input type="number" step="0.01" name="dieselRate" value="${r.dieselRate||0}"></div><div class="ims-field"><label>Electricity consumed</label><input type="number" step="0.01" name="electricityConsumed" value="${r.electricityConsumed||0}"></div></div>
+      <div class="ims-form-row"><div class="ims-field"><label>Transit mixer / equipment used</label><input name="equipmentUsed" value="${esc(r.equipmentUsed||'')}"></div><div class="ims-field"><label>Remarks</label><textarea name="remarks" rows="2">${esc(r.remarks||'')}</textarea></div></div>
     </form>`, onSubmit:() => plantSaveBatching(id) });
   }
   function plantSaveBatching(id='') {
-    const rec = plantReadForm('plantBatchingForm', ['workingHours','breakdownHours','idleHours','concreteQty','cementQty','cementItemId','sandQty','sandItemId','aggregateQty','aggregateItemId','admixtureQty','admixtureItemId','waterQty','dieselConsumed','dieselItemId','electricityConsumed','rejectedQty','directCost']);
+    const rec = plantReadForm('plantBatchingForm', ['workingHours','breakdownHours','idleHours','concreteQty','cementQty','cementRate','sandQty','sandRate','aggregateQty','aggregateRate','admixtureQty','admixtureRate','waterQty','dieselConsumed','dieselRate','electricityConsumed','rejectedQty','directCost']);
     rec.id = id || 'BPL-' + String(State.plantNextId.batching++).padStart(4,'0');
     rec.productionRate = plantRate(rec.concreteQty, rec.workingHours);
     rec.materialPerM3 = plantBatchingMaterialPerM3(rec);
     rec.productionCostPerM3 = plantBatchingCostPerM3(rec);
-    if (!plantPostProduction('batching', rec)) return false;
     const idx = State.batchingRecords.findIndex(x => x.id === rec.id);
     if (idx >= 0) State.batchingRecords[idx] = rec; else State.batchingRecords.push(rec);
-    saveState(); toast('Batching Production Saved', rec.id + ' materials deducted from stock', 'ok'); renderPlantProductionView();
+    saveState(); toast('Batching Production Saved', rec.id, 'ok'); renderPlantProductionView();
   }
   function plantDeleteRecord(kind, id) {
-    if (!confirm('Delete production record ' + id + ' and reverse its posted stock movements?')) return;
-    plantRemovePostedMovements(id);
+    if (!confirm('Delete production record ' + id + '?')) return;
     if (kind === 'crusher') State.crusherRecords = State.crusherRecords.filter(r => r.id !== id);
     else State.batchingRecords = State.batchingRecords.filter(r => r.id !== id);
-    saveState(); toast('Production Deleted', id + ' stock postings removed', 'warn'); renderPlantProductionView();
+    saveState(); toast('Production Deleted', id, 'warn'); renderPlantProductionView();
   }
   function renderPlantReports(c) {
     c.innerHTML = `<div class="grid grid-cols-3 gap-3 mb-4">
@@ -6979,7 +6855,6 @@
     </div>${plantRecordTable('crusher')}<div class="mt-5">${plantRecordTable('batching')}</div>`;
   }
   function plantExportRows() {
-    plantSyncDieselIssues();
     const crusher = (State.crusherRecords || []).map(r => ['Crusher', r.id, r.date, r.plantName, r.location, r.operatorName, r.shift, r.workingHours, r.breakdownHours, r.idleHours, r.dieselConsumed, r.electricityConsumed, r.feedMaterialType, r.feedQty, r.agg40Qty, r.agg20Qty, r.agg10Qty, r.dustQty, r.otherSize, r.otherQty, r.totalProduction, r.wastageQty, r.productionRate, r.dieselPerUnit, r.productionCostPerUnit, r.remarks]);
     const batching = (State.batchingRecords || []).map(r => ['Batching', r.id, r.date, r.plantName, r.location || r.pourLocation, r.operatorName, r.shift, r.workingHours, r.breakdownHours, r.idleHours, r.dieselConsumed, r.electricityConsumed, r.concreteGrade, r.concreteQty, r.cementQty, r.sandQty, r.aggregateQty, r.admixtureQty, r.batchNo, r.rejectedQty, r.concreteQty, r.rejectedQty, r.productionRate, plantRate(r.dieselConsumed, r.concreteQty), r.productionCostPerM3, r.remarks]);
     return crusher.concat(batching);
@@ -16251,6 +16126,113 @@ Available Actions:
   }
   window.actNewProject = actNewProject;
 
+  function reconcileProjectLocations(pid, text) {
+    const lines = splitListText(text || '');
+    const existing = State.projectLocations.filter(x => x.projectId === pid);
+    const matchedIds = new Set();
+    lines.forEach((name, i) => {
+      const found = existing.find(x => !matchedIds.has(x.id) && x.name.toLowerCase() === name.toLowerCase());
+      if (found) matchedIds.add(found.id);
+      else State.projectLocations.push({ id:'LOC-' + pid + '-' + Date.now().toString().slice(-6) + '-' + i, projectId:pid, code:'L' + String(existing.length + i + 1).padStart(2,'0'), name, type:'Work location', chainage:'', status:'active' });
+    });
+    const keepNames = new Set(lines.map(l => l.toLowerCase()));
+    State.projectLocations = State.projectLocations.filter(x => x.projectId !== pid || keepNames.has(x.name.toLowerCase()));
+  }
+  function reconcileProjectWbs(pid, text) {
+    const parsed = splitListText(text || '').map(line => { const m = String(line).match(/^(\S+)\s+(.+)$/); return { wbs:m?.[1] || '', name:m?.[2] || line }; });
+    const existing = State.wbsActivities.filter(x => x.projectId === pid);
+    const matchedIds = new Set();
+    parsed.forEach((p, i) => {
+      const found = existing.find(x => !matchedIds.has(x.id) && x.name.toLowerCase() === p.name.toLowerCase());
+      if (found) { matchedIds.add(found.id); if (p.wbs) found.wbs = p.wbs; }
+      else State.wbsActivities.push({ id:'WBS-' + pid + '-' + Date.now().toString().slice(-6) + '-' + i, projectId:pid, wbs:p.wbs || String(i+1) + '.0', name:p.name, packageId:'PKG-' + pid + '-01', plannedQty:0, unit:'LS', status:'planned', approvalStatus:'draft' });
+    });
+    const keepNames = new Set(parsed.map(p => p.name.toLowerCase()));
+    State.wbsActivities = State.wbsActivities.filter(x => x.projectId !== pid || keepNames.has(x.name.toLowerCase()));
+  }
+  function reconcileProjectMilestones(pid, text) {
+    const parsed = splitListText(text || '').map(line => { const parts = String(line).split('|').map(x => x.trim()); return { name:parts[0] || line, date:parts[1] || '' }; });
+    const existing = State.projectMilestones.filter(x => x.projectId === pid);
+    const matchedIds = new Set();
+    parsed.forEach((p, i) => {
+      const found = existing.find(x => !matchedIds.has(x.id) && x.name.toLowerCase() === p.name.toLowerCase());
+      if (found) { matchedIds.add(found.id); if (p.date) found.plannedDate = p.date; }
+      else State.projectMilestones.push({ id:'MS-' + pid + '-' + Date.now().toString().slice(-6) + '-' + i, projectId:pid, name:p.name, plannedDate:p.date, revisedDate:p.date, status:'upcoming' });
+    });
+    const keepNames = new Set(parsed.map(p => p.name.toLowerCase()));
+    State.projectMilestones = State.projectMilestones.filter(x => x.projectId !== pid || keepNames.has(x.name.toLowerCase()));
+  }
+  function actEditProject(id) {
+    const p = State.projects.find(x => x.id === id);
+    if (!p) return;
+    ensureAccountingModuleData();
+    const isPreset = PROJECT_TYPE_OPTIONS.includes(p.type);
+    const locationsText = State.projectLocations.filter(x => x.projectId === id).map(x => x.name).join('\n');
+    const wbsText = State.wbsActivities.filter(x => x.projectId === id).map(x => (x.wbs ? x.wbs + ' ' : '') + x.name).join('\n');
+    const milestonesText = State.projectMilestones.filter(x => x.projectId === id).map(x => x.name + ' | ' + (x.plannedDate || '')).join('\n');
+    openModal({
+      title: 'Edit Project · ' + p.id,
+      body: `
+        <div class="form-grid-2">
+          <div class="form-row"><label>Project Name</label><input name="name" value="${esc(p.name || '')}" placeholder="e.g. Kalanki Underpass"></div>
+          <div class="form-row"><label>Project Code</label><input value="${esc(p.id)}" disabled title="Project code is referenced across BOQ, DPR, billing and stock records and cannot be changed"></div>
+          <div class="form-row"><label>Employer / Client</label><input name="client" value="${esc(p.client || '')}"></div>
+          <div class="form-row"><label>Contractor</label><input name="contractor" value="${esc(p.contractor || '')}"></div>
+          <div class="form-row"><label>Consultant</label><input name="consultant" value="${esc(p.consultant || '')}"></div>
+          <div class="form-row"><label>Contract Type</label><select name="contractType">${['Item rate / BOQ','EPC','Design-build','Lump sum','Back-to-back subcontract'].map(x => `<option ${p.contractType===x?'selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="form-row"><label>Type</label><select name="typePreset" onchange="document.getElementById('editProjectCustomTypeWrap').style.display=this.value==='__custom__'?'block':'none'">${projectTypeOptionsHTML(isPreset ? p.type : '__custom__')}</select></div>
+          <div class="form-row" id="editProjectCustomTypeWrap" style="display:${isPreset ? 'none' : 'block'}"><label>Custom Type</label><input name="typeCustom" value="${esc(isPreset ? '' : (p.type || ''))}" placeholder="e.g. Data center, dry port, stadium"></div>
+          <div class="form-row"><label>Project Sections / Packages</label><input name="package" value="${esc(p.package || '')}"></div>
+          <div class="form-row"><label>Default Cost Code</label><input name="costCode" value="${esc(p.defaultCostCode || '')}"></div>
+          <div class="form-row"><label>Fiscal Year</label><select name="fiscalYearId"><option value="">(none)</option>${(State.fiscalYears || []).map(fy => `<option value="${esc(fy.id)}" ${p.fiscalYearId===fy.id?'selected':''}>${esc(fy.label)}</option>`).join('')}</select></div>
+          <div class="form-row"><label>Location</label><input name="loc" value="${esc(p.loc || '')}"></div>
+          <div class="form-row"><label>Contract Value (NPR)</label><input name="value" type="number" value="${Number(p.value || 0)}"></div>
+          <div class="form-row"><label>Start Date</label><input name="start" type="date" value="${esc(p.startDate || '')}"></div>
+          <div class="form-row"><label>Baseline Completion</label><input name="end" type="date" value="${esc(p.baselineCompletionDate || p.endDate || '')}"></div>
+          <div class="form-row"><label>Revised Completion</label><input name="revisedEnd" type="date" value="${esc(p.revisedCompletionDate || '')}"></div>
+          <div class="form-row"><label>Project Calendar</label><select name="calendarType">${['6-day working week','7-day continuous work','5-day office calendar','Custom calendar'].map(x => `<option ${p.calendarType===x?'selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="form-row"><label>Working Days</label><input name="workingDays" value="${esc(p.workingDays || '')}"></div>
+          <div class="form-row"><label>Holiday List</label><input name="holidays" value="${esc(p.holidays || '')}"></div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label>Site Locations</label><textarea name="locations" placeholder="Headworks&#10;Tunnel chainage 0+000 to 1+000&#10;Powerhouse">${esc(locationsText)}</textarea></div>
+          <div class="form-row"><label>WBS Activities</label><textarea name="wbsList" placeholder="1.0 Mobilization&#10;2.0 Excavation&#10;3.0 Concrete works">${esc(wbsText)}</textarea></div>
+        </div>
+        <div class="form-row"><label>Project Milestones</label><textarea name="milestones" placeholder="Mobilization complete | 2026-06-30&#10;First concrete | 2026-08-15">${esc(milestonesText)}</textarea></div>
+        <div class="form-row"><label>Scope / Description</label><textarea name="desc">${esc(p.desc || '')}</textarea></div>
+        <div class="text-xs text-stone-500 mt-1">Editing a location, WBS or milestone line updates it in place · deleting a line removes it · adding a new line creates a new entry.</div>
+      `,
+      submitLabel: 'Save Changes',
+      onSubmit: (d) => {
+        if (!d.name) { toast('Validation', 'Project name is required', 'bad'); return false; }
+        const type = d.typePreset === '__custom__' ? (d.typeCustom || '').trim() : (d.typePreset || '').trim();
+        if (!type) { toast('Validation', 'Choose a project type or enter a custom type', 'bad'); return false; }
+        Object.assign(p, {
+          name:d.name.trim(), client:(d.client || '').trim(), employer:(d.client || '').trim(),
+          contractor:(d.contractor || '').trim(), consultant:(d.consultant || '').trim(), contractType:(d.contractType || '').trim(),
+          type, loc:(d.loc || '').trim(), location:(d.loc || '').trim(), value:+d.value || 0, contract:(+d.value || 0) / 10000000,
+          startDate:d.start || '', endDate:d.end || '', baselineCompletionDate:d.end || '', revisedCompletionDate:d.revisedEnd || d.end || '',
+          end:d.end || p.end || 'TBD', package:(d.package || '').trim(), defaultCostCode:(d.costCode || '').trim(),
+          fiscalYearId:(d.fiscalYearId || '').trim(), calendarType:d.calendarType || p.calendarType, workingDays:d.workingDays || '',
+          holidays:d.holidays || '', desc:(d.desc || '').trim()
+        });
+        reconcileProjectLocations(p.id, d.locations);
+        reconcileProjectWbs(p.id, d.wbsList);
+        reconcileProjectMilestones(p.id, d.milestones);
+        const cal = State.projectCalendars.find(x => x.projectId === p.id);
+        if (cal) { cal.type = p.calendarType; cal.workingDays = p.workingDays; cal.holidays = p.holidays; }
+        saveState();
+        flushSaveState();
+        syncActiveProjectUI?.();
+        renderPortfolioScreen?.();
+        renderLauncher?.();
+        toast('Project Updated', p.name + ' - ' + p.id, 'ok');
+        setTimeout(() => openProjectDetail(p.id), 150);
+      }
+    });
+  }
+  window.actEditProject = actEditProject;
+
   function actNewTender() {
     openModal({
       title: 'New Tender · Bid Capture',
@@ -16710,6 +16692,7 @@ Available Actions:
         <div class="text-xs text-stone-500 mb-2">Health</div>
         <div class="mb-4"><span class="badge badge-${p.status}">${p.status==='ok'?'ON TRACK':p.status==='warn'?'AT RISK':'DELAYED'}</span> · ${p.issues} open issues · ${p.team} crew onsite</div>
         <div class="flex gap-2 flex-wrap">
+          <button class="btn btn-ghost" onclick="actEditProject('${p.id}')"><i data-lucide="pencil" class="w-3 h-3"></i>Edit Project</button>
           <button class="btn btn-ghost" onclick="navTo('schedule'); closeDrawer();"><i data-lucide="calendar" class="w-3 h-3"></i>Schedule</button>
           <button class="btn btn-ghost" onclick="navTo('dpr'); closeDrawer();"><i data-lucide="clipboard-list" class="w-3 h-3"></i>DPR</button>
           <button class="btn btn-ghost" onclick="navTo('billing'); closeDrawer();"><i data-lucide="receipt" class="w-3 h-3"></i>RA Bills</button>
