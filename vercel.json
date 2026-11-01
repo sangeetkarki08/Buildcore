@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "public",
   "regions": [
-    "bom1"
+    "dub1"
   ],
   "functions": {
     "api/index.py": {
