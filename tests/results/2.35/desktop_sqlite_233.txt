@@ -1,0 +1,11 @@
+M1 PASS  14 summaries opened; logsheets (27), sheets, DPR lines and books identical  (0.1s)
+M2 PASS  EX-01 on ROAD 53.0 h / 8 days (= logsheets); per project {'ROAD': 53.0, 'BLDG': 13.0}; all projects 66.0 h  (0.0s)
+M3 PASS  August 2026 22.0 h, September 2026 18.0 h, October 2026 13.0 h  (0.0s)
+M4 PASS  Bhadra 2083 (2026-08-17..2026-09-16) 43.0 h; Ashoj 2083 (2026-09-17..2026-10-17) 17.0 h  (0.1s)
+M5 PASS  Kartik 2083: bucket 10.0 h / 80.0 m3, breaker 2.0 h / 5.0 m3 = monthly sheet; all-time bucket 63.0 h  (0.1s)
+M6 PASS  submitted: total 53.0 h, 7 h waiting apart; approved: total 60.0 h, breaker Oct {'hours': 7.0, 'qty': 12.0}  (0.0s)
+M7 PASS  default bs after the switch; months ['Bhadra 2083', 'Ashoj 2083']  (0.0s)
+M8 PASS  roller: 63.0 h of which 5.0 h draft; register loose days [{'code': 'EX-01', 'name': 'Hydraulic excavator 20 t', 'n': 2, 'h': 13.0}, {'code': 'RL-01', 'name': 'Vibratory roller 10 t', 'n': 3, 'h': 18.0}, {'code': 'TP-01', 'name': 'Tipper truck 10 cum (hired)', 'n': 2, 'h': 13.0}]  (0.0s)
+M9 PASS  BLDG engineer: 13.0 h on BLDG only; ROAD refused (PROJECT_DENIED: this record belongs to a); every role may view equipment  (0.0s)
+M10 PASS  books identical (29 accounts checked), logsheets, logbooks, log_tools, dpr, dpr_equipment, eq_tools, equipment, lb_keep unchanged  (0.1s)
+10 of 10 passed

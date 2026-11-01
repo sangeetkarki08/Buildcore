@@ -1,0 +1,11 @@
+V1 PASS  logsheets (27), sheets (0) and books identical; calendar English until chosen  (0.0s)
+V2 PASS  LOG/2083-84/0001 Ashoj 2083 = 2026-09-17..2026-10-17, 2 days taken in; register 2 days / 13.0 h = sheet  (0.0s)
+V3 PASS  to Nepali: {'drafts': 2, 'renamed': 2, 'created': 0, 'removed': 0, 'moved': 1, 'kept': 1}; approved RL sheet untouched; back to English: {'drafts': 2, 'renamed': 2, 'created': 1, 'removed': 0, 'moved': 5}  (0.1s)
+V4 PASS  Ashoj sheet: sheet = summary = register (2, 13.0, 350.0); 1 day(s) on the approved English sheet listed apart  (0.1s)
+V5 PASS  20 Oct: Bucket 4 h · 30 m3; Hydraulic rock breaker 2 h · 5 m3; 21 Oct: Bucket 6 h · 50 m3; bucket total 10.0 h / 80.0  (0.1s)
+V6 PASS  draft and submitted DPR: 7 h shown apart, sheet 0.0 h, books unchanged; approved: sheet 7.0 h  (0.1s)
+V7 PASS  day back on sheet 1 with 8 h, output 60, fuel req. FR-77, operator's signature and start time kept  (0.1s)
+V8 PASS  October 2026 hours by project: English sheet {3: 22.0} = 2.31 rule {3: 22.0} = after moving to Nepali sheets {3: 22.0}  (0.1s)
+V9 PASS  books identical (5 accounts checked)  (0.1s)
+V10 PASS  viewer refused: Your role (viewer) cannot approve in equipment.  (0.0s)
+10 of 10 passed

@@ -1,0 +1,30 @@
+T1 PASS  labour 12080.0 -> R-01 5090.0, R-02 3020.0, R-03 3020.0, IDLE-E 950.0; Unallocated 0.0 (hand 5090.0/3020.0/3020.0/950.0)  (9.5s)
+T2 PASS  MRQ->issue->ledger line on R-04 (code 14, Rs 10500.0); MRQ coded to TW -> issue -> ledger on TW; uncoded MRQ refused ('Requisition MRQ/2083-84/0009 cannot go ahead without a cost ...'); uncoded issue refused, stays draft ('Cement OPC 43 grade: choose the BOQ item it is use')  (9.2s)
+T3 PASS  Original budget 83217720.0 = rate-analysis cost before OH&P 83217720.0 (diff 0.0; contract 97110000.0)  (9.7s)
+T4 PASS  Current v1->v3: R-02 qty 6000->6500.0 (Rs 19428500.0), new line R-07 qty 120.0 (placeholder); Original 83217720.0 unchanged (10 lines identical)  (9.5s)
+T5 PASS  check 10 fail naming Site resources DPR/2083-84/0013; lock refused; after posting: locked, snapshot = live CVR (15 rows, cost 2074140.0, accrued 79550.0, 0 diffs)  (10.5s)
+T6 PASS  back-dated voucher refused while Bhadra locked; PM reopen refused; director reopen logged (2026-10-16T10:00: 'Late invoice from site office found'); voucher then posted  (8.9s)
+T7 PASS  Bhadra: 48.0h approved, billed 41250.0 -> accrued 37950.0 (posted 41250.0 + accrued = 48.0h x 1650.0); Sep bill 47850.0 posted; Ashoj accrual 21450.0 = only 13.0h of October (Bhadra 23.0h gone), posted 89100.0 + accrued 21450.0 = 67.0h x rate; Ashoj close locked  (10.5s)
+T8 PASS  5 items match screen exactly: R-01 v 450000.0 c 577232.92 m -127232.92 cpi 0.49 ctc 2773400.0 eac 3350632.92 (b); R-02 v 5175000.0 c 236153.2 m 4938846.8 cpi 18.99 ctc 708459.61 eac 944612.81 (a); R-03 v 2724600.0 c 1233074.73 m 1491525.27 cpi 1.92 ctc 16311072.0 eac 17544146.73 (b); R-04 v 1072500.0 c 588000.0 m 484500.0 cpi 1.54 ctc 2125846.15 eac 2713846.15 (a); R-06 v 640000.0 c 457146.67 m 182853.33 cpi 1.21 ctc 1600013.35 eac 2057160.02 (a)  (8.4s)
+T9 PASS  EX-02 120 h: ROAD 70h charged 105000.0, BLDG 50h charged 75000.0 (rate 1500.0); fuel 1440.0 L vs norm 1200.0 L = +20.0% [flag fuel]; cost 237600.0 vs charged 180000.0 -> recovery -57600.0 [flag under_recovery]; pool recovery -171155.49  (10.4s)
+T10 PASS  B2B on R-02: billed 1100.0 vs measured 990.0 -> flagged paid_ahead; check 8 warn naming SCO/2083-84/0002; b2b margin 495000.0 = (3450.0-3000.0)x1100.0; planned 507100.0 (budget unit 2989.0), margin_below_plan  (10.2s)
+T11 PASS  12 of 12 checks fail on their planted error and name the document
+    T11.1 ok   check 1 pass -> fail; names voucher 21 'Material Consumed: ledger 875,000, in CVR 437,500' (cl_alloc share of line 88 set to 0.5)
+    T11.2 ok   check 2 pass -> fail; names store 5 'ROAD Main Store: balance 1,986,635, movements 1,985,400' (ROAD store HSD balance value +1,234.56 without a movement)
+    T11.3 ok   check 3 pass -> fail; names dpr 2 'DPR 2026-08-24: own gangs 136.0 h worth 15,280, labour cost 14,780' (own gang on DPR 2 raised by 500 after posting)
+    T11.4 ok   check 4 pass -> fail; names equipment 2 'RL-01 2026-09: logsheets 11.0 h, DPR 8.0 h' (RL-01 logsheet 20 +3 h not on the DPR)
+    T11.5 ok   check 5 pass -> fail; names invoice 5 'TP-01 2026-08: bill 25.0 hour, approved logsheets 16.0 hour' (TP-01 logsheet 2 (billed in August) back to draft)
+    T11.6 ok   check 6 pass -> warn; names boq_item 1 'R-01: IPC 3100.0, measured 3000.0 (IPC/2083-84/0001)' (IPC IPC/2083-84/0001 line R-01 +100 m3 beyond measurement)
+    T11.7 ok   check 7 pass -> fail; names voucher 46 'Receivable entry not from an invoice or receipt: 10,000' (manual journal 46 to the receivable)
+    T11.8 ok   check 8 pass -> warn; names sc_order 1 'SCO/2083-84/0001 RCC M20 culvert concrete incl. formwork : billed 30.0' (culvert bill +10 m3 beyond the main measurement)
+    T11.9 ok   check 9 pass -> fail; names voucher 21 '2026-09-07 Material Consumed 875,000' (1 lines (875000.0) recoded to Unallocated)
+    T11.10 ok   check 10 pass -> fail; names queue 46 '2026-09-15 Site resources DPR/2083-84/0013: 4,560 (approved)' (approved DPR 13 dated 2026-09-15 left in the accounts queue)
+    T11.11 ok   check 11 pass -> warn; names variation 2 'Budget line is a zero-cost placeholder: enter its unit costs' (variation 2 for a new item approved with no rate analysis)
+    T11.12 ok   check 12 pass -> warn; names boq_item 6 'R-06: measured 222.0 against contract 180.0 (+23.3%), no variation (MS' (measurement MS/2083-84/0002: R-06 to 222 m3 against 180, no variation)
+    note check 2: company stock vs inventory accounts; names the store whose balance differs from its movements
+    note check 4: names the machine and month (logsheets vs DPR hours)
+    note check 6: names the BOQ item and the IPC(s) that billed it
+    note check 7: total comparison; names the non-invoice receivable voucher
+    note check 12: names the BOQ item and the measurement(s) behind the overrun  (109.6s)
+T12 PASS  forecast margin 15.6%, overhead 1.33% (120000.0/9039000.0), debtor days 93.16, retention 451950.0, working capital 616532.5, current ratio 1.66, works in hand 120932000.0 = hand; league ['BLDG', 'ROAD'] (no TRADING/GENERAL)  (9.3s)
+12 of 12 passed

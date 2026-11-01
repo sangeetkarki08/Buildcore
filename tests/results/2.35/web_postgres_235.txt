@@ -1,0 +1,35 @@
+P1 PASS  ROAD lists [1, 2, 3, 4] (previous DPR 12, then LD-01); LD-02 only on BLDG; disposed and inactive left out  (0.0s)
+P2 PASS  EX opens 1008.5 (max of two lines), RL 507, TP blank then 777 from the register; 24 Oct follows the 23 Oct DPR  (0.2s)
+P3 PASS  night opens 2008 from the day shift; 21 Oct opens 2012 (draft night counted), 2008 once the night DPR is rejected  (0.1s)
+P4 PASS  EX gets Ram Bahadur from the list (was Op EX-01), RL keeps Op RL-01  (0.0s)
+P5 PASS  day_hours 10, then 8 after the setting changed  (0.0s)
+P6 FAIL  ApiError: This DPR cannot be submitted yet: RL-01: 10.0 idle hours need the delay that caused them (add the delay on the DPR). Link each gang and machine to a work line, or to Idle with the delay that caused it (Commercial › Cost codes › Waiting for a code, or the DPR's own work lines).  (0.1s)
+    Traceback (most recent call last):
+      File "/tmp/claude-0/-home-claude/3fe2f2d1-9501-546e-abe2-457dbb6ee4d1/scratchpad/w/kitpg/tests235.py", line 297, in child
+        ev = globals()[name]()
+      File "/tmp/claude-0/-home-claude/3fe2f2d1-9501-546e-abe2-457dbb6ee4d1/scratchpad/w/kitpg/tests235.py", line 205, in P6
+        approve(did)
+        ~~~~~~~^^^^^
+      File "/tmp/claude-0/-home-claude/3fe2f2d1-9501-546e-abe2-457dbb6ee4d1/scratchpad/w/kitpg/tests235.py", line 97, in approve
+        C("dpr.submit", {"id": did})
+        ~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/tmp/claude-0/-home-claude/3fe2f2d1-9501-546e-abe2-457dbb6ee4d1/scratchpad/w/kitpg/tests235.py", line 40, in C
+        return H.call(fn, a or {}, u=u)
+               ~~~~~~^^^^^^^^^^^^^^^^^^
+      File "/tmp/claude-0/-home-claude/3fe2f2d1-9501-546e-abe2-457dbb6ee4d1/scratchpad/w/kitpg/harness.py", line 52, in call
+        r = f(c, us, dict(a or {}))
+      File "/tmp/claude-0/-home-claude/3fe2f2d1-9501-546e-abe2-457dbb6ee4d1/scratchpad/web/engine/api_udpr.py", line 645, in dpr_submit25
+        r = orig(c, u, a)
+      File "/tmp/claude-0/-home-claude/3fe2f2d1-9501-546e-abe2-457dbb6ee4d1/scratchpad/web/engine/api_costlink.py", line 941, in dpr_submit2
+        raise ApiError("This DPR cannot be submitted yet: " + "; ".join(x["what"] for x in pr[:6]) +
+                       ". Link each gang and machine to a work line, or to Idle with the delay that caused it "
+                       "(Commercial › Cost codes › Waiting for a code, or the DPR's own work lines).")
+    core.ApiError: This DPR cannot be submitted yet: RL-01: 10.0 idle hours need the delay that caused them (add the delay on the DPR). Link each gang and machine to a work line, or to Idle with the delay that caused it (Commercial › Cost codes › Waiting for a code, or the DPR's own work lines).
+    
+P7 PASS  23 Oct opens 4011 from the hand logsheet of 21 Oct; 21 Oct itself opens 4006 from the DPR  (0.1s)
+P8 PASS  books identical (29 accounts), dpr, dpr_equipment, logsheets, equipment, settings unchanged, no table added  (0.2s)
+P9 PASS  viewer reads openings, site engineer gets 3 machines prefilled  (0.0s)
+P10 PASS  25 seed machine lines unchanged; a line typed in hours keeps 6 h; no reading -> opening blank  (0.0s)
+P11 PASS  TK-01 km 12000 -> 12085 with 7 h typed; next day opens 12085  (0.0s)
+P12 PASS  prefill on 4 projects, meter_open on 3 machines, both connected  (0.0s)
+11 of 12 passed

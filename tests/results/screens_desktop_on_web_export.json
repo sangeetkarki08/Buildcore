@@ -1,0 +1,93 @@
+{
+ "visited": 354,
+ "problems": [
+  {
+   "page": "project:m/projects",
+   "kind": "api",
+   "fn": "{\"fn\":\"master.list\",\"args\":{\"table\":\"projects\"}}",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:m/projects",
+   "kind": "page",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:m/materials",
+   "kind": "api",
+   "fn": "{\"fn\":\"master.list\",\"args\":{\"table\":\"materials\"}}",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:m/materials",
+   "kind": "page",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:m/parties",
+   "kind": "api",
+   "fn": "{\"fn\":\"master.list\",\"args\":{\"table\":\"parties\"}}",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:m/parties",
+   "kind": "page",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:acc/coa",
+   "kind": "api",
+   "fn": "{\"fn\":\"master.list\",\"args\":{\"table\":\"account_groups\"}}",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:acc/coa",
+   "kind": "page",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:acc/tdsrates",
+   "kind": "js",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:acc/tdsrates",
+   "kind": "api",
+   "fn": "{\"fn\":\"master.list\",\"args\":{\"table\":\"tds_rates\"}}",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:acc/periods",
+   "kind": "api",
+   "fn": "{\"fn\":\"master.list\",\"args\":{\"table\":\"fiscal_periods\"}}",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:acc/periods",
+   "kind": "page",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:eq/maint",
+   "kind": "js",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:eq/maint",
+   "kind": "api",
+   "fn": "{\"fn\":\"master.list\",\"args\":{\"table\":\"maint_plans\"}}",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:eq/rates",
+   "kind": "api",
+   "fn": "{\"fn\":\"master.list\",\"args\":{\"table\":\"equipment_rates\"}}",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  },
+  {
+   "page": "project:eq/rates",
+   "kind": "page",
+   "msg": "Unexpected error: no such column: project_id (details in data/error.log)"
+  }
+ ]
+}

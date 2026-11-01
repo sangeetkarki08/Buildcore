@@ -1,0 +1,4575 @@
+{
+"BOOKS": {
+"custom": {
+"admin": "Engineer",
+"board": "Dispute board",
+"claimRef": "—",
+"clauses": [],
+"detRef": "—",
+"ed": "",
+"fam": "fidic",
+"name": "Other form",
+"pay": {
+"certify": "certify",
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of claim",
+"r": "PC",
+"v": 0
+},
+{
+"d": 42,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed claim",
+"r": "PC",
+"v": 0
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final claim, continuing effect",
+"r": "PC",
+"v": 0
+},
+{
+"d": 42,
+"f": "after the detailed claim",
+"k": "response",
+"l": "{A} response",
+"r": "PC",
+"v": 0
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "{B} decision",
+"r": "PC",
+"v": 0
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the {B} decision",
+"k": "nodBoard",
+"l": "Notice of dissatisfaction",
+"r": "PC",
+"v": 0
+},
+{
+"d": 56,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "PC",
+"v": 0
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Force Majeure notice",
+"r": "PC",
+"v": 0
+},
+{
+"d": 28,
+"f": "after the Statement",
+"k": "certify",
+"l": "Interim Payment Certificate",
+"r": "PC",
+"v": 0
+},
+{
+"d": 56,
+"f": "after the Statement is received",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "PC",
+"v": 0
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "PC",
+"v": 0
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "PC",
+"v": 0
+}
+],
+"proc": "p99",
+"title": "Other or bespoke conditions",
+"use": "Any other form. Set every period and add your own claim clauses under Particular Conditions."
+},
+"emerald19": {
+"admin": "Engineer",
+"board": "DAAB",
+"claimRef": "20.2",
+"clauses": [
+{
+"c": "info",
+"e": "TCP",
+"n": "Errors in the Employer’s Requirements, including the Geotechnical Baseline Report.",
+"r": "1.9",
+"t": "Errors in the Employer’s Requirements",
+"v": 0
+},
+{
+"c": "authority",
+"e": "TCP",
+"n": "Employer delays or fails to obtain the permits, permissions or approvals it is responsible for.",
+"r": "1.13",
+"t": "Compliance with Laws",
+"v": 0
+},
+{
+"c": "access",
+"e": "TCP",
+"n": "Employer fails to give access to or possession of the Site within the time in the Contract Data.",
+"r": "2.1",
+"t": "Right of Access to the Site",
+"v": 0
+},
+{
+"c": "variation",
+"e": "V",
+"n": "An instruction to co-operate with others that an experienced contractor could not have foreseen at the Base Date is a Variation.",
+"r": "4.6",
+"t": "Co-operation",
+"v": 0
+},
+{
+"c": "info",
+"e": "TCP",
+"n": "Errors in the items of reference that an experienced contractor could not reasonably have found (4.7.3).",
+"r": "4.7",
+"t": "Setting Out",
+"v": 0
+},
+{
+"c": "ground",
+"e": "N",
+"n": "The GBR is the single contractual baseline for sub-surface risk. Record actual ground against it every shift.",
+"r": "4.10",
+"t": "Use of Site Data and the GBR",
+"v": 0
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Sub-surface conditions not addressed in the Geotechnical Baseline Report are Unforeseeable.",
+"r": "4.12",
+"t": "Unforeseeable Physical Conditions (outside the GBR)",
+"v": 1
+},
+{
+"c": "access",
+"e": "TC",
+"n": "Access route becomes unsuitable or unavailable because of changes by the Employer or a third party after the Base Date.",
+"r": "4.15",
+"t": "Access Route",
+"v": 0
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Fossils, coins or archaeological and geological items found on the Site.",
+"r": "4.23",
+"t": "Archaeological and Geological Findings",
+"v": 0
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Testing delayed by the Engineer or the Employer’s Personnel.",
+"r": "7.4",
+"t": "Testing by the Contractor",
+"v": 0
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes: (a) Variation; (b) a cause giving EOT under another Sub-Clause; (c) exceptionally adverse climatic conditions; (d) Unforeseeable shortages from epidemic or governmental actions; (e) delay, impediment or prevention by the Employer, its Personnel or other contractors. Concurrent delay follows the Special Provisions, if any.",
+"r": "8.5",
+"t": "Extension of Time for Completion",
+"v": 0
+},
+{
+"c": "authority",
+"e": "T",
+"n": "Unforeseeable delay or disruption by public authorities after the Contractor followed their procedures.",
+"r": "8.6",
+"t": "Delays Caused by Authorities",
+"v": 0
+},
+{
+"c": "suspension",
+"e": "TCP",
+"n": "Delay or Cost from complying with a suspension instructed under 8.9.",
+"r": "8.10",
+"t": "Consequences of Employer’s Suspension",
+"v": 0
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer takes over or uses part of the Works before the Taking-Over Certificate.",
+"r": "10.2",
+"t": "Taking Over Parts",
+"v": 0
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Employer’s Personnel prevent Tests on Completion for more than 14 days.",
+"r": "10.3",
+"t": "Interference with Tests on Completion",
+"v": 0
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Searching for the cause of a defect the Contractor is not liable for.",
+"r": "11.8",
+"t": "Contractor to Search",
+"v": 0
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer unreasonably delays Tests after Completion.",
+"r": "12.2",
+"t": "Delayed Tests after Completion",
+"v": 0
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer delays access needed to investigate a failure.",
+"r": "12.4",
+"t": "Failure to Pass Tests after Completion",
+"v": 0
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Valued under 13.3.1 (no re-measurement), with time under 8.5(a).",
+"r": "13.3",
+"t": "Variation Procedure",
+"v": 0
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Change in Laws, permits or their interpretation after the Base Date.",
+"r": "13.6",
+"t": "Adjustments for Changes in Laws",
+"v": 0
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Price adjustment by the Schedule(s) of cost indexation, if included.",
+"r": "13.7",
+"t": "Adjustments for Changes in Cost",
+"v": 0
+},
+{
+"c": "ground",
+"e": "A",
+"n": "Conditions within the GBR: Time for Completion and Contract Price move up or down from the Baseline Schedule and measured excavation and lining.",
+"r": "13.8",
+"t": "Measurement of Excavation and Lining; Adjustment of Time and Price",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges at 3% above the central-bank discount rate, compounded monthly; no Notice or Clause 20 claim needed.",
+"r": "14.8",
+"t": "Delayed Payment",
+"v": 0
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "After at least 21 days’ Notice, if the Engineer fails to certify, the Employer fails to pay, or fails to show its financial arrangements.",
+"r": "16.1",
+"t": "Suspension by Contractor",
+"v": 0
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Value of work done, demobilisation Cost, and loss of profit or other losses.",
+"r": "16.4",
+"t": "Payment after Termination by Contractor",
+"v": 0
+},
+{
+"c": "risk",
+"e": "TCp",
+"n": "Rectifying loss or damage caused by a risk at the Employer’s charge. Check which events also carry profit.",
+"r": "17.2",
+"t": "Liability for Care of the Works",
+"v": 0
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Separate notice within 14 days (18.2). Cost only for events in 18.1(a)–(e), and for (b)–(e) only if they occur in the Country.",
+"r": "18.4",
+"t": "Consequences of an Exceptional Event",
+"v": 0
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Performance becomes impossible or unlawful.",
+"r": "18.6",
+"t": "Release from Performance under the Law",
+"v": 0
+}
+],
+"detRef": "3.7",
+"ed": "2019",
+"fam": "fidic",
+"name": "Emerald Book",
+"pay": {
+"certify": "certify",
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of Claim",
+"r": "20.2.1",
+"v": 1
+},
+{
+"d": 14,
+"f": "after the Notice",
+"k": "lateResp",
+"l": "{A} objection to a late Notice",
+"r": "20.2.2",
+"v": 0
+},
+{
+"bar": 1,
+"d": 84,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed Claim",
+"n": "The time bar attaches to the statement of contractual or legal basis.",
+"r": "20.2.4",
+"v": 1
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final fully detailed Claim",
+"r": "20.2.6",
+"v": 0
+},
+{
+"d": 42,
+"f": "after the detailed Claim",
+"k": "agreement",
+"l": "Consultation to agree",
+"r": "3.7.3",
+"v": 0
+},
+{
+"d": 42,
+"f": "after the agreement window",
+"k": "determination",
+"l": "{A} determination",
+"r": "3.7.3",
+"v": 0
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the determination",
+"k": "nodDet",
+"l": "NOD on the determination",
+"r": "3.7.5",
+"v": 0
+},
+{
+"bar": 1,
+"d": 42,
+"f": "after the NOD",
+"k": "referDab",
+"l": "Refer Dispute to the DAAB",
+"r": "21.4.1",
+"v": 0
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "DAAB decision",
+"r": "21.4.3",
+"v": 0
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the decision",
+"k": "nodBoard",
+"l": "NOD on the DAAB decision",
+"r": "21.4.4",
+"v": 0
+},
+{
+"d": 28,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "21.5",
+"v": 0
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Exceptional Event notice",
+"r": "18.2",
+"v": 0
+},
+{
+"d": 28,
+"f": "after the Statement",
+"k": "certify",
+"l": "Interim Payment Certificate",
+"r": "14.6",
+"v": 0
+},
+{
+"d": 56,
+"f": "after the Statement is received",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "14.7(b)",
+"v": 0
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "16.1",
+"v": 0
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "16.2.1(c)",
+"v": 0
+}
+],
+"proc": "p17",
+"title": "Conditions of Contract for Underground Works",
+"use": "Tunnels and underground works with a Geotechnical Baseline Report. Built on the 2017 Yellow Book."
+},
+"gold08": {
+"admin": "Employer’s Representative",
+"board": "DAB",
+"claimRef": "20.1",
+"clauses": [
+{
+"c": "delay",
+"e": "N",
+"n": "Notice within 28 days; particulars within 42 days or the claim lapses. Late notice can be put to the DAB, which may accept it if the circumstances justify (20.1(a)).",
+"r": "20.1",
+"t": "Contractor’s Claims (late notice ruling)",
+"v": 1
+},
+{
+"c": "info",
+"e": "TCP",
+"n": "Check the Gold Book wording and Sub-Clause number.",
+"r": "Cl. 1",
+"t": "Errors in the Employer’s Requirements",
+"v": 0
+},
+{
+"c": "access",
+"e": "TCP",
+"n": "Check the Sub-Clause number.",
+"r": "Cl. 2",
+"t": "Right of Access to the Site",
+"v": 0
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Check the Gold Book risk allocation for ground.",
+"r": "Cl. 4",
+"t": "Unforeseeable Physical Conditions",
+"v": 0
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes of delay during the Design-Build Period.",
+"r": "Cl. 8",
+"t": "Extension of Time (Design-Build Period)",
+"v": 0
+},
+{
+"c": "delay",
+"e": "TC",
+"n": "Employer-caused events in the Operation Service Period.",
+"r": "Cl. 10",
+"t": "Operation Service events",
+"v": 0
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Variations, changes in legislation and cost adjustments.",
+"r": "Cl. 13",
+"t": "Variations and Adjustments",
+"v": 0
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges on late payment.",
+"r": "Cl. 14",
+"t": "Delayed Payment",
+"v": 0
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "Suspension after notice for non-payment.",
+"r": "Cl. 16",
+"t": "Suspension by Contractor",
+"v": 0
+},
+{
+"c": "risk",
+"e": "TC",
+"n": "Employer’s risks and their consequences.",
+"r": "Cl. 17",
+"t": "Risk Allocation",
+"v": 0
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Force-majeure-type events.",
+"r": "Cl. 18",
+"t": "Exceptional Risks",
+"v": 0
+}
+],
+"detRef": "3.5",
+"ed": "2008",
+"fam": "fidic",
+"name": "Gold Book",
+"pay": {
+"certify": "certify",
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of claim",
+"r": "20.1"
+},
+{
+"bar": 1,
+"d": 42,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed claim",
+"n": "Particulars not sent within 42 days make the claim lapse.",
+"r": "20.1"
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final claim, continuing effect",
+"r": "Cl. 20",
+"v": 0
+},
+{
+"d": 42,
+"f": "after the detailed claim",
+"k": "response",
+"l": "{A} response",
+"r": "Cl. 20",
+"v": 0
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "{B} decision",
+"r": "Cl. 20",
+"v": 0
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the {B} decision",
+"k": "nodBoard",
+"l": "Notice of dissatisfaction",
+"r": "Cl. 20"
+},
+{
+"d": 56,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "Cl. 20"
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Force Majeure notice",
+"r": "Cl. 19",
+"v": 0
+},
+{
+"d": 28,
+"f": "after the Statement",
+"k": "certify",
+"l": "Interim Payment Certificate",
+"r": "Cl. 14",
+"v": 0
+},
+{
+"d": 56,
+"f": "after the Statement is received",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "Cl. 14",
+"v": 0
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "Cl. 16",
+"v": 0
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "Cl. 16",
+"v": 0
+}
+],
+"proc": "p99",
+"title": "Conditions of Contract for Design, Build and Operate Projects",
+"use": "Design, build and a long operation period (default 20 years) with a standing DAB."
+},
+"green21": {
+"admin": "Engineer",
+"board": "Adjudicator",
+"claimRef": "Cl. 13",
+"clauses": [
+{
+"c": "delay",
+"e": "N",
+"n": "Notice within 28 days and detailed claim within 56 days. Lateness does not automatically kill the claim but can reduce it.",
+"r": "Cl. 13",
+"t": "Claims (time limit, not a time bar)",
+"v": 1
+},
+{
+"c": "delay",
+"e": "N",
+"n": "The Engineer must act neutrally when determining claims.",
+"r": "3.5",
+"t": "Agreement or Determination",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Check the EOT grounds and Employer’s risk events in your edition.",
+"r": "EOT",
+"t": "Extension of Time",
+"v": 0
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Instructed variations and their valuation.",
+"r": "Variations",
+"t": "Variations",
+"v": 0
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Late payment and financing charges.",
+"r": "Payment",
+"t": "Delayed payment",
+"v": 0
+},
+{
+"c": "payment",
+"e": "TC",
+"n": "Suspension for non-payment.",
+"r": "Suspension",
+"t": "Suspension by Contractor",
+"v": 0
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Termination for a prolonged Exceptional Event takes effect 7 days after notice in the 2nd edition.",
+"r": "Exceptional",
+"t": "Exceptional Events",
+"v": 0
+}
+],
+"detRef": "3.5",
+"ed": "2021",
+"fam": "fidic",
+"name": "Green Book",
+"pay": {
+"certify": "certify",
+"payBase": "certified",
+"termBase": "payDue"
+},
+"periods": [
+{
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of claim",
+"r": "Cl. 13"
+},
+{
+"d": 56,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Detailed claim",
+"r": "Cl. 13"
+},
+{
+"d": 42,
+"f": "after the detailed claim",
+"k": "response",
+"l": "{A} determination",
+"r": "3.5",
+"v": 0
+},
+{
+"d": 28,
+"f": "after referral",
+"k": "boardDecision",
+"l": "Adjudicator decision",
+"r": "Adjudication",
+"v": 0
+},
+{
+"d": 28,
+"f": "after the decision",
+"k": "nodBoard",
+"l": "Notice of dissatisfaction",
+"r": "Adjudication",
+"v": 0
+},
+{
+"d": 28,
+"f": "after the notice",
+"k": "amicable",
+"l": "Before arbitration",
+"r": "Arbitration",
+"v": 0
+},
+{
+"d": 28,
+"f": "after the statement",
+"k": "certify",
+"l": "Payment certificate",
+"r": "Payment",
+"v": 0
+},
+{
+"d": 28,
+"f": "after certification",
+"k": "pay",
+"l": "Payment",
+"r": "Payment",
+"v": 0
+}
+],
+"proc": "pgreen",
+"title": "Short Form of Contract, 2nd ed.",
+"use": "Short, simple or low-value works. Claims use time limits rather than a strict time bar."
+},
+"mdb10": {
+"admin": "Engineer",
+"board": "DB",
+"claimRef": "20.1",
+"clauses": [
+{
+"c": "info",
+"e": "TCP",
+"n": "Give prior notice of the drawing or instruction needed, by when, and the delay or cost if it is late. The claim arises if the Engineer misses that reasonable time.",
+"r": "1.9",
+"t": "Delayed Drawings or Instructions",
+"v": 1
+},
+{
+"c": "access",
+"e": "TCP",
+"n": "Employer fails to give access to or possession of the Site within the time stated in the Contract.",
+"r": "2.1",
+"t": "Right of Access to the Site",
+"v": 1
+},
+{
+"c": "payment",
+"e": "N",
+"n": "Employer must give evidence of its financing; a failure supports suspension under 16.1.",
+"r": "2.4",
+"t": "Employer’s Financial Arrangements",
+"v": 0
+},
+{
+"c": "info",
+"e": "TCP",
+"n": "Errors in the original points, lines or levels of reference that an experienced contractor could not reasonably have found.",
+"r": "4.7",
+"t": "Setting Out",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Notice as soon as practicable, describing the conditions. The Engineer may also review more favourable conditions met elsewhere.",
+"r": "4.12",
+"t": "Unforeseeable Physical Conditions",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Archaeological or geological finds; follow the Engineer’s instructions.",
+"r": "4.24",
+"t": "Fossils",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Testing delayed by the Engineer or Employer, or on their behalf.",
+"r": "7.4",
+"t": "Testing",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes: (a) Variation or substantial change in quantity; (b) a delay cause under another Sub-Clause; (c) exceptionally adverse climatic conditions; (d) Unforeseeable shortages of personnel or Goods from epidemic or governmental actions; (e) delay, impediment or prevention by the Employer, its Personnel or other contractors.",
+"r": "8.4",
+"t": "Extension of Time for Completion",
+"v": 1
+},
+{
+"c": "authority",
+"e": "T",
+"n": "Public authorities in the Country cause Unforeseeable delay after the Contractor followed their procedures.",
+"r": "8.5",
+"t": "Delays Caused by Authorities",
+"v": 1
+},
+{
+"c": "suspension",
+"e": "TC",
+"n": "Engineer instructs a suspension under 8.8 that is not the Contractor’s fault.",
+"r": "8.9",
+"t": "Consequences of Suspension",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer takes over or uses part of the Works before the Taking-Over Certificate.",
+"r": "10.2",
+"t": "Taking Over of Parts of the Works",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Employer prevents Tests on Completion for more than 14 days.",
+"r": "10.3",
+"t": "Interference with Tests on Completion",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Searching for the cause of a defect the Contractor is not liable for.",
+"r": "11.8",
+"t": "Contractor to Search",
+"v": 1
+},
+{
+"c": "quantity",
+"e": "R",
+"n": "New rate where measured quantity differs from the BoQ by more than 10%, that change × rate exceeds 0.01% of the Accepted Contract Amount, it changes unit Cost by more than 1%, and the item is not a fixed-rate item.",
+"r": "12.3",
+"t": "Evaluation (rate change)",
+"v": 1
+},
+{
+"c": "variation",
+"e": "C",
+"n": "Cost already incurred and not recovered because work was omitted by a Variation.",
+"r": "12.4",
+"t": "Omissions",
+"v": 1
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Variations are valued under 12.3 and give time under 8.4(a). Confirm oral instructions in writing.",
+"r": "13.3",
+"t": "Variation Procedure",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Change in the Laws of the Country, or their official interpretation, after the Base Date.",
+"r": "13.7",
+"t": "Adjustments for Changes in Legislation",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Price adjustment formula and indices in the Appendix to Tender, if included.",
+"r": "13.8",
+"t": "Adjustments for Changes in Cost",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges compounded monthly at 3% above the central-bank discount rate; due without formal notice or certification.",
+"r": "14.8",
+"t": "Delayed Payment",
+"v": 1
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "After at least 21 days’ notice for non-certification, non-payment or no evidence of financial arrangements. The MDB edition also covers suspension of the Bank’s loan disbursements.",
+"r": "16.1",
+"t": "Contractor’s Entitlement to Suspend Work",
+"v": 0
+},
+{
+"c": "termination",
+"e": "X",
+"n": "After termination by the Contractor under 16.2: value of work, removal Cost, and loss of profit or other loss.",
+"r": "16.4",
+"t": "Payment on Termination",
+"v": 1
+},
+{
+"c": "risk",
+"e": "C",
+"n": "Losses covered by the Employer’s indemnity.",
+"r": "17.1",
+"t": "Indemnities",
+"v": 1
+},
+{
+"c": "risk",
+"e": "TCp",
+"n": "Loss or damage from an Employer’s risk in 17.3. Profit only for 17.3(f) and (g).",
+"r": "17.4",
+"t": "Consequences of Employer’s Risks",
+"v": 1
+},
+{
+"c": "risk",
+"e": "C",
+"n": "Employer fails to take out an insurance it must provide; recover the premium.",
+"r": "18.1",
+"t": "General Requirements for Insurances",
+"v": 1
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Separate notice within 14 days (19.2). Cost only for events in 19.1(i)–(iv), and for (ii)–(iv) only if they occur in the Country.",
+"r": "19.4",
+"t": "Consequences of Force Majeure",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Force Majeure stops progress for 84 continuous days, or more than 140 days in total from the same notified event.",
+"r": "19.6",
+"t": "Optional Termination, Payment and Release",
+"v": 1
+}
+],
+"detRef": "3.5",
+"ed": "2010",
+"fam": "fidic",
+"name": "Pink Book (MDB)",
+"pay": {
+"certify": "certify",
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of claim",
+"r": "20.1"
+},
+{
+"d": 42,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed claim",
+"r": "20.1"
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final claim, continuing effect",
+"r": "20.1"
+},
+{
+"d": 42,
+"f": "after the detailed claim",
+"k": "response",
+"l": "{A} response",
+"r": "20.1"
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "{B} decision",
+"r": "20.4"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the {B} decision",
+"k": "nodBoard",
+"l": "Notice of dissatisfaction",
+"r": "20.4"
+},
+{
+"d": 56,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "20.5"
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Force Majeure notice",
+"r": "19.2"
+},
+{
+"d": 28,
+"f": "after the Statement",
+"k": "certify",
+"l": "Interim Payment Certificate",
+"r": "14.6"
+},
+{
+"d": 56,
+"f": "after the Statement is received",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "14.7(b)"
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "16.1"
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "16.2(c)"
+}
+],
+"proc": "p99",
+"title": "Conditions of Contract for Construction, MDB Harmonised Edition",
+"use": "Used for ADB, World Bank and other development-bank funded works, including Nepal hydropower and roads."
+},
+"ppmo_ncb": {
+"admin": "Project Manager",
+"board": "Adjudicator / DRB",
+"claimRef": "GCC 43 & 27",
+"clauses": [
+{
+"c": "access",
+"e": "TC",
+"n": "Employer does not give access to part of the Site by the Site Possession Date in the SCC.",
+"r": "43.1(a)",
+"t": "Site access not given by the Site Possession Date",
+"v": 1
+},
+{
+"c": "delay",
+"e": "TC",
+"n": "Employer changes the Schedule of Other Contractors in a way that affects your work.",
+"r": "43.1(b)",
+"t": "Schedule of Other Contractors changed",
+"v": 1
+},
+{
+"c": "info",
+"e": "TC",
+"n": "PM orders a delay or does not issue Drawings, Specifications or instructions on time.",
+"r": "43.1(c)",
+"t": "Delay ordered, or late drawings, specifications or instructions",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TC",
+"n": "PM instructs uncovering or additional tests and no Defect is found.",
+"r": "43.1(d)",
+"t": "Uncovering or extra tests find no defect",
+"v": 1
+},
+{
+"c": "delay",
+"e": "TC",
+"n": "PM unreasonably refuses to approve a subcontract.",
+"r": "43.1(e)",
+"t": "Subcontract approval unreasonably withheld",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Ground substantially more adverse than could reasonably be assumed before the Letter of Acceptance from the Site Investigation Reports, public information and a visual inspection.",
+"r": "43.1(f)",
+"t": "Adverse ground conditions",
+"v": 1
+},
+{
+"c": "variation",
+"e": "TC",
+"n": "PM instructs how to deal with an unforeseen condition caused by the Employer, or additional work for safety or other reasons.",
+"r": "43.1(g)",
+"t": "Instruction for an unforeseen condition or extra safety work",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Other contractors, public authorities, utilities or the Employer do not work within the dates and constraints in the Contract.",
+"r": "43.1(h)",
+"t": "Others outside agreed dates",
+"v": 1
+},
+{
+"c": "payment",
+"e": "TC",
+"n": "The advance payment is delayed.",
+"r": "43.1(i)",
+"t": "Advance payment delayed",
+"v": 1
+},
+{
+"c": "risk",
+"e": "TC",
+"n": "Any effect on you of the Employer’s Risks.",
+"r": "43.1(j)",
+"t": "Effects of the Employer’s Risks",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TC",
+"n": "PM unreasonably delays the Certificate of Completion.",
+"r": "43.1(k)",
+"t": "Completion certificate unreasonably delayed",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "PM must extend the date if a Compensation Event or Variation makes on-time completion impossible without acceleration at extra cost. Decision within 21 days of a request with full information (27.2).",
+"r": "27.1",
+"t": "Extension of the Intended Completion Date",
+"v": 1
+},
+{
+"c": "delay",
+"e": "N",
+"n": "Compensation is reduced to the extent the Employer’s interests suffer from late notification or lack of co-operation.",
+"r": "43.4",
+"t": "No compensation without early warning",
+"v": 1
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "You need a written variation order from the authority set by PPA s.54 (5/10/15% tiers, amended 2083). Extra work done without one risks non-payment.",
+"r": "Variations",
+"t": "Variations and payment for variations",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Contracts over 15 months. NCB works: a material price change above 10% is adjusted after deducting 10%. Not for lump-sum contracts or periods of contractor delay. Cap 25% (PPR r.119(3)).",
+"r": "PPA s.55",
+"t": "Price adjustment",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Check the GCC and SCC for the payment period and interest on late payment.",
+"r": "Payments",
+"t": "Late payment interest",
+"v": 0
+},
+{
+"c": "delay",
+"e": "N",
+"n": "LDs at the SCC rate per day, commonly 0.05% per day up to 10% (PPR r.121). Overpaid LDs are corrected if the date is later extended (47.2).",
+"r": "47",
+"t": "Liquidated damages",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Termination grounds and financial settlement. You must give prior notice before terminating.",
+"r": "PPA s.59",
+"t": "Termination and settlement",
+"v": 1
+}
+],
+"detRef": "GCC 43.3",
+"ed": "SBD",
+"fam": "ppmo",
+"name": "PPMO NCB Works",
+"pay": {
+"certify": "certify",
+"payBase": "certified",
+"termBase": "certified"
+},
+"periods": [
+{
+"d": 7,
+"f": "after becoming aware",
+"k": "earlyWarning",
+"l": "Early warning to the {A}",
+"n": "The GCC says “at the earliest opportunity”. This reminder is the tool’s, not the contract’s.",
+"r": "GCC (Early Warning)",
+"tool": 1
+},
+{
+"d": 28,
+"f": "after becoming aware",
+"k": "ceSubmit",
+"l": "Submit claim with full supporting information",
+"n": "Reminder only. Always before the EOT application cut-off below.",
+"r": "GCC 43.3 / 27.2",
+"tool": 1
+},
+{
+"d": 21,
+"f": "days before the completion date",
+"k": "eotBefore",
+"l": "EOT application cut-off",
+"r": "PPR r.120 / SCC",
+"v": 0
+},
+{
+"d": 21,
+"f": "after a request with full information",
+"k": "pmDecision",
+"l": "{A} decision",
+"r": "GCC 27.2",
+"v": 1
+},
+{
+"d": 15,
+"f": "after the decision",
+"k": "amicable",
+"l": "Amicable settlement attempt",
+"r": "GCC 25.1",
+"v": 1
+},
+{
+"d": 30,
+"f": "after the decision",
+"k": "referAdj",
+"l": "Refer to the {B}",
+"r": "GCC 25.1",
+"v": 1
+},
+{
+"d": 30,
+"f": "after referral",
+"k": "adjDecision",
+"l": "{B} decision",
+"n": "Some older SBD versions allow 42 days.",
+"r": "GCC 25.2",
+"v": 1
+},
+{
+"bar": 1,
+"d": 30,
+"f": "after the decision",
+"k": "referArb",
+"l": "Refer to arbitration",
+"r": "GCC 25.3",
+"v": 1
+},
+{
+"d": 14,
+"f": "after the statement",
+"k": "certify",
+"l": "Payment certificate",
+"r": "GCC / SCC",
+"v": 0
+},
+{
+"d": 28,
+"f": "after certification",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "GCC / SCC",
+"v": 0
+},
+{
+"d": 84,
+"f": "after certification",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "GCC (Termination)",
+"v": 0
+}
+],
+"proc": "pppmo",
+"title": "PPMO Standard Bidding Document, Works (NCB, Project Manager GCC)",
+"use": "Government of Nepal funded works procured by NCB under the Public Procurement Act 2063."
+},
+"ppmo_sq": {
+"admin": "Employer",
+"board": "Adjudicator",
+"claimRef": "GCC 6.3",
+"clauses": [
+{
+"c": "delay",
+"e": "T",
+"n": "You are entitled if delayed by any of the Employer’s Liabilities. Apply with reasons before the completion date: 7 days before in the Sealed Quotation SBD, 21 in some contracts.",
+"r": "6.3",
+"t": "Extension of Time",
+"v": 1
+},
+{
+"c": "delay",
+"e": "TC",
+"n": "Check the list of Employer’s liabilities in your GCC.",
+"r": "Employer’s Liabilities",
+"t": "Employer’s liabilities (delay causes)",
+"v": 0
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Written variation order from the eligible authority.",
+"r": "Variations",
+"t": "Variations (PPA s.54)",
+"v": 1
+},
+{
+"c": "delay",
+"e": "N",
+"n": "If the parties do not agree an Adjudicator, NEPCA appoints one.",
+"r": "Disputes",
+"t": "Amicable settlement, Adjudicator, Arbitration",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Usually not available: needs a contract longer than 15 months.",
+"r": "PPA s.55",
+"t": "Price adjustment",
+"v": 1
+}
+],
+"detRef": "GCC 6.3",
+"ed": "SBD",
+"fam": "ppmo",
+"name": "PPMO Small Works",
+"pay": {
+"certify": null,
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"d": 7,
+"f": "after becoming aware",
+"k": "earlyWarning",
+"l": "Early warning to the {A}",
+"n": "The GCC says “at the earliest opportunity”. This reminder is the tool’s, not the contract’s.",
+"r": "GCC (Early Warning)",
+"tool": 1
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "ceSubmit",
+"l": "Submit claim with full supporting information",
+"n": "Reminder only. Always before the EOT application cut-off below.",
+"r": "GCC 43.3 / 27.2",
+"tool": 1
+},
+{
+"d": 7,
+"f": "days before the completion date",
+"k": "eotBefore",
+"l": "EOT application cut-off",
+"r": "GCC 6.3",
+"v": 1
+},
+{
+"d": 21,
+"f": "after a request with full information",
+"k": "pmDecision",
+"l": "{A} decision",
+"r": "GCC 6.3",
+"v": 0
+},
+{
+"d": 15,
+"f": "after the decision",
+"k": "amicable",
+"l": "Amicable settlement attempt",
+"r": "GCC 25.1",
+"v": 0
+},
+{
+"d": 30,
+"f": "after the decision",
+"k": "referAdj",
+"l": "Refer to the {B}",
+"r": "GCC 25.1",
+"v": 0
+},
+{
+"d": 30,
+"f": "after referral",
+"k": "adjDecision",
+"l": "{B} decision",
+"n": "Some older SBD versions allow 42 days.",
+"r": "GCC 25.2",
+"v": 0
+},
+{
+"bar": 1,
+"d": 30,
+"f": "after the decision",
+"k": "referArb",
+"l": "Refer to arbitration",
+"r": "GCC 25.3",
+"v": 0
+},
+{
+"d": 0,
+"f": "after the statement",
+"k": "certify",
+"l": "Payment certificate",
+"r": "GCC / SCC",
+"v": 0
+},
+{
+"d": 30,
+"f": "after the bill",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "GCC / SCC",
+"v": 0
+},
+{
+"d": 84,
+"f": "after certification",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "GCC (Termination)",
+"v": 0
+}
+],
+"proc": "pppmo",
+"title": "PPMO SBD, Sealed Quotation and small NCB works",
+"use": "Small government works (Sealed Quotation and lower-value NCB SBDs)."
+},
+"red17": {
+"admin": "Engineer",
+"board": "DAAB",
+"claimRef": "20.2",
+"clauses": [
+{
+"c": "info",
+"e": "TCP",
+"n": "Give a Notice of the drawing or instruction needed and when and why it is needed. The claim arises if the Engineer does not issue it in reasonable time.",
+"r": "1.9",
+"t": "Delayed Drawings or Instructions",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TCP",
+"n": "Employer delays or fails to obtain the permits, permissions or approvals it is responsible for.",
+"r": "1.13",
+"t": "Compliance with Laws",
+"v": 0
+},
+{
+"c": "access",
+"e": "TCP",
+"n": "Employer fails to give access to or possession of the Site within the time in the Contract Data.",
+"r": "2.1",
+"t": "Right of Access to the Site",
+"v": 1
+},
+{
+"c": "variation",
+"e": "V",
+"n": "An instruction to co-operate with others that an experienced contractor could not have foreseen at the Base Date is a Variation.",
+"r": "4.6",
+"t": "Co-operation",
+"v": 0
+},
+{
+"c": "info",
+"e": "TCP",
+"n": "Errors in the items of reference that an experienced contractor could not reasonably have found (4.7.3).",
+"r": "4.7",
+"t": "Setting Out",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Notice as soon as practicable so the Engineer can inspect before the conditions are disturbed. The Engineer may consider more favourable conditions met elsewhere.",
+"r": "4.12",
+"t": "Unforeseeable Physical Conditions",
+"v": 1
+},
+{
+"c": "access",
+"e": "TC",
+"n": "Access route becomes unsuitable or unavailable because of changes by the Employer or a third party after the Base Date.",
+"r": "4.15",
+"t": "Access Route",
+"v": 0
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Fossils, coins or archaeological and geological items found on the Site.",
+"r": "4.23",
+"t": "Archaeological and Geological Findings",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Testing delayed by the Engineer or the Employer’s Personnel.",
+"r": "7.4",
+"t": "Testing by the Contractor",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes: (a) Variation; (b) a cause giving EOT under another Sub-Clause; (c) exceptionally adverse climatic conditions; (d) Unforeseeable shortages from epidemic or governmental actions; (e) delay, impediment or prevention by the Employer, its Personnel or other contractors. Concurrent delay follows the Special Provisions, if any.",
+"r": "8.5",
+"t": "Extension of Time for Completion",
+"v": 1
+},
+{
+"c": "authority",
+"e": "T",
+"n": "Unforeseeable delay or disruption by public authorities after the Contractor followed their procedures.",
+"r": "8.6",
+"t": "Delays Caused by Authorities",
+"v": 1
+},
+{
+"c": "suspension",
+"e": "TCP",
+"n": "Delay or Cost from complying with a suspension instructed under 8.9.",
+"r": "8.10",
+"t": "Consequences of Employer’s Suspension",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer takes over or uses part of the Works before the Taking-Over Certificate.",
+"r": "10.2",
+"t": "Taking Over Parts",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Employer’s Personnel prevent Tests on Completion for more than 14 days.",
+"r": "10.3",
+"t": "Interference with Tests on Completion",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Searching for the cause of a defect the Contractor is not liable for.",
+"r": "11.8",
+"t": "Contractor to Search",
+"v": 1
+},
+{
+"c": "quantity",
+"e": "R",
+"n": "New rate where quantity changes by more than 10%, the change × rate exceeds 0.01% of the Accepted Contract Amount, unit Cost changes by more than 1%, and the item is not fixed-rate.",
+"r": "12.3",
+"t": "Valuation of the Works",
+"v": 0
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Valued under 12.3, with time under 8.5(a). If an instruction changes the Works without being called a Variation, give a Notice under 20.2.",
+"r": "13.3",
+"t": "Variation Procedure",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Change in Laws, permits or their interpretation after the Base Date.",
+"r": "13.6",
+"t": "Adjustments for Changes in Laws",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Price adjustment by the Schedule(s) of cost indexation, if included.",
+"r": "13.7",
+"t": "Adjustments for Changes in Cost",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges at 3% above the central-bank discount rate, compounded monthly; no Notice or Clause 20 claim needed.",
+"r": "14.8",
+"t": "Delayed Payment",
+"v": 1
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "After at least 21 days’ Notice, if the Engineer fails to certify, the Employer fails to pay, or fails to show its financial arrangements.",
+"r": "16.1",
+"t": "Suspension by Contractor",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Value of work done, demobilisation Cost, and loss of profit or other losses.",
+"r": "16.4",
+"t": "Payment after Termination by Contractor",
+"v": 0
+},
+{
+"c": "risk",
+"e": "TCp",
+"n": "Rectifying loss or damage caused by a risk at the Employer’s charge. Check which events also carry profit.",
+"r": "17.2",
+"t": "Liability for Care of the Works",
+"v": 0
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Separate notice within 14 days (18.2). Cost only for events in 18.1(a)–(e), and for (b)–(e) only if they occur in the Country.",
+"r": "18.4",
+"t": "Consequences of an Exceptional Event",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Performance becomes impossible or unlawful.",
+"r": "18.6",
+"t": "Release from Performance under the Law",
+"v": 0
+}
+],
+"detRef": "3.7",
+"ed": "2017",
+"fam": "fidic",
+"name": "Red Book",
+"pay": {
+"certify": "certify",
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of Claim",
+"r": "20.2.1"
+},
+{
+"d": 14,
+"f": "after the Notice",
+"k": "lateResp",
+"l": "{A} objection to a late Notice",
+"r": "20.2.2"
+},
+{
+"bar": 1,
+"d": 84,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed Claim",
+"n": "The time bar attaches to the statement of contractual or legal basis.",
+"r": "20.2.4"
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final fully detailed Claim",
+"r": "20.2.6"
+},
+{
+"d": 42,
+"f": "after the detailed Claim",
+"k": "agreement",
+"l": "Consultation to agree",
+"r": "3.7.3"
+},
+{
+"d": 42,
+"f": "after the agreement window",
+"k": "determination",
+"l": "{A} determination",
+"r": "3.7.3"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the determination",
+"k": "nodDet",
+"l": "NOD on the determination",
+"r": "3.7.5"
+},
+{
+"bar": 1,
+"d": 42,
+"f": "after the NOD",
+"k": "referDab",
+"l": "Refer Dispute to the DAAB",
+"r": "21.4.1"
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "DAAB decision",
+"r": "21.4.3"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the decision",
+"k": "nodBoard",
+"l": "NOD on the DAAB decision",
+"r": "21.4.4"
+},
+{
+"d": 28,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "21.5"
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Exceptional Event notice",
+"r": "18.2"
+},
+{
+"d": 28,
+"f": "after the Statement",
+"k": "certify",
+"l": "Interim Payment Certificate",
+"r": "14.6"
+},
+{
+"d": 56,
+"f": "after the Statement is received",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "14.7(b)"
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "16.1"
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "16.2.1(c)"
+}
+],
+"proc": "p17",
+"title": "Conditions of Contract for Construction, 2nd ed.",
+"use": "Employer-designed works, re-measured. Tighter claims procedure and a standing DAAB."
+},
+"red99": {
+"admin": "Engineer",
+"board": "DAB",
+"claimRef": "20.1",
+"clauses": [
+{
+"c": "info",
+"e": "TCP",
+"n": "Give prior notice of the drawing or instruction needed, by when, and the delay or cost if it is late. The claim arises if the Engineer misses that reasonable time.",
+"r": "1.9",
+"t": "Delayed Drawings or Instructions",
+"v": 1
+},
+{
+"c": "access",
+"e": "TCP",
+"n": "Employer fails to give access to or possession of the Site within the time stated in the Contract.",
+"r": "2.1",
+"t": "Right of Access to the Site",
+"v": 1
+},
+{
+"c": "info",
+"e": "TCP",
+"n": "Errors in the original points, lines or levels of reference that an experienced contractor could not reasonably have found.",
+"r": "4.7",
+"t": "Setting Out",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Notice as soon as practicable, describing the conditions. The Engineer may also review more favourable conditions met elsewhere.",
+"r": "4.12",
+"t": "Unforeseeable Physical Conditions",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Archaeological or geological finds; follow the Engineer’s instructions.",
+"r": "4.24",
+"t": "Fossils",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Testing delayed by the Engineer or Employer, or on their behalf.",
+"r": "7.4",
+"t": "Testing",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes: (a) Variation or substantial change in quantity; (b) a delay cause under another Sub-Clause; (c) exceptionally adverse climatic conditions; (d) Unforeseeable shortages of personnel or Goods from epidemic or governmental actions; (e) delay, impediment or prevention by the Employer, its Personnel or other contractors.",
+"r": "8.4",
+"t": "Extension of Time for Completion",
+"v": 1
+},
+{
+"c": "authority",
+"e": "T",
+"n": "Public authorities in the Country cause Unforeseeable delay after the Contractor followed their procedures.",
+"r": "8.5",
+"t": "Delays Caused by Authorities",
+"v": 1
+},
+{
+"c": "suspension",
+"e": "TC",
+"n": "Engineer instructs a suspension under 8.8 that is not the Contractor’s fault.",
+"r": "8.9",
+"t": "Consequences of Suspension",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer takes over or uses part of the Works before the Taking-Over Certificate.",
+"r": "10.2",
+"t": "Taking Over of Parts of the Works",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Employer prevents Tests on Completion for more than 14 days.",
+"r": "10.3",
+"t": "Interference with Tests on Completion",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Searching for the cause of a defect the Contractor is not liable for.",
+"r": "11.8",
+"t": "Contractor to Search",
+"v": 1
+},
+{
+"c": "quantity",
+"e": "R",
+"n": "New rate where measured quantity differs from the BoQ by more than 10%, that change × rate exceeds 0.01% of the Accepted Contract Amount, it changes unit Cost by more than 1%, and the item is not a fixed-rate item.",
+"r": "12.3",
+"t": "Evaluation (rate change)",
+"v": 1
+},
+{
+"c": "variation",
+"e": "C",
+"n": "Cost already incurred and not recovered because work was omitted by a Variation.",
+"r": "12.4",
+"t": "Omissions",
+"v": 1
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Variations are valued under 12.3 and give time under 8.4(a). Confirm oral instructions in writing.",
+"r": "13.3",
+"t": "Variation Procedure",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Change in the Laws of the Country, or their official interpretation, after the Base Date.",
+"r": "13.7",
+"t": "Adjustments for Changes in Legislation",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Price adjustment formula and indices in the Appendix to Tender, if included.",
+"r": "13.8",
+"t": "Adjustments for Changes in Cost",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges compounded monthly at 3% above the central-bank discount rate; due without formal notice or certification.",
+"r": "14.8",
+"t": "Delayed Payment",
+"v": 1
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "After at least 21 days’ notice, if the Engineer fails to certify (14.6), the Employer fails to pay (14.7) or fails to show its financial arrangements (2.4).",
+"r": "16.1",
+"t": "Contractor’s Entitlement to Suspend Work",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "After termination by the Contractor under 16.2: value of work, removal Cost, and loss of profit or other loss.",
+"r": "16.4",
+"t": "Payment on Termination",
+"v": 1
+},
+{
+"c": "risk",
+"e": "C",
+"n": "Losses covered by the Employer’s indemnity.",
+"r": "17.1",
+"t": "Indemnities",
+"v": 1
+},
+{
+"c": "risk",
+"e": "TCp",
+"n": "Loss or damage from an Employer’s risk in 17.3. Profit only for 17.3(f) and (g).",
+"r": "17.4",
+"t": "Consequences of Employer’s Risks",
+"v": 1
+},
+{
+"c": "risk",
+"e": "C",
+"n": "Employer fails to take out an insurance it must provide; recover the premium.",
+"r": "18.1",
+"t": "General Requirements for Insurances",
+"v": 1
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Separate notice within 14 days (19.2). Cost only for events in 19.1(i)–(iv), and for (ii)–(iv) only if they occur in the Country.",
+"r": "19.4",
+"t": "Consequences of Force Majeure",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Force Majeure stops progress for 84 continuous days, or more than 140 days in total from the same notified event.",
+"r": "19.6",
+"t": "Optional Termination, Payment and Release",
+"v": 1
+}
+],
+"detRef": "3.5",
+"ed": "1999",
+"fam": "fidic",
+"name": "Red Book",
+"pay": {
+"certify": "certify",
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of claim",
+"r": "20.1"
+},
+{
+"d": 42,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed claim",
+"r": "20.1"
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final claim, continuing effect",
+"r": "20.1"
+},
+{
+"d": 42,
+"f": "after the detailed claim",
+"k": "response",
+"l": "{A} response",
+"r": "20.1"
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "{B} decision",
+"r": "20.4"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the {B} decision",
+"k": "nodBoard",
+"l": "Notice of dissatisfaction",
+"r": "20.4"
+},
+{
+"d": 56,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "20.5"
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Force Majeure notice",
+"r": "19.2"
+},
+{
+"d": 28,
+"f": "after the Statement",
+"k": "certify",
+"l": "Interim Payment Certificate",
+"r": "14.6"
+},
+{
+"d": 56,
+"f": "after the Statement is received",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "14.7(b)"
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "16.1"
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "16.2(c)"
+}
+],
+"proc": "p99",
+"title": "Conditions of Contract for Construction",
+"use": "Employer-designed works, re-measured against a BoQ. Common for hydropower civil works."
+},
+"silver17": {
+"admin": "Employer’s Representative",
+"board": "DAAB",
+"claimRef": "20.2",
+"clauses": [
+{
+"c": "authority",
+"e": "TCP",
+"n": "Employer delays or fails to obtain the permits, permissions or approvals it is responsible for.",
+"r": "1.13",
+"t": "Compliance with Laws",
+"v": 0
+},
+{
+"c": "access",
+"e": "TCP",
+"n": "Employer fails to give access to or possession of the Site within the time in the Contract Data.",
+"r": "2.1",
+"t": "Right of Access to the Site",
+"v": 1
+},
+{
+"c": "variation",
+"e": "V",
+"n": "An instruction to co-operate with others that an experienced contractor could not have foreseen at the Base Date is a Variation.",
+"r": "4.6",
+"t": "Co-operation",
+"v": 0
+},
+{
+"c": "info",
+"e": "TCP",
+"n": "Only for errors in data the Employer is responsible for under 5.1.",
+"r": "4.7",
+"t": "Setting Out",
+"v": 0
+},
+{
+"c": "ground",
+"e": "N",
+"n": "Contractor bears the risk of unforeseeable difficulties. No entitlement unless the Particular Conditions change this.",
+"r": "4.12",
+"t": "Unforeseeable Difficulties",
+"v": 1
+},
+{
+"c": "access",
+"e": "TC",
+"n": "Access route becomes unsuitable or unavailable because of changes by the Employer or a third party after the Base Date.",
+"r": "4.15",
+"t": "Access Route",
+"v": 0
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Fossils, coins or archaeological and geological items found on the Site.",
+"r": "4.23",
+"t": "Archaeological and Geological Findings",
+"v": 1
+},
+{
+"c": "info",
+"e": "N",
+"n": "Employer is responsible only for the data listed in 5.1 (immutable data, intended purposes, test criteria, data the Contractor cannot verify). Errors there can support a claim.",
+"r": "5.1",
+"t": "General Design Obligations",
+"v": 0
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Testing delayed by the Engineer or the Employer’s Personnel.",
+"r": "7.4",
+"t": "Testing by the Contractor",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes: (a) Variation; (b) a cause giving EOT under another Sub-Clause; (c) delay, impediment or prevention by the Employer or other contractors. Climatic and epidemic causes are not listed; check your Particular Conditions.",
+"r": "8.5",
+"t": "Extension of Time for Completion",
+"v": 0
+},
+{
+"c": "authority",
+"e": "T",
+"n": "Unforeseeable delay or disruption by public authorities after the Contractor followed their procedures.",
+"r": "8.6",
+"t": "Delays Caused by Authorities",
+"v": 1
+},
+{
+"c": "suspension",
+"e": "TCP",
+"n": "Delay or Cost from complying with a suspension instructed under 8.9.",
+"r": "8.10",
+"t": "Consequences of Employer’s Suspension",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer takes over or uses part of the Works before the Taking-Over Certificate.",
+"r": "10.2",
+"t": "Taking Over Parts",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Employer’s Personnel prevent Tests on Completion for more than 14 days.",
+"r": "10.3",
+"t": "Interference with Tests on Completion",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Searching for the cause of a defect the Contractor is not liable for.",
+"r": "11.8",
+"t": "Contractor to Search",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer unreasonably delays Tests after Completion.",
+"r": "12.2",
+"t": "Delayed Tests after Completion",
+"v": 0
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer delays access needed to investigate a failure.",
+"r": "12.4",
+"t": "Failure to Pass Tests after Completion",
+"v": 0
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Valued under 13.3.1 (no re-measurement), with time under 8.5(a).",
+"r": "13.3",
+"t": "Variation Procedure",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Change in Laws, permits or their interpretation after the Base Date.",
+"r": "13.6",
+"t": "Adjustments for Changes in Laws",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Price adjustment by the Schedule(s) of cost indexation, if included.",
+"r": "13.7",
+"t": "Adjustments for Changes in Cost",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges at 3% above the central-bank discount rate, compounded monthly; no Notice or Clause 20 claim needed.",
+"r": "14.8",
+"t": "Delayed Payment",
+"v": 1
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "After at least 21 days’ Notice, if the Engineer fails to certify, the Employer fails to pay, or fails to show its financial arrangements.",
+"r": "16.1",
+"t": "Suspension by Contractor",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Value of work done, demobilisation Cost, and loss of profit or other losses.",
+"r": "16.4",
+"t": "Payment after Termination by Contractor",
+"v": 0
+},
+{
+"c": "risk",
+"e": "TCp",
+"n": "Rectifying loss or damage caused by a risk at the Employer’s charge. Check which events also carry profit.",
+"r": "17.2",
+"t": "Liability for Care of the Works",
+"v": 0
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Separate notice within 14 days (18.2). Cost only for events in 18.1(a)–(e), and for (b)–(e) only if they occur in the Country.",
+"r": "18.4",
+"t": "Consequences of an Exceptional Event",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Performance becomes impossible or unlawful.",
+"r": "18.6",
+"t": "Release from Performance under the Law",
+"v": 0
+}
+],
+"detRef": "3.5",
+"ed": "2017",
+"fam": "fidic",
+"name": "Silver Book",
+"pay": {
+"certify": null,
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of Claim",
+"r": "20.2.1"
+},
+{
+"d": 14,
+"f": "after the Notice",
+"k": "lateResp",
+"l": "{A} objection to a late Notice",
+"r": "20.2.2"
+},
+{
+"bar": 1,
+"d": 84,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed Claim",
+"n": "The time bar attaches to the statement of contractual or legal basis.",
+"r": "20.2.4"
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final fully detailed Claim",
+"r": "20.2.6"
+},
+{
+"d": 42,
+"f": "after the detailed Claim",
+"k": "agreement",
+"l": "Consultation to agree",
+"r": "3.5.3"
+},
+{
+"d": 42,
+"f": "after the agreement window",
+"k": "determination",
+"l": "{A} determination",
+"r": "3.5.3"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the determination",
+"k": "nodDet",
+"l": "NOD on the determination",
+"r": "3.5.5"
+},
+{
+"bar": 1,
+"d": 42,
+"f": "after the NOD",
+"k": "referDab",
+"l": "Refer Dispute to the DAAB",
+"r": "21.4.1"
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "DAAB decision",
+"r": "21.4.3"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the decision",
+"k": "nodBoard",
+"l": "NOD on the DAAB decision",
+"r": "21.4.4"
+},
+{
+"d": 28,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "21.5"
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Exceptional Event notice",
+"r": "18.2"
+},
+{
+"d": 56,
+"f": "after the Employer receives the Statement",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "14.7(b)"
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "16.1"
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "16.2.1(c)"
+}
+],
+"proc": "p17",
+"title": "Conditions of Contract for EPC/Turnkey Projects, 2nd ed.",
+"use": "EPC turnkey. Ground risk with the Contractor; the Employer’s Representative determines claims."
+},
+"silver99": {
+"admin": "Employer",
+"board": "DAB",
+"claimRef": "20.1",
+"clauses": [
+{
+"c": "access",
+"e": "TCP",
+"n": "Employer fails to give access to or possession of the Site within the stated time.",
+"r": "2.1",
+"t": "Right of Access to the Site",
+"v": 1
+},
+{
+"c": "ground",
+"e": "N",
+"n": "The Contractor accepts the risk of unforeseeable difficulties and costs. No adjustment unless the Particular Conditions change this.",
+"r": "4.12",
+"t": "Unforeseeable Difficulties",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Archaeological or geological finds.",
+"r": "4.24",
+"t": "Fossils",
+"v": 1
+},
+{
+"c": "info",
+"e": "N",
+"n": "The Employer is responsible only for the data listed in 5.1 (immutable data, intended purposes, test criteria, data the Contractor cannot verify). Errors there can support a claim.",
+"r": "5.1",
+"t": "General Design Obligations",
+"v": 0
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Testing delayed by the Employer.",
+"r": "7.4",
+"t": "Testing",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes: (a) Variation; (b) a delay cause under another Sub-Clause; (c) delay, impediment or prevention by the Employer, its Personnel or other contractors.",
+"r": "8.4",
+"t": "Extension of Time for Completion",
+"v": 0
+},
+{
+"c": "authority",
+"e": "T",
+"n": "Unforeseeable delay by public authorities.",
+"r": "8.5",
+"t": "Delays Caused by Authorities",
+"v": 1
+},
+{
+"c": "suspension",
+"e": "TC",
+"n": "Employer instructs a suspension that is not the Contractor’s fault.",
+"r": "8.9",
+"t": "Consequences of Suspension",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Employer prevents Tests on Completion for more than 14 days.",
+"r": "10.3",
+"t": "Interference with Tests on Completion",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Searching for a defect cause the Contractor is not liable for.",
+"r": "11.8",
+"t": "Contractor to Search",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer unreasonably delays Tests after Completion.",
+"r": "12.2",
+"t": "Delayed Tests (after Completion)",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer delays access needed to investigate a failure.",
+"r": "12.4",
+"t": "Failure to Pass Tests after Completion",
+"v": 1
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Variations valued under 13.3; time under 8.4(a).",
+"r": "13.3",
+"t": "Variation Procedure",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Change in the Laws of the Country after the Base Date.",
+"r": "13.7",
+"t": "Adjustments for Changes in Legislation",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Price adjustment, if the Contract includes it.",
+"r": "13.8",
+"t": "Adjustments for Changes in Cost",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges on late payment.",
+"r": "14.8",
+"t": "Delayed Payment",
+"v": 1
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "After at least 21 days’ notice, if the Employer fails to pay or show its financial arrangements.",
+"r": "16.1",
+"t": "Contractor’s Entitlement to Suspend Work",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "After termination by the Contractor.",
+"r": "16.4",
+"t": "Payment on Termination",
+"v": 1
+},
+{
+"c": "risk",
+"e": "C",
+"n": "Losses covered by the Employer’s indemnity.",
+"r": "17.1",
+"t": "Indemnities",
+"v": 1
+},
+{
+"c": "risk",
+"e": "TCp",
+"n": "Loss or damage from an Employer’s risk in 17.3.",
+"r": "17.4",
+"t": "Consequences of Employer’s Risks",
+"v": 1
+},
+{
+"c": "risk",
+"e": "C",
+"n": "Employer fails to take out an insurance it must provide.",
+"r": "18.1",
+"t": "General Requirements for Insurances",
+"v": 1
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Separate notice within 14 days (19.2). Cost only for certain events.",
+"r": "19.4",
+"t": "Consequences of Force Majeure",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Prolonged Force Majeure.",
+"r": "19.6",
+"t": "Optional Termination, Payment and Release",
+"v": 1
+}
+],
+"detRef": "3.5",
+"ed": "1999",
+"fam": "fidic",
+"name": "Silver Book",
+"pay": {
+"certify": null,
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of claim",
+"r": "20.1"
+},
+{
+"d": 42,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed claim",
+"r": "20.1"
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final claim, continuing effect",
+"r": "20.1"
+},
+{
+"d": 42,
+"f": "after the detailed claim",
+"k": "response",
+"l": "{A} response",
+"r": "20.1"
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "{B} decision",
+"r": "20.4"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the {B} decision",
+"k": "nodBoard",
+"l": "Notice of dissatisfaction",
+"r": "20.4"
+},
+{
+"d": 56,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "20.5"
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Force Majeure notice",
+"r": "19.2"
+},
+{
+"d": 56,
+"f": "after the Employer receives the Statement",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "14.7(b)"
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "16.1"
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "16.2(c)"
+}
+],
+"proc": "p99",
+"title": "Conditions of Contract for EPC/Turnkey Projects",
+"use": "EPC turnkey. The Contractor carries ground risk; claims go to the Employer."
+},
+"yellow17": {
+"admin": "Engineer",
+"board": "DAAB",
+"claimRef": "20.2",
+"clauses": [
+{
+"c": "info",
+"e": "TCP",
+"n": "Error in the Employer’s Requirements or items of reference that an experienced contractor using due care would not have found when scrutinising them under 5.1.",
+"r": "1.9",
+"t": "Errors in the Employer’s Requirements",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TCP",
+"n": "Employer delays or fails to obtain the permits, permissions or approvals it is responsible for.",
+"r": "1.13",
+"t": "Compliance with Laws",
+"v": 0
+},
+{
+"c": "access",
+"e": "TCP",
+"n": "Employer fails to give access to or possession of the Site within the time in the Contract Data.",
+"r": "2.1",
+"t": "Right of Access to the Site",
+"v": 1
+},
+{
+"c": "variation",
+"e": "V",
+"n": "An instruction to co-operate with others that an experienced contractor could not have foreseen at the Base Date is a Variation.",
+"r": "4.6",
+"t": "Co-operation",
+"v": 0
+},
+{
+"c": "info",
+"e": "TCP",
+"n": "Errors in the items of reference that an experienced contractor could not reasonably have found (4.7.3).",
+"r": "4.7",
+"t": "Setting Out",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Notice as soon as practicable so the Engineer can inspect before the conditions are disturbed. The Engineer may consider more favourable conditions met elsewhere.",
+"r": "4.12",
+"t": "Unforeseeable Physical Conditions",
+"v": 1
+},
+{
+"c": "access",
+"e": "TC",
+"n": "Access route becomes unsuitable or unavailable because of changes by the Employer or a third party after the Base Date.",
+"r": "4.15",
+"t": "Access Route",
+"v": 0
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Fossils, coins or archaeological and geological items found on the Site.",
+"r": "4.23",
+"t": "Archaeological and Geological Findings",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Testing delayed by the Engineer or the Employer’s Personnel.",
+"r": "7.4",
+"t": "Testing by the Contractor",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes: (a) Variation; (b) a cause giving EOT under another Sub-Clause; (c) exceptionally adverse climatic conditions; (d) Unforeseeable shortages from epidemic or governmental actions; (e) delay, impediment or prevention by the Employer, its Personnel or other contractors. Concurrent delay follows the Special Provisions, if any.",
+"r": "8.5",
+"t": "Extension of Time for Completion",
+"v": 1
+},
+{
+"c": "authority",
+"e": "T",
+"n": "Unforeseeable delay or disruption by public authorities after the Contractor followed their procedures.",
+"r": "8.6",
+"t": "Delays Caused by Authorities",
+"v": 1
+},
+{
+"c": "suspension",
+"e": "TCP",
+"n": "Delay or Cost from complying with a suspension instructed under 8.9.",
+"r": "8.10",
+"t": "Consequences of Employer’s Suspension",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer takes over or uses part of the Works before the Taking-Over Certificate.",
+"r": "10.2",
+"t": "Taking Over Parts",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Employer’s Personnel prevent Tests on Completion for more than 14 days.",
+"r": "10.3",
+"t": "Interference with Tests on Completion",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Searching for the cause of a defect the Contractor is not liable for.",
+"r": "11.8",
+"t": "Contractor to Search",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer unreasonably delays Tests after Completion.",
+"r": "12.2",
+"t": "Delayed Tests after Completion",
+"v": 0
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer delays access needed to investigate a failure.",
+"r": "12.4",
+"t": "Failure to Pass Tests after Completion",
+"v": 0
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Valued under 13.3.1 (no re-measurement), with time under 8.5(a).",
+"r": "13.3",
+"t": "Variation Procedure",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Change in Laws, permits or their interpretation after the Base Date.",
+"r": "13.6",
+"t": "Adjustments for Changes in Laws",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Price adjustment by the Schedule(s) of cost indexation, if included.",
+"r": "13.7",
+"t": "Adjustments for Changes in Cost",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges at 3% above the central-bank discount rate, compounded monthly; no Notice or Clause 20 claim needed.",
+"r": "14.8",
+"t": "Delayed Payment",
+"v": 1
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "After at least 21 days’ Notice, if the Engineer fails to certify, the Employer fails to pay, or fails to show its financial arrangements.",
+"r": "16.1",
+"t": "Suspension by Contractor",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Value of work done, demobilisation Cost, and loss of profit or other losses.",
+"r": "16.4",
+"t": "Payment after Termination by Contractor",
+"v": 0
+},
+{
+"c": "risk",
+"e": "TCp",
+"n": "Rectifying loss or damage caused by a risk at the Employer’s charge. Check which events also carry profit.",
+"r": "17.2",
+"t": "Liability for Care of the Works",
+"v": 0
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Separate notice within 14 days (18.2). Cost only for events in 18.1(a)–(e), and for (b)–(e) only if they occur in the Country.",
+"r": "18.4",
+"t": "Consequences of an Exceptional Event",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Performance becomes impossible or unlawful.",
+"r": "18.6",
+"t": "Release from Performance under the Law",
+"v": 0
+}
+],
+"detRef": "3.7",
+"ed": "2017",
+"fam": "fidic",
+"name": "Yellow Book",
+"pay": {
+"certify": "certify",
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of Claim",
+"r": "20.2.1"
+},
+{
+"d": 14,
+"f": "after the Notice",
+"k": "lateResp",
+"l": "{A} objection to a late Notice",
+"r": "20.2.2"
+},
+{
+"bar": 1,
+"d": 84,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed Claim",
+"n": "The time bar attaches to the statement of contractual or legal basis.",
+"r": "20.2.4"
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final fully detailed Claim",
+"r": "20.2.6"
+},
+{
+"d": 42,
+"f": "after the detailed Claim",
+"k": "agreement",
+"l": "Consultation to agree",
+"r": "3.7.3"
+},
+{
+"d": 42,
+"f": "after the agreement window",
+"k": "determination",
+"l": "{A} determination",
+"r": "3.7.3"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the determination",
+"k": "nodDet",
+"l": "NOD on the determination",
+"r": "3.7.5"
+},
+{
+"bar": 1,
+"d": 42,
+"f": "after the NOD",
+"k": "referDab",
+"l": "Refer Dispute to the DAAB",
+"r": "21.4.1"
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "DAAB decision",
+"r": "21.4.3"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the decision",
+"k": "nodBoard",
+"l": "NOD on the DAAB decision",
+"r": "21.4.4"
+},
+{
+"d": 28,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "21.5"
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Exceptional Event notice",
+"r": "18.2"
+},
+{
+"d": 28,
+"f": "after the Statement",
+"k": "certify",
+"l": "Interim Payment Certificate",
+"r": "14.6"
+},
+{
+"d": 56,
+"f": "after the Statement is received",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "14.7(b)"
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "16.1"
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "16.2.1(c)"
+}
+],
+"proc": "p17",
+"title": "Conditions of Contract for Plant and Design-Build, 2nd ed.",
+"use": "Contractor design to the Employer’s Requirements; lump sum."
+},
+"yellow99": {
+"admin": "Engineer",
+"board": "DAB",
+"claimRef": "20.1",
+"clauses": [
+{
+"c": "info",
+"e": "TCP",
+"n": "Error in the Employer’s Requirements that an experienced contractor using due care would not have found when scrutinising them under 5.1.",
+"r": "1.9",
+"t": "Errors in the Employer’s Requirements",
+"v": 1
+},
+{
+"c": "access",
+"e": "TCP",
+"n": "Employer fails to give access to or possession of the Site within the time stated in the Contract.",
+"r": "2.1",
+"t": "Right of Access to the Site",
+"v": 1
+},
+{
+"c": "info",
+"e": "TCP",
+"n": "Errors in the original points, lines or levels of reference that an experienced contractor could not reasonably have found.",
+"r": "4.7",
+"t": "Setting Out",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Notice as soon as practicable, describing the conditions. The Engineer may also review more favourable conditions met elsewhere.",
+"r": "4.12",
+"t": "Unforeseeable Physical Conditions",
+"v": 1
+},
+{
+"c": "ground",
+"e": "TC",
+"n": "Archaeological or geological finds; follow the Engineer’s instructions.",
+"r": "4.24",
+"t": "Fossils",
+"v": 1
+},
+{
+"c": "info",
+"e": "V",
+"n": "Errors found in the Employer’s Requirements within the scrutiny period in the Appendix to Tender can lead to a Variation.",
+"r": "5.1",
+"t": "General Design Obligations",
+"v": 0
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Testing delayed by the Engineer or Employer, or on their behalf.",
+"r": "7.4",
+"t": "Testing",
+"v": 1
+},
+{
+"c": "delay",
+"e": "T",
+"n": "Causes: (a) a Variation; (b) a delay cause under another Sub-Clause; (c) exceptionally adverse climatic conditions; (d) Unforeseeable shortages from epidemic or governmental actions; (e) delay, impediment or prevention by the Employer, its Personnel or other contractors.",
+"r": "8.4",
+"t": "Extension of Time for Completion",
+"v": 1
+},
+{
+"c": "authority",
+"e": "T",
+"n": "Public authorities in the Country cause Unforeseeable delay after the Contractor followed their procedures.",
+"r": "8.5",
+"t": "Delays Caused by Authorities",
+"v": 1
+},
+{
+"c": "suspension",
+"e": "TC",
+"n": "Engineer instructs a suspension under 8.8 that is not the Contractor’s fault.",
+"r": "8.9",
+"t": "Consequences of Suspension",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer takes over or uses part of the Works before the Taking-Over Certificate.",
+"r": "10.2",
+"t": "Taking Over of Parts of the Works",
+"v": 1
+},
+{
+"c": "testing",
+"e": "TCP",
+"n": "Employer prevents Tests on Completion for more than 14 days.",
+"r": "10.3",
+"t": "Interference with Tests on Completion",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Searching for the cause of a defect the Contractor is not liable for.",
+"r": "11.8",
+"t": "Contractor to Search",
+"v": 1
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer unreasonably delays Tests after Completion.",
+"r": "12.2",
+"t": "Delayed Tests (after Completion)"
+},
+{
+"c": "testing",
+"e": "CP",
+"n": "Employer delays access needed to investigate a failure or carry out adjustments.",
+"r": "12.4",
+"t": "Failure to Pass Tests after Completion"
+},
+{
+"c": "variation",
+"e": "VT",
+"n": "Variations are valued under 13.3 (no BoQ re-measurement) and give time under 8.4(a).",
+"r": "13.3",
+"t": "Variation Procedure",
+"v": 1
+},
+{
+"c": "authority",
+"e": "TC",
+"n": "Change in the Laws of the Country, or their official interpretation, after the Base Date.",
+"r": "13.7",
+"t": "Adjustments for Changes in Legislation",
+"v": 1
+},
+{
+"c": "escalation",
+"e": "R",
+"n": "Price adjustment formula and indices in the Appendix to Tender, if included.",
+"r": "13.8",
+"t": "Adjustments for Changes in Cost",
+"v": 1
+},
+{
+"c": "payment",
+"e": "F",
+"n": "Financing charges compounded monthly at 3% above the central-bank discount rate; due without formal notice or certification.",
+"r": "14.8",
+"t": "Delayed Payment",
+"v": 1
+},
+{
+"c": "payment",
+"e": "TCP",
+"n": "After at least 21 days’ notice, if the Engineer fails to certify (14.6), the Employer fails to pay (14.7) or fails to show its financial arrangements (2.4).",
+"r": "16.1",
+"t": "Contractor’s Entitlement to Suspend Work",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "After termination by the Contractor under 16.2: value of work, removal Cost, and loss of profit or other loss.",
+"r": "16.4",
+"t": "Payment on Termination",
+"v": 1
+},
+{
+"c": "risk",
+"e": "C",
+"n": "Losses covered by the Employer’s indemnity.",
+"r": "17.1",
+"t": "Indemnities",
+"v": 1
+},
+{
+"c": "risk",
+"e": "TCp",
+"n": "Loss or damage from an Employer’s risk in 17.3. Profit only for 17.3(f) and (g).",
+"r": "17.4",
+"t": "Consequences of Employer’s Risks",
+"v": 1
+},
+{
+"c": "risk",
+"e": "C",
+"n": "Employer fails to take out an insurance it must provide; recover the premium.",
+"r": "18.1",
+"t": "General Requirements for Insurances",
+"v": 1
+},
+{
+"c": "weather",
+"e": "Tc",
+"n": "Separate notice within 14 days (19.2). Cost only for events in 19.1(i)–(iv), and for (ii)–(iv) only if they occur in the Country.",
+"r": "19.4",
+"t": "Consequences of Force Majeure",
+"v": 1
+},
+{
+"c": "termination",
+"e": "X",
+"n": "Force Majeure stops progress for 84 continuous days, or more than 140 days in total from the same notified event.",
+"r": "19.6",
+"t": "Optional Termination, Payment and Release",
+"v": 1
+}
+],
+"detRef": "3.5",
+"ed": "1999",
+"fam": "fidic",
+"name": "Yellow Book",
+"pay": {
+"certify": "certify",
+"payBase": "statement",
+"termBase": "payDue"
+},
+"periods": [
+{
+"bar": 1,
+"d": 28,
+"f": "after becoming aware",
+"k": "notice",
+"l": "Notice of claim",
+"r": "20.1"
+},
+{
+"d": 42,
+"f": "after becoming aware",
+"k": "detailed",
+"l": "Fully detailed claim",
+"r": "20.1"
+},
+{
+"d": 28,
+"f": "after the effect ends",
+"k": "finalClaim",
+"l": "Final claim, continuing effect",
+"r": "20.1"
+},
+{
+"d": 42,
+"f": "after the detailed claim",
+"k": "response",
+"l": "{A} response",
+"r": "20.1"
+},
+{
+"d": 84,
+"f": "after referral",
+"k": "boardDecision",
+"l": "{B} decision",
+"r": "20.4"
+},
+{
+"bar": 1,
+"d": 28,
+"f": "after the {B} decision",
+"k": "nodBoard",
+"l": "Notice of dissatisfaction",
+"r": "20.4"
+},
+{
+"d": 56,
+"f": "after the NOD, before arbitration",
+"k": "amicable",
+"l": "Amicable settlement period",
+"r": "20.5"
+},
+{
+"d": 14,
+"f": "after becoming aware",
+"k": "fmNotice",
+"l": "Force Majeure notice",
+"r": "19.2"
+},
+{
+"d": 28,
+"f": "after the Statement",
+"k": "certify",
+"l": "Interim Payment Certificate",
+"r": "14.6"
+},
+{
+"d": 56,
+"f": "after the Statement is received",
+"k": "pay",
+"l": "Payment of certified amount",
+"r": "14.7(b)"
+},
+{
+"d": 21,
+"f": "minimum notice",
+"k": "suspendNotice",
+"l": "Notice before suspending work",
+"r": "16.1"
+},
+{
+"d": 42,
+"f": "after payment falls due",
+"k": "terminatePay",
+"l": "Termination right for non-payment",
+"r": "16.2(c)"
+}
+],
+"proc": "p99",
+"title": "Conditions of Contract for Plant and Design-Build",
+"use": "Contractor designs to the Employer’s Requirements; lump sum. Typical for E&M and hydro-mechanical packages."
+}
+},
+"BOOK_GROUPS": [
+[
+"FIDIC 1999 suite",
+[
+"red99",
+"yellow99",
+"silver99"
+]
+],
+[
+"FIDIC MDB Harmonised",
+[
+"mdb10"
+]
+],
+[
+"FIDIC 2017 suite",
+[
+"red17",
+"yellow17",
+"silver17"
+]
+],
+[
+"FIDIC specialist & short form",
+[
+"emerald19",
+"gold08",
+"green21"
+]
+],
+[
+"Nepal PPMO",
+[
+"ppmo_ncb",
+"ppmo_sq"
+]
+],
+[
+"Other",
+[
+"custom"
+]
+]
+],
+"CATS": {
+"access": {
+"ev": [
+"Joint site handover record showing what was and was not handed over",
+"Land acquisition, forest clearance or permit status letters",
+"Your written requests for access, with dates",
+"List of activities blocked and the date each could start"
+],
+"n": "Site access & possession"
+},
+"authority": {
+"ev": [
+"The new law, gazette notice or authority order, with its date",
+"Permit applications and follow-up letters",
+"Proof the change came after the Base Date",
+"Cost difference calculation"
+],
+"n": "Authorities, permits & law"
+},
+"delay": {
+"ev": [
+"Accepted baseline programme",
+"Time-impact analysis (fragnet) for this event",
+"Updated programme showing the critical path",
+"Record of concurrent delays, yours and theirs"
+],
+"n": "Delay & extension of time"
+},
+"escalation": {
+"ev": [
+"Base and current price indices with their sources",
+"Adjustment formula and weightings from the contract",
+"Calculation for each payment period"
+],
+"n": "Price adjustment"
+},
+"ground": {
+"ev": [
+"Dated copy of the tender site data, geotechnical report or GBR you relied on",
+"Joint geological face mapping or rock classification signed by both sides",
+"Support classes and quantities used compared with the tender",
+"Probe holes, boreholes and test results",
+"Independent view on what an experienced contractor could have foreseen"
+],
+"n": "Ground & physical conditions"
+},
+"info": {
+"ev": [
+"RFI and drawing register with request and receipt dates",
+"Prior notice saying what was needed and by when",
+"Programme showing the date each drawing was needed",
+"Drawing revisions and transmittals"
+],
+"n": "Drawings, instructions & information"
+},
+"payment": {
+"ev": [
+"Statement submission with the date it was received",
+"Certification and payment dates from the bank",
+"Financing-charge calculation",
+"Notice of intention to suspend, if used"
+],
+"n": "Payment & certification"
+},
+"quantity": {
+"ev": [
+"Joint measurement sheets",
+"BoQ quantity compared with measured quantity",
+"Unit-cost analysis showing the change",
+"Original tender rate build-up"
+],
+"n": "Quantities & rates"
+},
+"risk": {
+"ev": [
+"Notice of the loss or damage",
+"Photos and survey of the damage",
+"Insurance correspondence",
+"Rectification cost records"
+],
+"n": "Employer’s risks, care of works & insurance"
+},
+"suspension": {
+"ev": [
+"Suspension instruction or your suspension notice",
+"Records of protection and storage measures",
+"Standby labour and plant records",
+"Demobilisation and remobilisation costs"
+],
+"n": "Suspension"
+},
+"termination": {
+"ev": [
+"Default and termination notices with dates",
+"Valuation of work done and goods on site",
+"Demobilisation and loss calculations"
+],
+"n": "Termination"
+},
+"testing": {
+"ev": [
+"Test requests and notices to attend",
+"Test results and attendance records",
+"Taking-over requests and the Employer’s use of parts",
+"Investigation records showing the defect was not yours"
+],
+"n": "Testing, taking over & defects"
+},
+"variation": {
+"ev": [
+"Written instruction or variation order",
+"Your written confirmation of any oral instruction",
+"Letter stating you treat the instruction as a variation",
+"Quantity and rate build-up for the valuation",
+"PPMO contracts: approval by the authority required under PPA s.54"
+],
+"n": "Variations & instructions"
+},
+"weather": {
+"ev": [
+"DHM or site rain-gauge and river-flow data",
+"Historical comparison showing the conditions were exceptional",
+"Separate 14-day notice of the force majeure or exceptional event",
+"Log of working days lost and photos of damage"
+],
+"n": "Climate, force majeure & exceptional events"
+}
+},
+"COMMON_EV": [
+[
+"n1",
+"Notice issued within the contract period and receipt acknowledged"
+],
+[
+"n2",
+"Site diary entry made on the day"
+],
+[
+"n3",
+"Dated, located photos or video"
+],
+[
+"n4",
+"Raised at a progress meeting and minuted"
+],
+[
+"n5",
+"Labour, plant and idle-plant records for the affected period"
+],
+[
+"n6",
+"Costs booked to a separate cost code"
+],
+[
+"n7",
+"Mitigation steps recorded"
+]
+],
+"DESIGN": [
+"yellow99",
+"silver99",
+"yellow17",
+"silver17",
+"emerald19",
+"gold08"
+],
+"ENT": {
+"A": "Time & price ±",
+"C": "Cost",
+"F": "Financing charges",
+"N": "No entitlement",
+"P": "Profit",
+"R": "Price adjustment",
+"T": "Time",
+"V": "Variation value",
+"X": "Termination payment",
+"c": "Cost (some)",
+"p": "Profit (some)"
+},
+"EPC": [
+"silver99",
+"silver17"
+],
+"LET_TYPES": [
+"Letter",
+"Notice",
+"Instruction",
+"RFI",
+"Submission",
+"Claim",
+"Determination",
+"Minutes",
+"Other"
+],
+"PROC": {
+"p17": [
+{
+"base": "aware",
+"crit": 1,
+"f": "fmNotice",
+"id": "fm",
+"k": [
+"fmNotice"
+],
+"l": "Exceptional Event notice",
+"nt": "A separate notice from the Notice of Claim.",
+"onlyCat": "weather",
+"who": "c"
+},
+{
+"bar": "notice",
+"base": "aware",
+"f": "notice",
+"id": "notice",
+"k": [
+"notice"
+],
+"l": "Notice of Claim",
+"nt": "Mark the letter as a Notice (Sub-Clause 1.3).",
+"ref": "notice",
+"who": "c"
+},
+{
+"base": "notice",
+"id": "lateResp",
+"k": [
+"lateResp"
+],
+"kind": "info",
+"l": "{A} must object to a late Notice",
+"nt": "If the {A} does not object in time, the Notice is treated as valid.",
+"onlyIfLate": 1,
+"who": "a"
+},
+{
+"bar": "detailed",
+"base": "aware",
+"f": "detailed",
+"id": "detailed",
+"k": [
+"detailed"
+],
+"l": "Fully detailed Claim",
+"nt": "The statement of contractual or legal basis is time-barred. With continuing effect, send interim claims monthly.",
+"ref": "detailed",
+"who": "c"
+},
+{
+"base": "endEffects",
+"cont": 1,
+"f": "final",
+"id": "final",
+"k": [
+"finalClaim"
+],
+"l": "Final fully detailed Claim",
+"who": "c"
+},
+{
+"base": "detailed",
+"id": "agree",
+"k": [
+"agreement"
+],
+"kind": "info",
+"l": "Agreement window ends",
+"who": "a"
+},
+{
+"base": "detailed",
+"deem": 1,
+"f": "response",
+"id": "response",
+"k": [
+"agreement",
+"determination"
+],
+"l": "{A} determination",
+"nt": "If none is given in time, the claim is treated as rejected.",
+"ref": "response",
+"who": "a"
+},
+{
+"bar": "nodDet",
+"base": "response",
+"disp": 1,
+"f": "nod1",
+"id": "nod1",
+"k": [
+"nodDet"
+],
+"l": "NOD on the determination",
+"nt": "Otherwise the determination becomes final and binding.",
+"who": "e"
+},
+{
+"bar": "referDab",
+"base": "nod1",
+"disp": 1,
+"f": "referral",
+"id": "referral",
+"k": [
+"referDab"
+],
+"l": "Refer Dispute to the {B}",
+"nt": "Otherwise the NOD lapses.",
+"who": "e"
+},
+{
+"base": "referral",
+"disp": 1,
+"f": "boardDecision",
+"id": "boardDecision",
+"k": [
+"boardDecision"
+],
+"l": "{B} decision",
+"who": "b"
+},
+{
+"bar": "nodBoard",
+"base": "boardDecision",
+"disp": 1,
+"f": "nod2",
+"id": "nod2",
+"k": [
+"nodBoard"
+],
+"l": "NOD on the {B} decision",
+"who": "e"
+},
+{
+"base": "nod2",
+"disp": 1,
+"f": "arbitration",
+"id": "arbitration",
+"k": [
+"amicable"
+],
+"kind": "earliest",
+"l": "Arbitration can start",
+"who": "e"
+}
+],
+"p99": [
+{
+"base": "aware",
+"crit": 1,
+"f": "fmNotice",
+"id": "fm",
+"k": [
+"fmNotice"
+],
+"l": "Force Majeure notice",
+"nt": "A separate notice from the claim notice.",
+"onlyCat": "weather",
+"who": "c"
+},
+{
+"bar": "notice",
+"base": "aware",
+"f": "notice",
+"id": "notice",
+"k": [
+"notice"
+],
+"l": "Notice of claim",
+"ref": "notice",
+"who": "c"
+},
+{
+"bar": "detailed",
+"base": "aware",
+"f": "detailed",
+"id": "detailed",
+"k": [
+"detailed"
+],
+"l": "Fully detailed claim",
+"nt": "With continuing effect, send interim particulars monthly.",
+"ref": "detailed",
+"who": "c"
+},
+{
+"base": "endEffects",
+"cont": 1,
+"f": "final",
+"id": "final",
+"k": [
+"finalClaim"
+],
+"l": "Final claim",
+"who": "c"
+},
+{
+"base": "detailed",
+"f": "response",
+"id": "response",
+"k": [
+"response"
+],
+"l": "{A} response",
+"ref": "response",
+"who": "a"
+},
+{
+"base": "response",
+"disp": 1,
+"f": "referral",
+"id": "referral",
+"k": null,
+"kind": "open",
+"l": "Refer dispute to the {B}",
+"who": "e"
+},
+{
+"base": "referral",
+"disp": 1,
+"f": "boardDecision",
+"id": "boardDecision",
+"k": [
+"boardDecision"
+],
+"l": "{B} decision",
+"who": "b"
+},
+{
+"bar": "nodBoard",
+"base": "boardDecision",
+"disp": 1,
+"f": "nod2",
+"id": "nod2",
+"k": [
+"nodBoard"
+],
+"l": "Notice of dissatisfaction",
+"nt": "Without it the decision becomes final and binding.",
+"who": "e"
+},
+{
+"base": "nod2",
+"disp": 1,
+"f": "arbitration",
+"id": "arbitration",
+"k": [
+"amicable"
+],
+"kind": "earliest",
+"l": "Arbitration can start",
+"who": "e"
+}
+],
+"pgreen": [
+{
+"base": "aware",
+"f": "notice",
+"id": "notice",
+"k": [
+"notice"
+],
+"l": "Notice of claim",
+"nt": "A time limit, not a time bar: late notice can reduce what you recover.",
+"ref": "notice",
+"who": "c"
+},
+{
+"base": "aware",
+"f": "detailed",
+"id": "detailed",
+"k": [
+"detailed"
+],
+"l": "Detailed claim",
+"ref": "detailed",
+"who": "c"
+},
+{
+"base": "detailed",
+"f": "response",
+"id": "response",
+"k": [
+"response"
+],
+"l": "{A} determination",
+"ref": "response",
+"who": "a"
+},
+{
+"base": "response",
+"disp": 1,
+"f": "referral",
+"id": "referral",
+"k": null,
+"kind": "open",
+"l": "Refer dispute to the {B}",
+"who": "e"
+},
+{
+"base": "referral",
+"disp": 1,
+"f": "boardDecision",
+"id": "boardDecision",
+"k": [
+"boardDecision"
+],
+"l": "{B} decision",
+"who": "b"
+},
+{
+"bar": "nodBoard",
+"base": "boardDecision",
+"disp": 1,
+"f": "nod2",
+"id": "nod2",
+"k": [
+"nodBoard"
+],
+"l": "Notice of dissatisfaction",
+"who": "e"
+},
+{
+"base": "nod2",
+"disp": 1,
+"f": "arbitration",
+"id": "arbitration",
+"k": [
+"amicable"
+],
+"kind": "earliest",
+"l": "Arbitration can start",
+"who": "e"
+}
+],
+"pppmo": [
+{
+"base": "aware",
+"f": "notice",
+"id": "notice",
+"k": [
+"earlyWarning"
+],
+"l": "Early warning / notice to the {A}",
+"nt": "Late notice reduces compensation to the extent it harms the Employer (GCC 43.4).",
+"ref": "notice",
+"who": "c"
+},
+{
+"base": "aware",
+"cap": "eotBefore",
+"f": "detailed",
+"id": "detailed",
+"k": [
+"ceSubmit"
+],
+"l": "Request the {A}’s decision with full supporting information",
+"nt": "Also send renewed performance security, insurance and advance-payment guarantee extensions and a revised programme.",
+"ref": "detailed",
+"who": "c"
+},
+{
+"base": "detailed",
+"f": "response",
+"id": "response",
+"k": [
+"pmDecision"
+],
+"l": "{A} decision on time and cost",
+"ref": "response",
+"who": "a"
+},
+{
+"base": "response",
+"disp": 1,
+"id": "amic",
+"k": [
+"amicable"
+],
+"kind": "info",
+"l": "Try to settle amicably",
+"who": "e"
+},
+{
+"base": "response",
+"crit": 1,
+"disp": 1,
+"f": "referral",
+"id": "referral",
+"k": [
+"referAdj"
+],
+"l": "Refer to the {B}",
+"who": "e"
+},
+{
+"base": "referral",
+"disp": 1,
+"f": "boardDecision",
+"id": "boardDecision",
+"k": [
+"adjDecision"
+],
+"l": "{B} decision",
+"who": "b"
+},
+{
+"bar": "referArb",
+"base": "boardDecision",
+"disp": 1,
+"f": "nod2",
+"id": "nod2",
+"k": [
+"referArb"
+],
+"l": "Refer to arbitration",
+"nt": "Otherwise the decision becomes final and binding.",
+"who": "e"
+},
+{
+"base": "nod2",
+"disp": 1,
+"f": "arbitration",
+"id": "arbitration",
+"k": null,
+"kind": "open",
+"l": "Arbitration under way (NEPCA / Arbitration Act 2055)",
+"who": "e"
+}
+]
+},
+"REC_TYPES": [
+"Letter",
+"Notice",
+"Site diary",
+"Photo / video",
+"Meeting minutes",
+"RFI",
+"Instruction",
+"Survey / measurement",
+"Test result",
+"Programme",
+"Cost record",
+"Other"
+],
+"SU": {
+"f17": [
+{
+"base": "loa",
+"d": 28,
+"id": "ps",
+"l": "Performance Security delivered",
+"ref": "4.2.1",
+"who": "c"
+},
+{
+"base": "loa",
+"d": 35,
+"id": "ca",
+"l": "Contract Agreement signed",
+"ref": "1.6",
+"who": "e"
+},
+{
+"base": "loa",
+"d": 28,
+"id": "daab",
+"l": "DAAB members appointed",
+"n": "Unless the Contract Data gives another date. Appoint it now, not when a dispute starts.",
+"ref": "21.1",
+"who": "e"
+},
+{
+"base": "loa",
+"d": 28,
+"id": "apg",
+"l": "Advance payment guarantee and advance Statement",
+"n": "No fixed period; send it with the Performance Security so the advance is not delayed.",
+"ref": "14.2",
+"v": 0,
+"who": "c"
+},
+{
+"base": "loa",
+"d": 42,
+"id": "comm",
+"kind": "info",
+"l": "Commencement Date at the latest",
+"n": "The Engineer gives at least 14 days’ Notice of the Commencement Date.",
+"ref": "8.1",
+"who": "a"
+},
+{
+"base": "commence",
+"d": 0,
+"id": "rep",
+"l": "Contractor’s Representative proposed",
+"n": "Before the Commencement Date.",
+"ref": "4.3",
+"who": "c"
+},
+{
+"base": "accessDate",
+"d": 0,
+"id": "access",
+"l": "Site access and possession",
+"n": "Record a joint handover. Late or partial access is a claim under 2.1.",
+"ref": "2.1",
+"who": "emp"
+},
+{
+"base": "n81",
+"d": 28,
+"id": "prog",
+"l": "Initial programme",
+"n": "Within 28 days after the Notice under 8.1. Show the critical path and logic links: the accepted programme is the baseline for every delay claim.",
+"ref": "8.3",
+"who": "c"
+},
+{
+"base": "commence",
+"d": 28,
+"id": "qm",
+"l": "Quality Management System",
+"ref": "4.9.1",
+"v": 0,
+"who": "c"
+},
+{
+"base": "commence",
+"d": 28,
+"id": "ins",
+"l": "Evidence of insurances",
+"n": "Period stated in the Contract Data.",
+"ref": "19.1",
+"v": 0,
+"who": "c"
+},
+{
+"base": "commence",
+"d": 42,
+"design": 1,
+"id": "er",
+"l": "Report errors found in the Employer’s Requirements",
+"n": "Period stated in the Contract Data.",
+"ref": "1.9 / 5.1",
+"v": 0,
+"who": "c"
+},
+{
+"base": "month1",
+"d": 7,
+"id": "rpt",
+"l": "First monthly progress report",
+"n": "Covers up to the end of the first calendar month after the Commencement Date.",
+"ref": "4.20",
+"who": "c"
+}
+],
+"f99": [
+{
+"base": "loa",
+"d": 28,
+"id": "ps",
+"l": "Performance Security delivered",
+"ref": "4.2",
+"who": "c"
+},
+{
+"base": "loa",
+"d": 28,
+"id": "ca",
+"l": "Contract Agreement signed",
+"ref": "1.6",
+"who": "e"
+},
+{
+"base": "loa",
+"d": 42,
+"id": "adv",
+"kind": "info",
+"l": "First advance instalment due",
+"n": "42 days after the Letter of Acceptance or 21 days after you deliver the Performance Security and advance guarantee, whichever is later.",
+"ref": "14.7(a)",
+"who": "e"
+},
+{
+"base": "loa",
+"d": 42,
+"id": "comm",
+"kind": "info",
+"l": "Commencement Date at the latest",
+"n": "The Engineer gives at least 7 days’ notice.",
+"ref": "8.1",
+"who": "a"
+},
+{
+"base": "commence",
+"d": 0,
+"id": "rep",
+"l": "Contractor’s Representative proposed",
+"n": "Before the Commencement Date.",
+"ref": "4.3",
+"who": "c"
+},
+{
+"base": "accessDate",
+"d": 0,
+"id": "access",
+"l": "Site access and possession",
+"n": "Record a joint handover. Late or partial access is a claim under 2.1.",
+"ref": "2.1",
+"who": "emp"
+},
+{
+"base": "dabDate",
+"d": 0,
+"id": "dab",
+"l": "DAB appointed",
+"n": "By the date in the Appendix to Tender.",
+"only": [
+"red99",
+"mdb10",
+"gold08"
+],
+"ref": "20.2",
+"v": 0,
+"who": "e"
+},
+{
+"base": "n81",
+"d": 28,
+"id": "prog",
+"l": "Programme",
+"n": "Within 28 days after the notice under 8.1. The accepted programme is the baseline for every delay claim.",
+"ref": "8.3",
+"who": "c"
+},
+{
+"base": "commence",
+"d": 28,
+"id": "ins",
+"l": "Evidence of insurances",
+"n": "Periods stated in the Appendix to Tender.",
+"ref": "18.1",
+"v": 0,
+"who": "c"
+},
+{
+"base": "commence",
+"d": 42,
+"design": 1,
+"id": "er",
+"l": "Report errors found in the Employer’s Requirements",
+"n": "Period stated in the Appendix to Tender.",
+"ref": "5.1",
+"v": 0,
+"who": "c"
+},
+{
+"base": "month1",
+"d": 7,
+"id": "rpt",
+"l": "First monthly progress report",
+"ref": "4.21",
+"who": "c"
+}
+],
+"green": [
+{
+"base": "loa",
+"d": 28,
+"id": "ps",
+"l": "Performance security (if required)",
+"ref": "Contract Data",
+"v": 0,
+"who": "c"
+},
+{
+"base": "accessDate",
+"d": 0,
+"id": "access",
+"l": "Site access",
+"ref": "Contract Data",
+"who": "emp"
+},
+{
+"base": "commence",
+"d": 14,
+"id": "prog",
+"l": "Programme",
+"ref": "Programme clause",
+"v": 0,
+"who": "c"
+},
+{
+"base": "commence",
+"d": 14,
+"id": "ins",
+"l": "Evidence of insurances",
+"ref": "Insurance clause",
+"v": 0,
+"who": "c"
+}
+],
+"ppmo": [
+{
+"base": "loi",
+"d": 7,
+"id": "complaint",
+"kind": "info",
+"l": "Complaint window after the notice of intent",
+"ref": "PPA s.27, s.47",
+"who": "e"
+},
+{
+"base": "loa",
+"d": 15,
+"id": "sign",
+"l": "Performance security furnished and contract signed",
+"n": "Missing it forfeits your bid security.",
+"ref": "PPA s.27(3)–(4)",
+"who": "c"
+},
+{
+"base": "loa",
+"d": 14,
+"id": "prog",
+"l": "Program to the Project Manager",
+"ref": "GCC (Program) / SCC",
+"v": 0,
+"who": "c"
+},
+{
+"base": "commence",
+"d": 0,
+"id": "ins",
+"l": "Insurance policies to the Project Manager",
+"n": "Before the Start Date.",
+"ref": "GCC (Insurance)",
+"v": 0,
+"who": "c"
+},
+{
+"base": "accessDate",
+"d": 0,
+"id": "access",
+"l": "Site possession",
+"n": "Late possession is a compensation event (GCC 43.1(a)).",
+"ref": "SCC",
+"who": "emp"
+},
+{
+"base": "advDate",
+"d": 30,
+"id": "advStart",
+"l": "Start work after the first advance",
+"n": "Advance up to 20%, first instalment at most half; keep it in a separate account and report its use.",
+"ref": "PPA s.52A",
+"who": "c"
+},
+{
+"base": null,
+"id": "adj",
+"l": "Adjudicator confirmed",
+"n": "Named in the SCC; if not agreed, NEPCA appoints.",
+"ref": "SCC / GCC 25",
+"who": "e"
+}
+],
+"ppmo_sq": [
+{
+"base": "loa",
+"d": 7,
+"id": "sign",
+"l": "Contract signed with 5% performance security",
+"ref": "PPR r.84(12)",
+"who": "c"
+},
+{
+"base": "accessDate",
+"d": 0,
+"id": "access",
+"l": "Site possession",
+"ref": "SCC",
+"who": "emp"
+},
+{
+"base": "commence",
+"d": 0,
+"id": "ins",
+"l": "Insurance before starting",
+"ref": "GCC (Insurance)",
+"v": 0,
+"who": "c"
+}
+]
+},
+"SU_PRACTICE": [
+[
+"reg",
+"Notice register set up: every notice numbered and dated, with proof of receipt"
+],
+[
+"diary",
+"Daily site diary and photo log format agreed with the site team"
+],
+[
+"base",
+"Baseline programme accepted, or your submission on record"
+],
+[
+"codes",
+"Cost codes ready to isolate the cost of each claim event"
+],
+[
+"corr",
+"Correspondence rules: who signs, who receives, addresses for notices"
+],
+[
+"brief",
+"Site and office team briefed on this contract’s notice periods and time bars"
+],
+[
+"tender",
+"Tender assumptions, clarifications and site-visit records filed: they prove what was foreseeable"
+],
+[
+"setup",
+"Contract Data and Particular Conditions entered under Contract & conditions"
+]
+]
+}

@@ -1,0 +1,11 @@
+Z1 PASS  events (1), logsheets (27) and books identical after start-up and the register  (0.0s)
+Z2 PASS  sheet 1: 2 -> 3 days after a DPR; approved sheet kept 3 days with 1 waiting; reopened 4 days  (0.1s)
+Z3 PASS  Ashoj 2083 = 2026-09-17..2026-10-17; EX-01 sheets {2: (2, 13.0), 1: (0, 0.0)}; days total 2.0; machine days without a sheet: ['RL-01', 'TP-01']  (0.0s)
+Z4 PASS  plain DPR line -> bucket 6 h / 50 m3 (work on the DPR 40); bucket+breaker DPR unchanged; log_tools rows unchanged (0)  (0.1s)
+Z5 PASS  event EVT/2083-84/0002 kept through two revisions (classic and smart form), no duplicate  (0.1s)
+Z6 PASS  untouched EVT/2083-84/0002 removed with its task (1) closed; EVT/2083-84/0003 with a notice sent kept and listed  (0.1s)
+Z7 PASS  lost link restored to EVT/2083-84/0002; duplicate 3 listed as a second copy and removed; EVT/2083-84/0002 and the hand-made event kept  (0.1s)
+Z8 PASS  trial balance, stock, suppliers, VAT and vouchers identical  (0.1s)
+Z9 PASS  6 h x 4620.0 = 27720.0 on the DPR's own site-resources voucher (2 lines), no extra attachment voucher  (0.0s)
+Z10 PASS  viewer reads, cannot tidy; BLDG check does not list ROAD's EVT/2083-84/0002  (0.1s)
+10 of 10 passed

@@ -1,0 +1,9 @@
+.env
+.env.local
+.vercel
+__pycache__/
+*.pyc
+tools/dev_storage_data/
+node_modules/
+*.db
+!tests/**/*.db

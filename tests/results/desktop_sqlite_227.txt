@@ -1,0 +1,18 @@
+W1 PASS  13 weeks from 2026-10-12; opening 32696057.2 = cash and bank in the ledger; every week opens with the previous closing and closing = opening + in - out; 5 scenarios; books identical  (0.1s)
+W2 FAIL  AssertionError: {'kind': 'in', 'label': 'Overdue receivables (no promised date)', 'confidence': 'uncertain', 'values': [0.0, 0.0, 0.0, 0.0, 0.0, 4626535.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'items': [{'week': 6, 'date': '2026-11-16', 'amount': 4626535.0, 'ref': 'IPC/2083-84/0001 ROAD overdue since 2026-09-30', 'project_id': 3}], 'total': 4626535.0, 'confidence_label': 'Uncertain'}  (0.2s)
+    Traceback (most recent call last):
+      File "/home/claude/w/tks/tests227.py", line 344, in child
+        ev = globals()[name]()
+      File "/home/claude/w/tks/tests227.py", line 183, in W2
+        assert un["values"][wk(d, "2026-11-15")] == 4626535.0, un
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    AssertionError: {'kind': 'in', 'label': 'Overdue receivables (no promised date)', 'confidence': 'uncertain', 'values': [0.0, 0.0, 0.0, 0.0, 0.0, 4626535.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'items': [{'week': 6, 'date': '2026-11-16', 'amount': 4626535.0, 'ref': 'IPC/2083-84/0001 ROAD overdue since 2026-09-30', 'project_id': 3}], 'total': 4626535.0, 'confidence_label': 'Uncertain'}
+    
+W3 PASS  supplier bills 7176140.0 owed in week 1 = open bills; approved request of 1,000,000 moves to 20 Nov; a request in the chain is likely; total payments unchanged by requests  (0.4s)
+W4 PASS  3 loan instalments (10 Nov, 10 Dec, 10 Jan) and 7 equipment instalments in 13 weeks; a requested instalment is taken out of the schedule line  (0.1s)
+W5 PASS  reserve 2,000,000 and margin money 5,000,000 (Nov-Dec only) taken off; with an escrow equal to the lowest balance the first funding gap is week 8, largest 5919522.79; bad entries refused  (0.2s)
+W6 PASS  cumulative receipts with 15/30/45-day delays never ahead of the base; 10% overrun raises future costs 25887633 -> 28144945; closings {'base': 15087681, 'd15': 5137058, 'd30': 5137058, 'd45': 2413497, 'o10': 12830370}; bad scenarios refused  (0.4s)
+W7 PASS  a confirmed overdraft drawdown of 10,000,000 lands on 5 Nov and is not delayed by the scenarios; 4 bad items refused; delete removes it; project manager can view but not edit; project-assigned users refused  (0.3s)
+W8 PASS  snapshot saved; only the 1,000,000 receipt entered after it counts as week 1 actual (1000000.0 in, 0.0 out, forecast 0.0), actual closing = saved opening + actual movement; later weeks wait for actuals  (0.1s)
+W9 PASS  trial balance, stock, suppliers, VAT and vouchers identical after items, restricted funds, settings, every scenario and a snapshot  (0.4s)
+8 of 9 passed
