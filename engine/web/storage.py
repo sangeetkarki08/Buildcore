@@ -22,11 +22,16 @@ def configured():
 
 
 def _base():
-    return (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
+    u = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").strip().rstrip("/")
+    # the address is often copied from Supabase's Data API page with /rest/v1 on the end
+    for tail in ("/rest/v1", "/storage/v1"):
+        if u.endswith(tail):
+            u = u[:-len(tail)]
+    return u
 
 
 def _key():
-    return os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_SECRET_KEY") or ""
+    return (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_SECRET_KEY") or "").strip()
 
 
 def _req(method, path, body=None, headers=None, raw=False, timeout=120):

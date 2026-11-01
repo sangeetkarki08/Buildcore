@@ -26,6 +26,7 @@ from urllib.parse import parse_qs, quote, urlparse
 from web import pgsqlite, storage
 
 _LOCAL = threading.local()
+_GATE = threading.BoundedSemaphore(max(1, int(os.environ.get("BCO_MAX_PARALLEL") or 3)))
 
 
 def main_path():
@@ -566,13 +567,17 @@ def make_handler(server):
                 rest = "&".join("%s=%s" % (k, quote(v, safe="")) for k, vs in qs.items() for v in vs)
                 self.path = p + ("?" + rest if rest else "")
 
+        # Requests of one company run one after the other anyway (the company lock), so running many at once in
+        # one server copy only uses up database connections (Supabase free plan: 15 in all). A few at a time.
         def do_GET(self):
             self._fix_path()
-            return super().do_GET()
+            with _GATE:
+                return super().do_GET()
 
         def do_POST(self):
             self._fix_path()
-            return super().do_POST()
+            with _GATE:
+                return super().do_POST()
 
         def allowed(self):
             return True

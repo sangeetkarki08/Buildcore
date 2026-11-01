@@ -963,9 +963,34 @@ def _dsn():
 DSN_FOR_PATH = None      # tests: a separate database per data folder
 
 
+MAX_IDLE = int(os.environ.get("BCO_PG_IDLE") or 2)          # open connections kept per server copy, ready for reuse
+IDLE_SECONDS = float(os.environ.get("BCO_PG_IDLE_SECONDS") or 60)
+
+
+def _too_many(e):
+    m = str(e)
+    return "EMAXCONN" in m or "max clients" in m or "too many clients" in m or "remaining connection slots" in m \
+        or "too many connections" in m
+
+
+def _drop_idle(dsn=None):
+    """close the connections this server copy keeps ready, to give their places back to the database"""
+    with _POOL_LOCK:
+        keys = [k for k in _POOL if dsn is None or k == dsn]
+        gone = [pg for k in keys for pg, _t in _POOL.pop(k, [])]
+    for pg in gone:
+        try:
+            pg.close()
+        except Exception:
+            pass
+
+
 def _raw_connect(dsn=None):
+    # Supabase's free plan allows 15 connections at the same time through its pooler. When they are all in
+    # use (other requests running at that moment), wait a little and try again instead of failing at once.
     last = None
-    for attempt in range(3):
+    wait = 0.3
+    for attempt in range(10):
         try:
             pg = psycopg.connect(dsn or _dsn(), autocommit=True, cursor_factory=ClientCursor, prepare_threshold=None,
                                  connect_timeout=15)
@@ -973,20 +998,36 @@ def _raw_connect(dsn=None):
             return pg
         except psycopg.OperationalError as e:
             last = e
+            if _too_many(e):
+                _drop_idle()
+                time.sleep(wait)
+                wait = min(wait * 1.6, 3.0)
+                continue
+            if attempt >= 2:
+                break
             time.sleep(0.5 * (attempt + 1))
+    if last is not None and _too_many(last):
+        raise OperationalError("The database is busy: all its connections are in use (Supabase free plan: 15 at a "
+                               "time). Wait a moment and try again.")
     raise OperationalError("Cannot reach the database: %s" % last)
 
 
 def _get_pg(dsn):
-    """Reuse open PostgreSQL connections (serverless instances keep them between requests)."""
-    key = (threading.get_ident(), dsn)
+    """Reuse open PostgreSQL connections (a serverless copy keeps a few between requests). One pool per server
+    copy, shared by its threads: each request thread takes a connection for itself and gives it back."""
+    now = time.time()
     while True:
         with _POOL_LOCK:
-            lst = _POOL.get(key)
-            pg = lst.pop() if lst else None
-        if pg is None:
+            lst = _POOL.get(dsn)
+            item = lst.pop() if lst else None
+        if item is None:
             return _raw_connect(dsn)
-        if pg.closed:
+        pg, t = item
+        if pg.closed or now - t > IDLE_SECONDS:
+            try:
+                pg.close()
+            except Exception:
+                pass
             continue
         try:
             if pg.info.transaction_status != psycopg.pq.TransactionStatus.IDLE:
@@ -1000,12 +1041,12 @@ def _get_pg(dsn):
 
 
 def _put_pg(pg, dsn):
-    key = (threading.get_ident(), dsn)
-    with _POOL_LOCK:
-        lst = _POOL.setdefault(key, [])
-        if len(lst) < 3:
-            lst.append(pg)
-            return
+    if not pg.closed:
+        with _POOL_LOCK:
+            lst = _POOL.setdefault(dsn, [])
+            if len(lst) < MAX_IDLE:
+                lst.append((pg, time.time()))
+                return
     try:
         pg.close()
     except Exception:
