@@ -16,4 +16,6 @@ server = boot.start()
 
 from web.webpatch import make_handler  # noqa: E402
 
-handler = make_handler(server)
+_WebHandler = make_handler(server)
+class handler(_WebHandler):
+    pass
