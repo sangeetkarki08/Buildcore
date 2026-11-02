@@ -827,6 +827,7 @@ def comp_summary(c, u, a):
         x["ac"] += f["ac"]
         x["eac"] += f["eac"]
         x["forecast_revenue"] += f["forecast_revenue"]
+        x["no_forecast_revenue"] = x.get("no_forecast_revenue", 0.0) + (f.get("no_forecast_revenue") or 0)
         for act in q(c, "SELECT * FROM activities WHERE boq_item_id=?", (bid,)):
             x["planned_value_rev"] += (act["planned_qty"] or 0) * P.planned_fraction(act, asof) * rate
             x["activity_ids"].add(act["id"])
@@ -861,8 +862,9 @@ def comp_summary(c, u, a):
         x["weighted_progress"] = round(x["progress_pct"] * x["weight_pct"] / 100, 2)
         x["cpi"] = round(x["ev"] / x["ac"], 2) if x["ac"] > EPS and x["ev"] else None
         x["spi"] = round(x["ev"] / x["pv"], 2) if x["pv"] > EPS else None
-        x["forecast_margin"] = r2(x["forecast_revenue"] - x["eac"])
-        x["forecast_margin_pct"] = round(100 * x["forecast_margin"] / x["forecast_revenue"], 1) if x["forecast_revenue"] else None
+        covered = x["forecast_revenue"] - x.get("no_forecast_revenue", 0.0)    # items with no cost forecast left out
+        x["forecast_margin"] = r2(covered - x["eac"])
+        x["forecast_margin_pct"] = round(100 * x["forecast_margin"] / covered, 1) if covered > EPS else None
         x["unbilled_done"] = r2(x["done_value"] - x["billed_value"])
         x["status"] = ("late" if (x["late_days"] or 0) > 0 or x["progress_gap"] < -5 else "on track") if rv else ""
         for k in ("contract_amount", "revised_amount", "done_value", "planned_value_rev", "measured_value", "billed_value", "certified_value",

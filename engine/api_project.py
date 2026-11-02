@@ -774,6 +774,10 @@ def boq_figures(c, b, asof):
     rem = max(rq - ex, 0)
     etc = r2(rem * (auc if auc is not None else (ub or 0)))
     eac = r2(ac + etc)
+    # remaining work with neither a cost so far nor a budget (rate analysis) has no cost forecast: its value must
+    # not be counted as profit, or an item with no budget shows a 100% margin
+    basis = "actual" if auc is not None else ("budget" if ub and ub > EPS else "none")
+    no_fc = r2(rem * rate) if basis == "none" and rem > EPS else 0.0
     return {"id": b["id"], "code": b["code"], "description": b["description"], "unit": b["unit"],
             "wbs_id": b.get("wbs_id"), "location": b.get("location"), "contract_qty": b["qty"],
             "contract_rate": b["rate"], "contract_amount": r2(b["qty"] * b["rate"]), "revised_qty": r4(rq),
@@ -785,7 +789,9 @@ def boq_figures(c, b, asof):
             "cv": r2(ev - ac) if ev is not None else None, "sv": r2(ev - pv) if ev is not None else None,
             "cpi": round(ev / ac, 2) if ev is not None and ac > EPS else None,
             "spi": round(ev / pv, 2) if ev is not None and pv else None, "actual_unit_cost": auc, "etc": etc,
-            "eac": eac, "forecast_revenue": r2(rq * rate), "forecast_profit": r2(rq * rate - eac),
+            "eac": eac, "forecast_revenue": r2(rq * rate),
+            "forecast_profit": r2(rq * rate - no_fc - eac) if not no_fc else None,
+            "forecast_basis": basis, "no_forecast_revenue": no_fc,
             "unbilled_measured": r4(measured - billed)}
 
 
@@ -830,13 +836,17 @@ def project_evm(c, pid, asof):
     tender_cost = sum((r["contract_qty"] * r["unit_budget"]) for r in budgeted) + oh_budget
     tender_margin = round(100 * (contract_rev - tender_cost) / contract_rev, 1) if contract_rev and budgeted else None
     cur_margin = round(100 * (er - ac_total) / er, 1) if er else None
-    fc_margin = round(100 * (fr - eac) / fr, 1) if fr else None
+    no_fc = r2(sum(r["no_forecast_revenue"] for r in rows))
+    fr_cov = r2(fr - no_fc)                 # revenue with a cost forecast behind it
+    fc_margin = round(100 * (fr_cov - eac) / fr_cov, 1) if fr_cov > EPS else None
     return {"rows": rows, "contract_revenue": r2(contract_rev), "forecast_revenue": r2(fr), "earned_revenue": r2(er),
+            "forecast_revenue_covered": fr_cov, "no_forecast_revenue": no_fc,
+            "no_forecast_items": len([r for r in rows if r["no_forecast_revenue"]]),
             "progress_value_pct": round(100 * progress, 1), "bac": r2(bac + oh_budget), "pv": r2(pv), "ev": r2(ev),
             "ac": ac_total, "ac_boq": r2(ac_boq), "ac_unallocated": r2(other),
             "cpi": round(ev / ac_boq, 2) if ac_boq > EPS and budgeted else None,
             "spi": round(ev / pv, 2) if pv else None, "cv": r2(ev - ac_boq), "sv": r2(ev - pv),
-            "eac": eac, "etc": r2(eac - ac_total), "forecast_profit": r2(fr - eac),
+            "eac": eac, "etc": r2(eac - ac_total), "forecast_profit": r2(fr_cov - eac),
             "tender_margin": tender_margin, "current_margin": cur_margin, "forecast_margin": fc_margin,
             "margin_fade": round(tender_margin - fc_margin, 1) if tender_margin is not None and fc_margin is not None
             else None, "items_without_budget": len(rows) - len(budgeted), "committed": r2(inv_committed(c, pid))}

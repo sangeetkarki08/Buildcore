@@ -515,10 +515,14 @@ def boq_figures2(c, b, asof):
     rem = max((r["revised_qty"] or 0) - ex, 0)
     etc = r2(rem * (auc if auc is not None else (r["unit_budget"] or 0)))
     eac = r2(ac + etc)
+    ub = r["unit_budget"]
+    basis = "actual" if auc is not None else ("budget" if ub and ub > EPS else "none")
+    no_fc = r2(rem * (r["revised_rate"] or 0)) if basis == "none" and rem > EPS else 0.0
     r.update({"ac": ac, "actual_unit_cost": auc, "etc": etc, "eac": eac,
               "cv": r2(r["ev"] - ac) if r["ev"] is not None else None,
               "cpi": round(r["ev"] / ac, 2) if r["ev"] is not None and ac > EPS else None,
-              "forecast_profit": r2((r["forecast_revenue"] or 0) - eac)})
+              "forecast_basis": basis, "no_forecast_revenue": no_fc,
+              "forecast_profit": r2((r["forecast_revenue"] or 0) - no_fc - eac) if not no_fc else None})
     return r
 
 
@@ -546,10 +550,16 @@ def project_evm2(c, pid, asof):
         ev["ac_unallocated"] = r2(ev["ac_unallocated"] + d)
         ev["eac"] = r2(ev["eac"] + d)
     ev["etc"] = r2(ev["eac"] - ev["ac"])
-    fr, er = ev["forecast_revenue"], ev["earned_revenue"]
+    er = ev["earned_revenue"]
+    # only revenue with a cost forecast behind it counts towards forecast profit (items with no budget and no cost
+    # yet are listed as "no forecast", not taken as 100% profit)
+    no_fc = r2(sum(r.get("no_forecast_revenue") or 0 for r in ev["rows"]))
+    fr = r2(ev["forecast_revenue"] - no_fc)
+    ev["no_forecast_revenue"], ev["forecast_revenue_covered"] = no_fc, fr
+    ev["no_forecast_items"] = len([r for r in ev["rows"] if r.get("no_forecast_revenue")])
     ev["forecast_profit"] = r2(fr - ev["eac"])
     ev["current_margin"] = round(100 * (er - ev["ac"]) / er, 1) if er else None
-    ev["forecast_margin"] = round(100 * (fr - ev["eac"]) / fr, 1) if fr else None
+    ev["forecast_margin"] = round(100 * (fr - ev["eac"]) / fr, 1) if fr > EPS else None
     tm = ev.get("tender_margin")
     ev["margin_fade"] = round(tm - ev["forecast_margin"], 1) if tm is not None and ev["forecast_margin"] is not None else None
     ac_boq = r2(sum(r["ac"] for r in ev["rows"]))
