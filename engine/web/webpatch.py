@@ -412,7 +412,9 @@ def _patch_reinit(server):
     def init_db(*a, **k):
         before = dict(FUNCS)
         try:
-            return orig(*a, **k)
+            result = orig(*a, **k)
+            _add_indexes(core)
+            return result
         finally:
             if state["done"]:
                 for name, entry in before.items():
@@ -420,6 +422,34 @@ def _patch_reinit(server):
             state["done"] = True
     core.init_db = init_db
     server.init_db = init_db
+
+
+_INDEXES = (
+    "CREATE INDEX IF NOT EXISTS ix_vl_project ON voucher_lines(project_id)",
+    "CREATE INDEX IF NOT EXISTS ix_v_project ON vouchers(project_id)",
+    "CREATE INDEX IF NOT EXISTS ix_vl_boq ON voucher_lines(boq_item_id)",
+    "CREATE INDEX IF NOT EXISTS ix_vl_act ON voucher_lines(activity_id)",
+)
+
+
+def _add_indexes(core):
+    """Speed: look-up indexes on voucher lines and vouchers in the current company. No data changes."""
+    try:
+        c = core.connect()
+    except Exception:
+        return
+    try:
+        for sql in _INDEXES:
+            try:
+                c.execute(sql)
+                c.commit()
+            except Exception:
+                try:
+                    c.rollback()
+                except Exception:
+                    pass
+    finally:
+        c.close()
 
 
 # ───────────────────────── backups and restore ─────────────────────────
