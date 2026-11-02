@@ -321,6 +321,30 @@ def price_history(c, u, a):
                 "ORDER BY g.date DESC LIMIT ?", (a["material_id"], int(a.get("limit") or 20)))
 
 
+@api("price.recent", "procurement", "view")
+def price_recent(c, u, a):
+    """Past purchase prices per material, for purchase requests and orders: from the posted GRNs of this project,
+    or of the other projects when this one has not bought the material yet. When every purchase was at the same
+    rate, that one price; otherwise the latest three purchases."""
+    pid = a.get("project_id")
+    rows = q(c, "SELECT l.material_id, l.rate, g.date, g.no, g.vendor_id, g.project_id FROM grn_lines l JOIN grn g ON "
+                "g.id=l.grn_id WHERE g.status='posted' AND l.rate>0 AND l.material_id IS NOT NULL ORDER BY g.date DESC, g.id DESC")
+    by = {}
+    for r in rows:
+        mine = pid and str(r["project_id"]) == str(pid)
+        by.setdefault(r["material_id"], {"project": [], "other": []})["project" if mine else "other"].append(r)
+    out = {}
+    for mid, x in by.items():
+        lst, here = (x["project"], True) if x["project"] else (x["other"], False)
+        rates = {r2(r["rate"]) for r in lst}
+        keep = lst[:1] if len(rates) == 1 else lst[:3]
+        out[str(mid)] = {"this_project": here, "same": len(rates) == 1, "purchases": len(lst),
+                         "latest": r2(lst[0]["rate"]),
+                         "prices": [{"rate": r2(r["rate"]), "date": r["date"], "no": r["no"], "vendor_id": r["vendor_id"]}
+                                    for r in keep]}
+    return out
+
+
 @api("vendor.performance", "procurement", "view")
 def vendor_performance(c, u, a):
     rows = q(c, "SELECT p.id, p.code, p.name FROM parties p WHERE p.kind IN ('vendor','subcontractor')")

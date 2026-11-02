@@ -1,6 +1,36 @@
 /* Procurement and accounts */
 "use strict";
 
+/* ── past purchase prices on purchase request and order lines ──
+   One price when every purchase of the material was at the same rate, otherwise the latest three;
+   from this project's posted GRNs, or the other projects' when this one has not bought it yet. */
+const PRICES = {};
+function loadPrices(pid) {
+  const k = String(pid || "");
+  if (!PRICES[k] || (PRICES[k].data && Date.now() - PRICES[k].t > 120000)) {      /* read again after 2 minutes */
+    PRICES[k] = { data: PRICES[k] ? PRICES[k].data : null, t: Date.now() };
+    api("price.recent", { project_id: pid || null }).then((d) => {
+      PRICES[k].data = d;
+      document.querySelectorAll(".modal tbody span").forEach((s) => { if (s._update) s._update(); });
+    }).catch(() => { PRICES[k].data = {}; });
+  }
+  return PRICES[k].data;
+}
+function pastPrice(pid, mid) {
+  const d = loadPrices(pid);
+  return d && mid ? d[String(mid)] || null : null;
+}
+function pastPriceText(pid, mid) {
+  if (!mid) return "";
+  const d = loadPrices(pid);
+  if (!d) return "…";
+  const p = d[String(mid)];
+  if (!p) return "not bought before";
+  const where = p.this_project ? "" : " (other projects)";
+  if (p.same) return fmtMoney(p.prices[0].rate) + (p.purchases > 1 ? " on all " + p.purchases + " purchases" : " (" + p.prices[0].date + ")") + where;
+  return p.prices.map((x) => fmtMoney(x.rate) + " (" + x.date + ")").join(" · ") + where;
+}
+
 /* ── purchase requests ── */
 const PR = {
   type: "pr", title: "Purchase requests", sub: "What the site needs to buy. Approved requests go to quotation comparison and then a purchase order.",
@@ -8,7 +38,7 @@ const PR = {
   cols: [{ k: "no", label: "No." }, { k: "date", label: "Date" }, { k: "required_by", label: "Needed by" }, { k: "priority", label: "Priority" }, { k: "source", label: "Source" }, { k: "status", label: "Status", fmt: "status" }],
   fixed: projFixed,
   header: () => [{ k: "date", label: "Date", type: "date", req: true }, { k: "required_by", label: "Needed by", type: "date" }, { k: "priority", label: "Priority", type: "select", noBlank: true, options: [["normal", "Normal"], ["urgent", "Urgent"]] }, { k: "remarks", label: "Justification", wide: true }],
-  lines: (d) => [{ k: "material_id", label: "Material", type: "select", options: opt.materials, w: 230, onChange: (r) => { const m = byId(S.L.materials, r.material_id); if (m) { r.description = r.description || m.name; r.unit = m.unit; r.est_rate = r.est_rate || m.standard_rate; } }, rerender: true }, { k: "description", label: "Description", w: 160 }, { k: "qty", label: "Qty", type: "number", w: 80 }, { k: "unit", label: "Unit", w: 60 }, { k: "est_rate", label: "Est. rate", type: "number", w: 90 }, { label: "Est. value", num: true, show: (r) => fmtMoney(r.qty * r.est_rate) }, { k: "boq_item_id", label: "BOQ item", type: "select", options: () => opt.boq(d.project_id || S.project), w: 170 }, { k: "ordered_qty", label: "Ordered", readonly: true, type: "number" }],
+  lines: (d) => (loadPrices(d.project_id || S.project), [{ k: "material_id", label: "Material", type: "select", options: opt.materials, w: 230, onChange: (r) => { const m = byId(S.L.materials, r.material_id); const p = pastPrice(d.project_id || S.project, r.material_id); if (m) { r.description = r.description || m.name; r.unit = m.unit; r.est_rate = r.est_rate || (p ? p.latest : m.standard_rate); } }, rerender: true }, { k: "description", label: "Description", w: 160 }, { k: "qty", label: "Qty", type: "number", w: 80 }, { k: "unit", label: "Unit", w: 60 }, { k: "est_rate", label: "Est. rate", type: "number", w: 90 }, { label: "Past prices", show: (r) => pastPriceText(d.project_id || S.project, r.material_id) }, { label: "Est. value", num: true, show: (r) => fmtMoney(r.qty * r.est_rate) }, { k: "boq_item_id", label: "BOQ item", type: "select", options: () => opt.boq(d.project_id || S.project), w: 170 }, { k: "ordered_qty", label: "Ordered", readonly: true, type: "number" }]),
   after: async (ctx) => {
     const b = await api("po.budget", { project_id: ctx.doc.project_id || S.project });
     if (b.budget) ctx.extra.append(h("div", { class: "panel" }, h("h2", {}, "Material budget check"), kv([["Budget", fmtMoney(b.budget)], ["Committed (open POs)", fmtMoney(b.committed)], ["Consumed", fmtMoney(b.actual)], ["In stock", fmtMoney(b.stock)], ["Available", h("b", { class: b.available < 0 ? "red" : "" }, fmtMoney(b.available))]])));
@@ -82,7 +112,7 @@ const PO = {
   defaults: () => ({ store_id: (S.L.stores.find((s) => String(s.project_id) === String(S.project) && s.type === "main") || {}).id, terms: S.L.settings.po_terms }),
   header: (d) => [{ k: "vendor_id", label: "Vendor", type: "select", options: () => opt.parties(["vendor", "subcontractor"]), req: true }, { k: "date", label: "PO date", type: "date", req: true }, { k: "delivery_date", label: "Deliver by", type: "date" }, { k: "store_id", label: "Deliver to store", type: "select", options: () => opt.stores(d.project_id || S.project), req: true }, { k: "payment_terms", label: "Payment terms" }, { k: "freight", label: "Freight (lump sum)", type: "number" }, { k: "terms", label: "Terms & conditions", type: "textarea", wide: true }, { k: "remarks", label: "Remarks", wide: true }],
   blank: () => ({ vat_rate: S.L.settings.vat_rate }),
-  lines: () => [{ k: "material_id", label: "Material", type: "select", options: opt.materials, w: 220, onChange: (r) => { const m = byId(S.L.materials, r.material_id); if (m) { r.description = r.description || m.name; r.unit = m.unit; } }, rerender: true }, { k: "description", label: "Description", w: 150 }, { k: "qty", label: "Qty", type: "number", w: 80 }, { k: "unit", label: "Unit", w: 55 }, { k: "rate", label: "Rate", type: "number", w: 90 }, { k: "vat_rate", label: "VAT %", type: "number", w: 60 }, { label: "Amount", num: true, show: (r) => fmtMoney(r.qty * r.rate) }, { k: "received_qty", label: "Received", readonly: true, type: "number" }],
+  lines: (d) => (loadPrices((d && d.project_id) || S.project), [{ k: "material_id", label: "Material", type: "select", options: opt.materials, w: 220, onChange: (r) => { const m = byId(S.L.materials, r.material_id); const p = pastPrice((d && d.project_id) || S.project, r.material_id); if (m) { r.description = r.description || m.name; r.unit = m.unit; if (!Number(r.rate) && p) r.rate = p.latest; } }, rerender: true }, { k: "description", label: "Description", w: 150 }, { k: "qty", label: "Qty", type: "number", w: 80 }, { k: "unit", label: "Unit", w: 55 }, { k: "rate", label: "Rate", type: "number", w: 90 }, { label: "Past prices", show: (r) => pastPriceText((d && d.project_id) || S.project, r.material_id) }, { k: "vat_rate", label: "VAT %", type: "number", w: 60 }, { label: "Amount", num: true, show: (r) => fmtMoney(r.qty * r.rate) }, { k: "received_qty", label: "Received", readonly: true, type: "number" }]),
   after: (ctx) => {
     const t = h("div", { class: "panel" });
     ctx.extra.append(t);
