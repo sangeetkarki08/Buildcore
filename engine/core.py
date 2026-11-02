@@ -601,7 +601,7 @@ def init_db():
         c.executescript(SCHEMA_PLANT)
         c.executescript(SCHEMA_LOG)
         # BuildCore 1.7+ modules (fixed assets, rates, schedule and control); each one is optional
-        for _m in ("api_fa", "api_ra", "api_sched", "api_res", "api_cash", "api_life", "api_adv", "api_books", "api_corp", "api_ai", "api_copilot", "api_site", "api_license", "api_decide", "api_safety", "api_field", "api_hire", "api_cadmin", "api_grnimp", "api_insight", "api_procure", "api_workspace", "api_exec", "api_mgmt", "api_costlink", "api_udpr", "api_fc", "api_cfw", "api_ctc", "api_fcc", "api_logfix", "api_rgen", "api_logbs", "api_eqsum", "api_doclib", "api_claims", "api_dprmeter"):
+        for _m in ("api_fa", "api_ra", "api_sched", "api_res", "api_cash", "api_life", "api_adv", "api_books", "api_corp", "api_ai", "api_copilot", "api_site", "api_license", "api_decide", "api_safety", "api_field", "api_hire", "api_cadmin", "api_grnimp", "api_insight", "api_procure", "api_workspace", "api_exec", "api_mgmt", "api_costlink", "api_udpr", "api_fc", "api_cfw", "api_ctc", "api_fcc", "api_logfix", "api_rgen", "api_logbs", "api_eqsum", "api_doclib", "api_claims", "api_dprmeter", "api_agree"):
             try:
                 _mod = __import__(_m)
                 getattr(_mod, "init_" + _m[4:])(c)
