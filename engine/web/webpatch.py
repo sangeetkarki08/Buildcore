@@ -525,6 +525,112 @@ def _patch_setup():
     FUNCS["auth.setup"] = (auth_setup,) + tuple(f[1:])
 
 
+# ───────────────────────── forgotten passwords ─────────────────────────
+_PW_REQ = ("CREATE TABLE IF NOT EXISTS web_pw_requests(id INTEGER PRIMARY KEY, ts TEXT, username TEXT, name TEXT, "
+           "note TEXT, ip TEXT)")
+_KEY_TRIES = "~setup_key"      # wrong setup keys are counted in login_attempts under this name
+
+
+def _patch_forgot():
+    """Passwords are kept only as hashes, so a forgotten one cannot be shown: the person sets a new one.
+    Anyone who has the setup key from the Vercel settings (BCO_SETUP_KEY) can do that for any user, so even
+    the only administrator can get back in. Everyone else asks: the request waits in Administration > Users."""
+    from datetime import timedelta
+    from api_inventory import api
+    from core import ApiError, audit, hash_pw, ins, now, q, q1, setting
+
+    def find_user(c, name):
+        name = (name or "").strip().lower()
+        usr = q1(c, "SELECT * FROM users WHERE username=?", (name,))
+        if not usr and name:
+            byname = q(c, "SELECT * FROM users WHERE lower(trim(name))=?", (name,))
+            usr = byname[0] if len(byname) == 1 else None
+        return usr
+
+    def lock_minutes(c):
+        try:
+            return int(float(setting(c, "lock_minutes") or 10))
+        except ValueError:
+            return 10
+
+    @api("auth.reset_with_key", public=True)
+    def reset_with_key(c, u, a):
+        want = (os.environ.get("BCO_SETUP_KEY") or "").strip()
+        if not want:
+            raise ApiError("Resetting with the setup key is not available: BCO_SETUP_KEY is not set in Vercel. "
+                           "Ask an administrator instead.")
+        mins = lock_minutes(c)
+        since = (datetime.now() - timedelta(minutes=mins)).isoformat(timespec="seconds")
+        recent = q(c, "SELECT ok FROM login_attempts WHERE username=? AND ts>=? ORDER BY id DESC LIMIT 5",
+                   (_KEY_TRIES, since))
+        if len(recent) == 5 and not any(r["ok"] for r in recent):
+            raise ApiError("Too many wrong setup keys. Wait %d minutes and try again." % mins)
+        if not hmac.compare_digest(str(a.get("setup_key") or "").strip(), want):
+            ins(c, "login_attempts", {"ts": now(), "username": _KEY_TRIES, "ip": a.get("_ip"), "ok": 0})
+            c.commit()      # keep the record of the wrong key
+            raise ApiError("The setup key is not right. It is the value of BCO_SETUP_KEY in your Vercel settings.")
+        usr = find_user(c, a.get("username"))
+        if not usr:
+            raise ApiError("There is no user '%s' in this company. Check the company and the username."
+                           % (a.get("username") or "").strip())
+        pw = a.get("password") or ""
+        if len(pw) < 6:
+            raise ApiError("The new password needs at least 6 characters.")
+        h, s = hash_pw(pw)
+        c.execute("UPDATE users SET pw_hash=?, salt=? WHERE id=?", (h, s, usr["id"]))
+        c.execute("DELETE FROM sessions WHERE user_id=?", (usr["id"],))       # signed out everywhere
+        c.execute("DELETE FROM login_attempts WHERE username=?", (usr["username"],))
+        ins(c, "login_attempts", {"ts": now(), "username": _KEY_TRIES, "ip": a.get("_ip"), "ok": 1})
+        c.execute(_PW_REQ)
+        c.execute("DELETE FROM web_pw_requests WHERE username=?", (usr["username"],))
+        audit(c, usr, "password_reset", "users", usr["id"], {"how": "setup key", "ip": a.get("_ip")})
+        return {"username": usr["username"]}
+
+    @api("auth.reset_request", public=True)
+    def reset_request(c, u, a):
+        # the same answer whether or not the user exists, so nobody can find usernames this way
+        answer = {"sent": True}
+        usr = find_user(c, a.get("username"))
+        if not usr or not usr["active"]:
+            return answer
+        c.execute(_PW_REQ)
+        if q1(c, "SELECT id FROM web_pw_requests WHERE username=?", (usr["username"],)):
+            return answer
+        if (q1(c, "SELECT COUNT(*) n FROM web_pw_requests") or {}).get("n", 0) >= 50:
+            return answer
+        ins(c, "web_pw_requests", {"ts": now(), "username": usr["username"], "name": usr["name"],
+                                   "note": str(a.get("note") or "").strip()[:300], "ip": a.get("_ip")})
+        return answer
+
+    @api("web.pw_requests", "admin", "view")
+    def pw_requests(c, u, a):
+        c.execute(_PW_REQ)
+        return q(c, "SELECT r.id, r.ts, r.username, r.name, r.note, u.id user_id FROM web_pw_requests r "
+                    "LEFT JOIN users u ON u.username=r.username ORDER BY r.id")
+
+    @api("web.pw_request_done", "admin", "edit")
+    def pw_request_done(c, u, a):
+        """Set the new password the administrator chose (and unlock), or with no password just dismiss."""
+        c.execute(_PW_REQ)
+        req = q1(c, "SELECT * FROM web_pw_requests WHERE id=?", (int(a["id"]),))
+        if not req:
+            return True
+        pw = a.get("password")
+        if pw is not None:
+            usr = q1(c, "SELECT * FROM users WHERE username=?", (req["username"],))
+            if not usr:
+                raise ApiError("User '%s' no longer exists." % req["username"])
+            if len(pw) < 6:
+                raise ApiError("The new password needs at least 6 characters.")
+            h, s = hash_pw(pw)
+            c.execute("UPDATE users SET pw_hash=?, salt=? WHERE id=?", (h, s, usr["id"]))
+            c.execute("DELETE FROM sessions WHERE user_id=?", (usr["id"],))
+            c.execute("DELETE FROM login_attempts WHERE username=?", (usr["username"],))
+            audit(c, u, "password_reset", "users", usr["id"], {"how": "reset request"})
+        c.execute("DELETE FROM web_pw_requests WHERE id=?", (req["id"],))
+        return True
+
+
 # ───────────────────────── request handling ─────────────────────────
 def _wrap_call(server):
     import api_workspace
@@ -693,6 +799,7 @@ def before_init(server):
     _patch_backups(server)
     _patch_jobs()
     _patch_setup()
+    _patch_forgot()
     _patch_doclib()
     _patch_reinit(server)
     server.Handler.allowed = lambda self: True

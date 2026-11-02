@@ -4,6 +4,7 @@
  *  - restore sends the desktop data file the same way, then the server imports it
  *  - the first administrator needs the setup key from the Vercel settings
  *  - Backup & restore gets a step to bring the desktop's attachments (data\files folder) across
+ *  - Forgot password on the sign-in page; the requests it sends are listed in Administration › Users
  */
 (function () {
   "use strict";
@@ -133,5 +134,93 @@
     const panels = page.querySelectorAll(".panel");
     const last = panels[panels.length - 1];
     if (last && last.parentNode) last.parentNode.insertBefore(attachmentsPanel(), last.nextSibling);
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  /* Forgotten password: a new one is set with the setup key, or an administrator is asked */
+  async function tryApi(fn, args) {
+    try { return await api(fn, args); } catch (e) { toast(e.message, "err"); throw e; }
+  }
+  function forgotDialog(username) {
+    const field = (label, input) => h("label", { class: "f" }, h("span", {}, label), input);
+    const user = h("input", { autocomplete: "username", value: username || "" });
+    const key = h("input", { type: "password", autocomplete: "off" });
+    const p1 = h("input", { type: "password", autocomplete: "new-password", placeholder: "6 or more characters" });
+    const p2 = h("input", { type: "password", autocomplete: "new-password", placeholder: "type it again" });
+    const note = h("input", { placeholder: "optional, e.g. your phone number" });
+    const m = modal("Forgot password", h("div", {},
+      h("p", { class: "muted" }, "Passwords are stored scrambled, so nobody can look yours up. You set a new one instead."),
+      field("Username (or your full name)", user),
+      h("h4", {}, "I have the setup key"),
+      h("p", { class: "hint" }, "The value of BCO_SETUP_KEY in the Vercel project (Settings › Environment Variables). Usually only the owner has it."),
+      field("Setup key", key), field("New password", p1), field("New password again", p2),
+      h("h4", {}, "I don't have the setup key"),
+      h("p", { class: "hint" }, "Send a request. An administrator sees it in Administration › Users and sets a new password for you."),
+      field("Message for the administrator", note)), [
+      { label: "Ask an administrator", act: async () => {
+        if (!user.value.trim()) { toast("Type your username.", "err"); throw new Error("x"); }
+        await tryApi("auth.reset_request", { username: user.value.trim(), note: note.value });
+        toast("Request sent. An administrator will set a new password and tell you.");
+      } },
+      { label: "Set new password", cls: "primary", act: async () => {
+        if (!user.value.trim()) { toast("Type your username.", "err"); throw new Error("x"); }
+        if (!key.value.trim()) { toast("Enter the setup key, or use Ask an administrator.", "err"); throw new Error("x"); }
+        if (p1.value.length < 6) { toast("The new password needs at least 6 characters.", "err"); throw new Error("x"); }
+        if (p1.value !== p2.value) { toast("The two passwords are not the same.", "err"); throw new Error("x"); }
+        const r = await tryApi("auth.reset_with_key", { username: user.value.trim(), setup_key: key.value, password: p1.value });
+        toast("New password set for " + r.username + ". Sign in with it now.");
+        const u = document.querySelector(".auth input[name=u]");
+        if (u) u.value = r.username;
+      } }], { narrow: true });
+    return m;
+  }
+  const forgotSeen = new WeakSet();
+  new MutationObserver(() => {
+    const form = document.querySelector(".auth form.card");
+    if (!form || forgotSeen.has(form)) return;
+    const title = form.querySelector("h2");
+    const foot = form.querySelector(".foot");
+    if (!title || title.textContent !== "Sign in" || !foot) return;
+    forgotSeen.add(form);
+    const u = form.querySelector("input[name=u]");
+    foot.textContent = "";
+    foot.append(h("a", { href: "#", onclick: (e) => { e.preventDefault(); forgotDialog(u && u.value.trim()); } }, "Forgot password?"),
+      " Set a new one with the setup key, or ask an administrator.");
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  /* Administration › Users: requests from people who forgot their password */
+  function requestsPanel(rows) {
+    const box = h("div", { class: "panel", style: "margin-bottom:14px" }, h("h3", {}, "Password reset requests (" + rows.length + ")"),
+      h("p", { class: "hint" }, "These people forgot their password. Set a new one and tell them in person or by phone."));
+    for (const r of rows) {
+      const line = h("div", { class: "bar", style: "gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line, #ddd)" },
+        h("div", { class: "grow" }, h("b", {}, r.username), r.name ? " (" + r.name + ")" : "", " · " + String(r.ts || "").replace("T", " ").slice(0, 16),
+          r.note ? h("div", { class: "muted" }, r.note) : null, r.user_id ? null : h("div", { class: "muted" }, "This user no longer exists.")),
+        r.user_id ? h("button", { class: "btn small primary", onclick: () => {
+          const p1 = h("input", { type: "password", autocomplete: "new-password", placeholder: "6 or more characters" });
+          modal("New password for " + r.username, h("div", {}, h("label", { class: "f" }, h("span", {}, "New password"), p1),
+            h("p", { class: "hint" }, "This also unlocks the user and signs them out everywhere.")), [{ label: "Set password", cls: "primary", act: async () => {
+            if (p1.value.length < 6) { toast("The new password needs at least 6 characters.", "err"); throw new Error("x"); }
+            await tryApi("web.pw_request_done", { id: r.id, password: p1.value });
+            toast("New password set for " + r.username + ".");
+            line.remove();
+          } }], { narrow: true });
+        } }, "Set new password") : null,
+        h("button", { class: "btn small", onclick: async () => { await tryApi("web.pw_request_done", { id: r.id }); line.remove(); } }, "Dismiss"));
+      box.append(line);
+    }
+    return box;
+  }
+  const usersSeen = new WeakSet();
+  new MutationObserver(async () => {
+    if (!/#\/?admin\/users/.test(location.hash)) return;
+    const page = document.querySelector("#page");
+    const head = page && page.querySelector("h1");
+    if (!head || usersSeen.has(head)) return;
+    usersSeen.add(head);
+    let rows = [];
+    try { rows = await api("web.pw_requests", {}); } catch (e) { return; }
+    if (!rows.length || !head.isConnected) return;
+    const bar = head.closest(".bar") || head;
+    bar.parentNode.insertBefore(requestsPanel(rows), bar.nextSibling);
   }).observe(document.documentElement, { childList: true, subtree: true });
 })();
