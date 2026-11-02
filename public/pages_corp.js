@@ -177,7 +177,8 @@
     const btn = h("button", { class: "btn primary", type: "submit" }, "Sign in");
     app.append(h("div", { class: "auth" }, brandSide(st.company),
       h("form", { class: "card", onsubmit: (e) => { e.preventDefault(); submit(); } }, h("h2", {}, "Sign in"),
-        h("p", { class: "muted" }, st.company || ""), err, coField,
+        h("p", { class: "muted" }, st.company || ""), err, coField || h("p", { class: "hint", style: "margin:0 0 12px" },
+          "One company so far. To keep another company's books, an administrator adds it in Administration › Companies; then you choose the company here."),
         h("label", { class: "f" }, h("span", {}, "Username (or your full name)"), u), h("label", { class: "f" }, h("span", {}, "Password"), p.el), btn,
         h("div", { class: "foot" }, "Forgot the password? An administrator sets a new one in Administration › Users (and can unlock you after 5 wrong tries)."))));
     (u.value ? p.input : u).focus();

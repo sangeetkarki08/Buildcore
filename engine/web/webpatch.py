@@ -100,7 +100,7 @@ def _patch_companies():
     import api_corp
     api_corp._backup_loop = lambda: None      # Supabase keeps the database; backups are downloaded on request
     api_corp._watchdog = lambda: None
-    cache = {"t": 0, "v": None}
+    cache = _REG_CACHE
 
     def registry():
         if cache["v"] is not None and time.time() - cache["t"] < 10:
@@ -121,6 +121,34 @@ def _patch_companies():
         cache.update(t=time.time(), v=reg)
     api_corp.registry = registry
     api_corp.save_registry = save_registry
+
+    # Several server copies run at once, each with its own copy of the list. A company made a moment ago in another
+    # copy is not in this copy's list yet: read the list again rather than quietly opening the first company.
+    orig_find = api_corp._find
+
+    def _find(code):
+        if code and cache["v"] is not None and not any(x["code"] == code for x in cache["v"]["companies"]):
+            cache["t"] = 0
+        return orig_find(code)
+    api_corp._find = _find
+
+    f = inv_funcs().get("co.list")
+    if f and not getattr(f[0], "_web_fresh", False):
+        orig_list = f[0]
+
+        def co_list(c, u, a):
+            cache["t"] = 0                         # the sign-in screen always sees every company
+            return orig_list(c, u, a)
+        co_list._web_fresh = True
+        inv_funcs()["co.list"] = (co_list,) + tuple(f[1:])
+
+
+_REG_CACHE = {"t": 0, "v": None}
+
+
+def inv_funcs():
+    from api_inventory import FUNCS
+    return FUNCS
 
 
 # ───────────────────────── licence ─────────────────────────
