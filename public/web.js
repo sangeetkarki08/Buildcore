@@ -184,8 +184,49 @@
     const u = form.querySelector("input[name=u]");
     foot.textContent = "";
     foot.append(h("a", { href: "#", onclick: (e) => { e.preventDefault(); forgotDialog(u && u.value.trim()); } }, "Forgot password?"),
-      " Set a new one with the setup key, or ask an administrator.");
+      " Set a new one with the setup key, or ask an administrator.",
+      h("div", { style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--line, #ddd)" },
+        "Another company? ", h("a", { href: "#", onclick: (e) => { e.preventDefault(); signupDialog(); } }, "Set up a new company"),
+        " with its own books, projects and users."));
   }).observe(document.documentElement, { childList: true, subtree: true });
+
+  /* A new company from the sign-in page: for an office that has no company here yet (needs the company key) */
+  function signupDialog() {
+    const field = (label, input) => h("label", { class: "f" }, h("span", {}, label), input);
+    const inp = (o) => h("input", o || {});
+    const name = inp(), pan = inp(), addr = inp(), fy = inp({ placeholder: "e.g. 2083-84" }), fys = inp({ type: "date" });
+    const who = inp(), user = inp({ autocomplete: "off" });
+    const p1 = inp({ type: "password", autocomplete: "new-password", placeholder: "6 or more characters" });
+    const p2 = inp({ type: "password", autocomplete: "new-password", placeholder: "type it again" });
+    const key = inp({ type: "password", autocomplete: "off" });
+    modal("Set up a new company", h("div", {},
+      h("p", { class: "muted" }, "The new company starts empty, with its own books, stores, projects, users and fiscal years. Nothing is shared with the other companies here. You become its administrator."),
+      h("h4", {}, "Company"), field("Company name", name), h("div", { class: "grid" }, field("PAN", pan), field("Address", addr)),
+      h("div", { class: "grid" }, field("First fiscal year", fy), field("It starts on (AD, Shrawan 1)", fys)),
+      h("h4", {}, "Its administrator (you)"), field("Your full name", who), field("Username (you sign in with this)", user),
+      h("div", { class: "grid" }, field("Password", p1), field("Password again", p2)),
+      h("h4", {}, "Company key"),
+      h("p", { class: "hint" }, "Ask the person who runs this BuildCore. It stops anyone who finds this address from making companies."),
+      field("Company key", key)), [
+      { label: "Create the company", cls: "primary", act: async () => {
+        const bad = (m) => { toast(m, "err"); throw new Error("x"); };
+        if (!name.value.trim()) bad("Type the company name.");
+        if (!who.value.trim() || !user.value.trim()) bad("Type your full name and a username.");
+        if (p1.value.length < 6) bad("The password needs at least 6 characters.");
+        if (p1.value !== p2.value) bad("The two passwords are not the same.");
+        if (!key.value.trim()) bad("Enter the company key.");
+        const r = await tryApi("co.signup", { name: name.value, pan: pan.value, address: addr.value, fy: fy.value.trim(), fy_start: fys.value,
+          admin_name: who.value, username: user.value, password: p1.value, company_key: key.value });
+        try {
+          localStorage.setItem("bco_company", r.code);
+          localStorage.setItem("bco_last_user", r.username);
+          localStorage.removeItem("bco_token");
+        } catch (e) { /* private window */ }
+        document.cookie = "bco_co=" + r.code + "; path=/; max-age=31536000; SameSite=Lax";
+        toast(r.name + " is ready. Sign in with your new username and password.");
+        setTimeout(() => { location.hash = ""; location.reload(); }, 1200);
+      } }], {});
+  }
 
   /* Administration › Users: requests from people who forgot their password */
   function requestsPanel(rows) {

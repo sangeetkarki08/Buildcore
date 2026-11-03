@@ -589,6 +589,106 @@ _PW_REQ = ("CREATE TABLE IF NOT EXISTS web_pw_requests(id INTEGER PRIMARY KEY, t
 _KEY_TRIES = "~setup_key"      # wrong setup keys are counted in login_attempts under this name
 
 
+_CO_TRIES = "~company_key"      # wrong company keys are counted in login_attempts under this name
+
+
+def _patch_signup():
+    """A new company from the sign-in page, for an office that has no company here yet. It needs the company key
+    (BCO_COMPANY_KEY, or BCO_SETUP_KEY when that is not set), so nobody who merely finds the address can make one.
+    The new company starts empty, with the person who made it as its administrator; nothing is shared with the
+    other companies."""
+    from datetime import timedelta
+    import api_corp
+    from api_inventory import FUNCS, api
+    from core import ApiError, hash_pw, ins, now, q, setting
+
+    @api("co.signup", public=True)
+    def co_signup(c, u, a):
+        want = (os.environ.get("BCO_COMPANY_KEY") or os.environ.get("BCO_SETUP_KEY") or "").strip()
+        if not want:
+            raise ApiError("New companies cannot be made here yet: add BCO_SETUP_KEY in Vercel (Settings > Environment "
+                           "Variables) and redeploy.")
+        try:
+            mins = int(float(setting(c, "lock_minutes") or 10))
+        except ValueError:
+            mins = 10
+        since = (datetime.now() - timedelta(minutes=mins)).isoformat(timespec="seconds")
+        recent = q(c, "SELECT ok FROM login_attempts WHERE username=? AND ts>=? ORDER BY id DESC LIMIT 5", (_CO_TRIES, since))
+        if len(recent) == 5 and not any(r["ok"] for r in recent):
+            raise ApiError("Too many wrong company keys. Wait %d minutes and try again." % mins)
+        if not hmac.compare_digest(str(a.get("company_key") or "").strip(), want):
+            ins(c, "login_attempts", {"ts": now(), "username": _CO_TRIES, "ip": a.get("_ip"), "ok": 0})
+            c.commit()
+            raise ApiError("The company key is not right. Ask the person who runs this BuildCore for it.")
+        name = str(a.get("name") or "").strip()
+        admin_name = str(a.get("admin_name") or "").strip()
+        username = str(a.get("username") or "").strip().lower()
+        pw = str(a.get("password") or "")
+        if not name or not admin_name or not username:
+            raise ApiError("Fill in the company name, your full name and a username.")
+        if len(pw) < 6:
+            raise ApiError("The password needs at least 6 characters.")
+        reg = api_corp.registry()
+        if any((x.get("name") or "").strip().lower() == name.lower() for x in reg["companies"]):
+            raise ApiError("A company called %s is already here. Choose it on the sign-in page instead." % name)
+        code = base = api_corp._slug(name)
+        n = 2
+        while any(x["code"] == code for x in reg["companies"]):
+            code = "%s%d" % (base, n)
+            n += 1
+        reg["companies"].append({"code": code, "name": name, "dir": "companies/" + code, "created": now()})
+        api_corp.save_registry(reg)
+        src = api_corp.CUR["code"] or "main"
+        ok = False
+        try:
+            api_corp.switch(code)
+            k = core_connect()
+            try:
+                for key, v in (("company_name", name), ("company_pan", a.get("pan")), ("company_address", a.get("address"))):
+                    if v is not None:
+                        k.execute("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                                  (key, str(v).strip()))
+                if q(k, "SELECT id FROM users"):
+                    raise ApiError("This company already has users.")
+                h, s = hash_pw(pw)
+                uid = ins(k, "users", {"username": username, "name": admin_name, "pw_hash": h, "salt": s, "role": "admin",
+                                       "active": 1})
+                if "access" in {r[1] for r in k.execute("PRAGMA table_info(users)")}:
+                    k.execute("UPDATE users SET access='all' WHERE id=?", (uid,))
+                if a.get("fy") and a.get("fy_start") and "period.generate" in FUNCS:
+                    FUNCS["period.generate"][0](k, {"id": uid, "role": "admin", "name": admin_name}, {"fy": a["fy"], "start_date": a["fy_start"]})
+                k.commit()
+            finally:
+                k.close()
+            ok = True
+        finally:
+            api_corp.switch(src)
+            if not ok:
+                try:
+                    reg = api_corp.registry()
+                    reg["companies"] = [x for x in reg["companies"] if x["code"] != code]
+                    api_corp.save_registry(reg)
+                except Exception:
+                    pass
+        ins(c, "login_attempts", {"ts": now(), "username": _CO_TRIES, "ip": a.get("_ip"), "ok": 1})
+        return {"code": code, "name": name, "username": username}
+
+    f = FUNCS.get("web.info")
+    if f:
+        orig = f[0]
+
+        def web_info(c, u, a):
+            out = orig(c, u, a)
+            out["company_signup"] = bool(os.environ.get("BCO_COMPANY_KEY") or os.environ.get("BCO_SETUP_KEY"))
+            return out
+        FUNCS["web.info"] = (web_info,) + tuple(f[1:])
+
+
+def core_connect():
+    import core
+    return core.connect()
+
+
 def _patch_forgot():
     """Passwords are kept only as hashes, so a forgotten one cannot be shown: the person sets a new one.
     Anyone who has the setup key from the Vercel settings (BCO_SETUP_KEY) can do that for any user, so even
@@ -858,6 +958,7 @@ def before_init(server):
     _patch_jobs()
     _patch_setup()
     _patch_forgot()
+    _patch_signup()
     _patch_doclib()
     _patch_reinit(server)
     server.Handler.allowed = lambda self: True
