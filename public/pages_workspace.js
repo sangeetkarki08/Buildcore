@@ -207,7 +207,7 @@
       g[2].splice(after ? (i >= 0 ? i + 1 : g[2].length) : 0, 0, item.slice());
     });
     MENU.length = 0;
-    (window.bcoJobMenu ? window.bcoJobMenu(out) : out).forEach((g) => MENU.push(g));
+    out.forEach((g) => MENU.push(g));
     // permission filtering stays where it always was: renderNav checks each module right
   }
 

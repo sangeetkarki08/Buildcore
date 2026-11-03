@@ -177,10 +177,11 @@
     const btn = h("button", { class: "btn primary", type: "submit" }, "Sign in");
     app.append(h("div", { class: "auth" }, brandSide(st.company),
       h("form", { class: "card", onsubmit: (e) => { e.preventDefault(); submit(); } }, h("h2", {}, "Sign in"),
-        h("p", { class: "muted" }, st.company || ""), err, coField || h("p", { class: "hint", style: "margin:0 0 12px" },
-          "One company so far. To keep another company's books, an administrator adds it in Administration › Companies; then you choose the company here."),
+        h("p", { class: "muted" }, st.company || ""), err, coField,
         h("label", { class: "f" }, h("span", {}, "Username (or your full name)"), u), h("label", { class: "f" }, h("span", {}, "Password"), p.el), btn,
-        h("div", { class: "foot" }, "Forgot the password? An administrator sets a new one in Administration › Users (and can unlock you after 5 wrong tries)."))));
+        h("div", { class: "foot" }, window.bcoForgot ? [h("a", { href: "#", class: "forgotlink", onclick: (e) => { e.preventDefault(); window.bcoForgot({ username: u.value.trim(), company: st.company,
+          signIn: async (token, uname) => { S.token = token; LSset("bco_token", token); LSset("bco_last_user", uname); await start2(); } }); } }, "Forgot password?"), " "] : "Forgot the password? ",
+          "An administrator can also set a new one in Administration › Users (and unlock you after 5 wrong tries)."))));
     (u.value ? p.input : u).focus();
   }
 
@@ -277,6 +278,7 @@
         h("div", { class: "um-head" }, h("b", {}, S.user.name), h("span", {}, S.user.role.replace(/_/g, " ") + (S.user.location ? " · " + S.user.location : ""))),
         h("button", { onclick: () => { menu.hidden = true; switchCompanyDialog(); } }, "Switch company  (Alt+F3)"),
         h("button", { onclick: () => { menu.hidden = true; pwBtn.click(); } }, "Change password"),
+        window.bcoRecovery ? h("button", { onclick: () => { menu.hidden = true; window.bcoRecovery(); } }, "Password recovery code") : null,
         h("button", { onclick: () => { menu.hidden = true; if (typeof shortcutHelp === "function") shortcutHelp(); } }, "Keyboard keys  (F1)"),
         h("button", { class: "danger", onclick: () => outBtn.click() }, "Sign out"));
       const um = h("div", { class: "usermenu" }, h("button", { class: "avatar", title: S.user.name + " — " + S.user.role, onclick: (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; } }, initials), menu);
@@ -302,10 +304,12 @@
     const box = h("div", { class: "panel", style: "margin-top:14px" }, h("h3", {}, "Sign-in status"),
       table([{ k: "username", label: "Username" }, { k: "name", label: "Name" }, { k: "role", label: "Role" }, { k: "active", label: "Active", fmt: "yes" },
         { label: "Last sign-in", v: (r) => (r.last_login || "never").replace("T", " ").slice(0, 16) },
-        { label: "Wrong tries", v: (r) => r.failed || "" }, { label: "", v: (r) => r.locked || r.failed ? h("button", { class: "btn small primary", onclick: async (e) => { e.stopPropagation(); await run("adm.unlock", { id: r.id }, "Unlocked " + r.username); go(); } }, r.locked ? "Unlock" : "Clear tries") : "" }],
+        { label: "Wrong tries", v: (r) => r.failed || "" }, { label: "", v: (r) => r.locked || r.failed ? h("button", { class: "btn small primary", onclick: async (e) => { e.stopPropagation(); await run("adm.unlock", { id: r.id }, "Unlocked " + r.username); go(); } }, r.locked ? "Unlock" : "Clear tries") : "" },
+        { label: "Recovery code", v: (r) => r.recovery === undefined ? "" : (r.recovery ? "yes" : "—") + (r.reset_open ? " · reset code open" : "") },
+        { label: "", v: (r) => window.bcoResetCode && r.active ? h("button", { class: "btn small", title: "One-time code to choose a new password on the sign-in screen", onclick: (e) => { e.stopPropagation(); window.bcoResetCode(r); } }, "Reset code") : "" }],
       rows, { name: "users_signin", search: false, empty: "No users." }),
       h("p", { class: "hint" }, locked.length ? locked.length + " user(s) have wrong tries. After 5 wrong passwords a user is locked for the time set in Settings; Unlock clears it." :
-        "Users sign in with their username or full name. If someone cannot sign in, check the company, that the user is Active, and set a new password here."));
+        "Users sign in with their username or full name. If someone cannot sign in, check the company, that the user is Active, and set a new password here — or press Reset code so they choose their own on the sign-in screen (Forgot password?)."));
     root.append(box);
   };
   PAGES["admin/users"]._bco28 = true;

@@ -182,9 +182,10 @@
     if (!title || title.textContent !== "Sign in" || !foot) return;
     forgotSeen.add(form);
     const u = form.querySelector("input[name=u]");
-    foot.textContent = "";
-    foot.append(h("a", { href: "#", onclick: (e) => { e.preventDefault(); forgotDialog(u && u.value.trim()); } }, "Forgot password?"),
-      " Set a new one with the setup key, or ask an administrator.",
+    // BuildCore's own "Forgot password?" stays; the web adds the setup-key way and new companies below it
+    foot.append(h("div", { style: "margin-top:8px" }, "On the web: ",
+        h("a", { href: "#", onclick: (e) => { e.preventDefault(); forgotDialog(u && u.value.trim()); } }, "reset with the setup key"),
+        " or ask an administrator."),
       h("div", { style: "margin-top:10px;padding-top:10px;border-top:1px solid var(--line, #ddd)" },
         "Another company? ", h("a", { href: "#", onclick: (e) => { e.preventDefault(); signupDialog(); } }, "Set up a new company"),
         " with its own books, projects and users."));

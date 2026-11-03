@@ -105,8 +105,6 @@ def _project_rows(c, pid=None):
                     "cpi": ev.get("cpi"), "earned": ev.get("earned_revenue"), "cost": ev.get("ac"),
                     "bac": ev.get("bac"), "eac": ev.get("eac"), "cv": ev.get("cv"),
                     "forecast_profit": ev.get("forecast_profit"), "forecast_revenue": ev.get("forecast_revenue"), "forecast_margin": ev.get("forecast_margin"),
-                    "forecast_revenue_covered": ev.get("forecast_revenue_covered"), "no_forecast_revenue": ev.get("no_forecast_revenue"),
-                    "no_forecast_items": ev.get("no_forecast_items"),
                     "tender_margin": ev.get("tender_margin"), "margin_fade": ev.get("margin_fade"),
                     "receivable": r2(recv), "unbilled": r2(unbilled),
                     "health": {k: v["level"] for k, v in dims.items()},
@@ -275,14 +273,9 @@ def overview(c, u, a):
             "spi": round(wsum("spi"), 2) if wsum("spi") is not None else None,
             "cpi": round(wsum("cpi"), 2) if wsum("cpi") is not None else None}
     if money:
-        # margin on the revenue that has a cost forecast; work with no budget and no cost yet is shown apart
-        rev = sum(_f(r.get("forecast_revenue_covered")) if r.get("forecast_revenue_covered") is not None
-                  else (_f(r.get("forecast_revenue")) or (_f(r["eac"]) + _f(r["forecast_profit"]))) for r in ok)
+        rev = sum(_f(r.get("forecast_revenue")) or (_f(r["eac"]) + _f(r["forecast_profit"])) for r in ok)
         kpis.update({"forecast_profit": tot("forecast_profit"), "cost": tot("cost"), "unbilled": tot("unbilled"),
-                     "forecast_margin": round(100 * tot("forecast_profit") / rev, 1) if rev > EPS else None,
-                     "forecast_revenue": tot("forecast_revenue"), "forecast_revenue_covered": r2(rev),
-                     "no_forecast_revenue": tot("no_forecast_revenue"),
-                     "no_forecast_projects": len([r for r in ok if _f(r.get("no_forecast_revenue")) > EPS])})
+                     "forecast_margin": round(100 * tot("forecast_profit") / rev, 1) if rev > EPS else None})
     if core.can(u, "accounts", "view"):
         from api_finance import invoice_paid
         t = today()

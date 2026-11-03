@@ -29,7 +29,7 @@ async function api(fn, args) {
   try {
     r = await fetch("/api", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Token": S.token || "" },
+      headers: { "Content-Type": "application/json", "X-Token": S.token || "", "X-Fn": fn },
       body: JSON.stringify({ fn, args: args || {} }),
     });
   } catch (e) {

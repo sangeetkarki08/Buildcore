@@ -284,24 +284,18 @@
     };
     if (K.contract_value != null) {
       const done = K.contract_value ? 100 * (K.earned || 0) / K.contract_value : 0;
-      const boq = K.forecast_revenue || 0;
-      const off = boq > 0 && Math.abs(boq - K.contract_value) > 0.01 * Math.max(boq, K.contract_value);
-      card({ label: "Work in hand", value: money(K.backlog), unit: "NPR", level: off ? "attention" : "", tag: off ? "check BOQ" : null,
+      const mm = K.value_mismatch || [];
+      card({ label: "Work in hand", value: money(K.backlog), unit: "NPR", level: mm.length ? "attention" : "", tag: mm.length ? "BOQ ≠ contract" : null,
         sub: pct(done, 0) + " of " + money(K.contract_value) + " done · " + K.projects + " project" + (K.projects === 1 ? "" : "s") +
-          (off ? " · BOQ totals " + money(boq) + ", not the contract value" : ""), href: "#/command",
-        title: off ? "The projects' contract value (Projects screen) and the total of their BOQ items (revised quantity × rate) differ. Forecast revenue uses the BOQ; check the contract value or the BOQ." : "" });
+          (mm.length ? " · BOQ total " + money(K.boq_value) + "; contract value differs on " + mm.map((x) => x.code + " (BOQ " + money(x.boq) + ", contract " + money(x.contract_value) + ")").join(", ") : ""),
+        href: "#/command", title: "Contract value typed on each project less the work done. The BOQ is what the forecast uses: when the two differ, correct the project's contract value or the BOQ." });
     } else card({ label: "Active projects", value: String(K.projects || 0), sub: "", href: "#/p/control" });
     if (K.forecast_profit != null) {
-      const nofc = K.no_forecast_revenue || 0;
-      const title = "Forecast profit at completion: revenue at completion less the forecast cost (EAC) of every active project. BOQ items with no rate analysis and no cost yet have no cost forecast, so their value is left out instead of being counted as profit.";
-      if (!(K.forecast_revenue_covered > 0)) {
-        card({ label: "Forecast profit", value: "No forecast", level: "attention", tag: "no budgets",
-          sub: money(nofc) + " of BOQ work has no cost budget yet. Add rate analysis to the BOQ items.", href: "#/p/evm", title });
-      } else {
-        const lv = K.forecast_profit < 0 ? "critical" : (K.forecast_margin != null && K.forecast_margin < 5 ? "attention" : "ok");
-        card({ label: "Forecast profit", value: money(K.forecast_profit), unit: "NPR", level: nofc > 0 && lv === "ok" ? "attention" : lv, neg: K.forecast_profit < 0, tag: K.forecast_margin != null ? pct(K.forecast_margin) + " margin" : null,
-          sub: nofc > 0 ? "Leaves out " + money(nofc) + " of work with no cost budget" : "", trend: trendTag(delta(tr.profit), money, true), spark: tr.profit, sparkColor: lv === "critical" ? "#c53030" : "var(--acc)", href: "#/p/evm", title });
-      }
+      const lv = K.forecast_profit < 0 ? "critical" : (K.forecast_margin != null && K.forecast_margin < 5 ? "attention" : "ok");
+      const noCost = K.revenue_without_cost || 0, none = noCost > 0 && !(K.revenue_costed > 0);
+      card({ label: "Forecast profit", value: none ? "Not available" : money(K.forecast_profit), unit: none ? "" : "NPR", level: none ? "attention" : noCost > 0 && lv === "ok" ? "attention" : lv, neg: K.forecast_profit < 0,
+        tag: K.forecast_margin != null ? pct(K.forecast_margin) + " margin" + (noCost > 0 ? " (part)" : "") : (noCost > 0 ? "No cost estimates" : null),
+        sub: noCost > 0 ? money(noCost) + " of BOQ has no cost estimate yet and is not counted (add the control budget or rate analysis)" : "", trend: trendTag(delta(tr.profit), money, true), spark: tr.profit, sparkColor: lv === "critical" ? "#c53030" : "var(--acc)", href: "#/p/evm", title: "Forecast profit at completion: revenue at completion less the forecast cost (EAC) of every active project" });
     }
     if (K.cash != null) {
       const lv = K.cash_shortfall ? "critical" : "ok";
