@@ -9,7 +9,11 @@
      · a 5 x 5 risk heat map from the new risk register
      · one compact project table, and a one-page printable report.
    The Dashboard menu is cut to the screens people use every day; the rest move to "Tools & views".
-   The previous dashboard stays as "Classic dashboard". */
+   The previous dashboard stays as "Classic dashboard".
+   2.48: "Needs attention" instead of "Decisions this week": repeated lines grouped with a count (they open to show each
+   one), calm labels (Important / This week / Review / For info) instead of "ACT NOW", contract notices only for the
+   employer's or neutral events, a "This month" panel (site, money, supply, machines, approvals, one row per project)
+   and "To complete your figures" in place of bare "Not available". Server flag d.glance.on = off gives the 2.47 view. */
 (function () {
   "use strict";
   const VER = "2.18.0";
@@ -43,7 +47,9 @@
   };
   const ico = (k) => { const s = svgEl(24, 24, ICON[k] || ICON.risk, "ins-ico"); s.setAttribute("fill", "none"); s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "1.8"); s.setAttribute("stroke-linecap", "round"); s.setAttribute("stroke-linejoin", "round"); return s; };
   const KIND = { cash: "Cash", cost: "Cost", time: "Time", contract: "Contract", supply: "Supply", equipment: "Equipment", risk: "Risk" };
-  const SEV = { critical: "Act now", high: "This week", medium: "Soon", info: "FYI" };
+  const SEV_218 = { critical: "Act now", high: "This week", medium: "Soon", info: "FYI" };
+  const SEV_248 = { critical: "Important", high: "This week", medium: "Review", info: "For info" };
+  let SEV = SEV_218, GL = false;
 
   /* ───────────────────────── styles ───────────────────────── */
   const css = document.createElement("style");
@@ -118,6 +124,32 @@
 .rk-sc{display:inline-block;min-width:28px;text-align:center;border-radius:6px;color:#fff;font-weight:700;font-size:12px;padding:1px 4px}
 .rk-sug{display:flex;flex-direction:column;gap:8px}.rk-sug div{display:flex;gap:10px;align-items:center;border:1px dashed var(--line);border-radius:10px;padding:8px 12px}
 .rk-sug div b{flex:1;font-weight:600}.rk-sug small{color:var(--muted)}
+.ins.gl .ins-dec .sev{text-transform:none;letter-spacing:0;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;margin-right:8px;vertical-align:1px}
+.ins.gl .ins-dec .critical .sev{background:rgba(197,48,48,.10)}.ins.gl .ins-dec .high .sev{background:rgba(183,121,31,.12)}.ins.gl .ins-dec .medium .sev,.ins.gl .ins-dec .info .sev{background:rgba(var(--acc-rgb),.08);color:var(--acc)}
+.ins.gl .ins-dec .medium .ic,.ins.gl .ins-dec .info .ic{background:var(--line-soft,rgba(127,127,127,.1));color:var(--muted)}
+.ins-dec .cnt{display:inline-block;min-width:20px;text-align:center;font-size:11px;font-weight:700;border-radius:999px;background:var(--line-soft,rgba(127,127,127,.14));color:var(--ink);padding:0 6px;margin-left:6px;vertical-align:1px}
+.ins-dec .subs{grid-column:2/4;list-style:none;margin:6px 0 2px;padding:0 0 0 2px;border-left:2px solid var(--line)}
+.ins-dec .subs li{display:flex;gap:10px;grid-template-columns:none;padding:5px 10px;border-top:0;font-size:12.5px;align-items:baseline}.ins-dec .subs li b{font-size:12.5px;font-weight:600}
+.ins-dec .subs li .why{flex:1;color:var(--muted)}
+.ins-tag.info{background:rgba(var(--acc-rgb),.1);color:var(--acc)}
+.ins-kpi .s a{color:var(--acc);text-decoration:none;font-weight:600;white-space:nowrap}
+.gl-month .hd .ins-scope button{font-size:12.5px;padding:4px 11px}
+.gl-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.gl-g{border:1px solid var(--line-soft,var(--line));border-radius:12px;padding:12px 14px;min-width:0}
+.gl-g h3{margin:0 0 8px;font-size:12.5px;font-weight:600;color:var(--muted);display:flex;gap:8px;align-items:center}.gl-g h3 a{margin-left:auto;font-weight:500;text-decoration:none;color:var(--acc)}
+.gl-big{font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.15}.gl-big small{font-size:12px;color:var(--muted);font-weight:600;margin-left:4px}
+.gl-cap{font-size:12px;color:var(--muted);margin:1px 0 8px}
+.gl-rows{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:13px}.gl-rows span:nth-child(odd){color:var(--muted)}.gl-rows span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.gl-rows .bad{color:var(--bad)}.gl-rows .warn{color:var(--warn)}
+.gl-bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line-soft,rgba(127,127,127,.12));margin:6px 0 4px}.gl-bar i{display:block;height:100%}
+.gl-legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--muted)}.gl-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.gl-note{font-size:12px;color:var(--muted);margin-top:8px}
+.gl-ptable td.n,.gl-ptable th.n{text-align:right}.gl-ptable td:last-child{white-space:nowrap}.ins.gl .ins-dec .why{white-space:normal}
+.gl-setup{list-style:none;margin:0;padding:0}.gl-setup li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:2px 10px;align-items:start;padding:9px 2px;border-top:1px solid var(--line-soft,var(--line))}
+.gl-setup li:first-child{border-top:0}.gl-setup .k{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);margin-top:1px}.gl-setup b{font-weight:600;font-size:13.5px}
+.gl-setup .w{grid-column:2;color:var(--muted);font-size:12.5px;line-height:1.4}.gl-setup a{grid-row:span 2;grid-column:3;font-size:12.5px;text-decoration:none;white-space:nowrap}
+@media (max-width:1180px){.gl-groups{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.gl-groups{grid-template-columns:minmax(0,1fr)}.ins-dec .subs{grid-column:1/3}}
 @media (max-width:1180px){.ins-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:900px){.ins-grid,.rk-top{grid-template-columns:minmax(0,1fr)}.ins-ptable .hide-s{display:none}}
 @media (max-width:620px){.ins-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.ins-kpi .v{font-size:20px}.ins-kpi .v .sp{display:none}.ins-dec li{grid-template-columns:30px minmax(0,1fr)}.ins-dec .amt,.ins-dec .act{grid-column:2;justify-self:start;text-align:left}.ins-ptable .hide-m{display:none}}
@@ -258,6 +290,9 @@
       return;
     }
     DATA = d;
+    GL = !!(d.glance && d.glance.on);
+    SEV = GL ? SEV_248 : SEV_218;
+    wrap.classList.toggle("gl", GL);
     if (typeof approvalsCount !== "undefined" && d.attention) { try { approvalsCount = d.attention.approval || 0; } catch (e) { /* ignore */ } }
     wrap.lastChild.remove();
     const K = d.kpis || {};
@@ -277,7 +312,7 @@
     const kp = h("div", { class: "ins-kpis" });
     const card = (o) => {
       const c = h("div", { class: "ins-kpi " + (o.level || ""), onclick: () => { location.hash = o.href; }, title: o.title || "" },
-        h("div", { class: "lb" }, h("span", {}, o.label), o.tag ? h("span", { class: "ins-tag " + o.level }, o.tag) : null),
+        h("div", { class: "lb" }, h("span", {}, o.label), o.tag ? h("span", { class: "ins-tag " + (o.tagLevel || o.level) }, o.tag) : null),
         h("div", { class: "v" + (o.neg ? " neg" : "") }, o.value, o.unit ? h("small", {}, o.unit) : null, h("span", { class: "sp" }, (o.spark && spark(o.spark, o.sparkColor)) || null)),
         h("div", { class: "s" }, o.sub || "", o.trend ? " " : "", o.trend || null));
       kp.append(c);
@@ -285,7 +320,11 @@
     if (K.contract_value != null) {
       const done = K.contract_value ? 100 * (K.earned || 0) / K.contract_value : 0;
       const mm = K.value_mismatch || [];
-      card({ label: "Work in hand", value: money(K.backlog), unit: "NPR", level: mm.length ? "attention" : "", tag: mm.length ? "BOQ ≠ contract" : null,
+      if (GL) card({ label: "Work in hand", value: money(K.backlog), unit: "NPR", level: "", tag: mm.length ? "Check contract value" : null, tagLevel: "info",
+        sub: [pct(done, 0) + " done of " + money(K.contract_value) + " · " + K.projects + " project" + (K.projects === 1 ? "" : "s"),
+          mm.length ? h("div", {}, "BOQ adds up to " + money(K.boq_value) + (mm.length === 1 ? " on " + mm[0].code : "") + ". ", h("a", { href: "#/m/projects", onclick: (e) => e.stopPropagation() }, "Check ›")) : null],
+        href: "#/command", title: "Contract value typed on each project less the work done. The forecast uses the BOQ: when the BOQ total and the contract value differ, correct one of them." });
+      else card({ label: "Work in hand", value: money(K.backlog), unit: "NPR", level: mm.length ? "attention" : "", tag: mm.length ? "BOQ ≠ contract" : null,
         sub: pct(done, 0) + " of " + money(K.contract_value) + " done · " + K.projects + " project" + (K.projects === 1 ? "" : "s") +
           (mm.length ? " · BOQ total " + money(K.boq_value) + "; contract value differs on " + mm.map((x) => x.code + " (BOQ " + money(x.boq) + ", contract " + money(x.contract_value) + ")").join(", ") : ""),
         href: "#/command", title: "Contract value typed on each project less the work done. The BOQ is what the forecast uses: when the two differ, correct the project's contract value or the BOQ." });
@@ -293,7 +332,14 @@
     if (K.forecast_profit != null) {
       const lv = K.forecast_profit < 0 ? "critical" : (K.forecast_margin != null && K.forecast_margin < 5 ? "attention" : "ok");
       const noCost = K.revenue_without_cost || 0, none = noCost > 0 && !(K.revenue_costed > 0);
-      card({ label: "Forecast profit", value: none ? "Not available" : money(K.forecast_profit), unit: none ? "" : "NPR", level: none ? "attention" : noCost > 0 && lv === "ok" ? "attention" : lv, neg: K.forecast_profit < 0,
+      if (GL && none) card({ label: "Forecast profit", value: "—", level: "", tag: "Needs cost estimates", tagLevel: "info",
+        sub: h("div", {}, "No BOQ item has a cost estimate yet, so profit cannot be worked out. ", h("a", { href: "#/cl/budget", onclick: (e) => e.stopPropagation() }, "Add the control budget ›")),
+        href: "#/cl/budget", title: "Forecast profit needs a cost for each BOQ item: a control budget, a rate analysis or cost booked to it." });
+      else if (GL && noCost > 0) card({ label: "Forecast profit", value: money(K.forecast_profit), unit: "NPR", level: lv === "critical" ? "critical" : "", neg: K.forecast_profit < 0,
+        tag: K.forecast_margin != null ? pct(K.forecast_margin) + " margin (part)" : null,
+        sub: h("div", {}, "On " + money(K.revenue_costed) + " of BOQ with cost estimates; " + money(noCost) + " still has none. ", h("a", { href: "#/cl/budget", onclick: (e) => e.stopPropagation() }, "Add ›")),
+        trend: trendTag(delta(tr.profit), money, true), spark: tr.profit, href: "#/p/evm" });
+      else card({ label: "Forecast profit", value: none ? "Not available" : money(K.forecast_profit), unit: none ? "" : "NPR", level: none ? "attention" : noCost > 0 && lv === "ok" ? "attention" : lv, neg: K.forecast_profit < 0,
         tag: K.forecast_margin != null ? pct(K.forecast_margin) + " margin" + (noCost > 0 ? " (part)" : "") : (noCost > 0 ? "No cost estimates" : null),
         sub: noCost > 0 ? money(noCost) + " of BOQ has no cost estimate yet and is not counted (add the control budget or rate analysis)" : "", trend: trendTag(delta(tr.profit), money, true), spark: tr.profit, sparkColor: lv === "critical" ? "#c53030" : "var(--acc)", href: "#/p/evm", title: "Forecast profit at completion: revenue at completion less the forecast cost (EAC) of every active project" });
     }
@@ -307,16 +353,18 @@
       card({ label: "Client money overdue", value: money(K.receivable_overdue), unit: "NPR", level: lv, sub: "of " + money(K.receivable) + " receivable" + (K.unbilled ? " · " + money(K.unbilled) + " not yet billed" : ""), href: "#/acc/ageing" });
     } else if (K.unbilled != null) card({ label: "Measured, not billed", value: money(K.unbilled), unit: "NPR", level: K.unbilled > 0 ? "attention" : "ok", sub: "Put it in the next IPC", href: "#/p/ipc" });
     card({ label: "SPI · CPI", value: ratio(K.spi) + " · " + ratio(K.cpi), level: [lvl(K.spi, 0.95, 0.85), lvl(K.cpi, 0.95, 0.85)].includes("critical") ? "critical" : [lvl(K.spi, 0.95, 0.85), lvl(K.cpi, 0.95, 0.85)].includes("attention") ? "attention" : (K.spi == null && K.cpi == null ? "" : "ok"),
-      sub: K.spi == null && K.cpi == null ? "Needs a programme and BOQ budget" : "1.00 = on plan; below 0.95 needs action", trend: trendTag(delta(tr.cpi), (x) => x.toFixed(2), true), spark: tr.cpi, href: "#/p/control", title: "Weighted by contract value. SPI = earned ÷ planned progress; CPI = earned value ÷ actual cost." });
+      sub: K.spi == null && K.cpi == null ? (GL ? h("div", {}, "Shows once projects have a programme with dates (time) and a cost budget (cost). ", h("a", { href: "#/p/schedule", onclick: (e) => e.stopPropagation() }, "Programme ›")) : "Needs a programme and BOQ budget") : "1.00 = on plan; below 0.95 needs action", trend: trendTag(delta(tr.cpi), (x) => x.toFixed(2), true), spark: tr.cpi, href: "#/p/control", title: "Weighted by contract value. SPI = earned ÷ planned progress; CPI = earned value ÷ actual cost." });
     wrap.append(kp);
+    const setup = GL ? setupList(d) : [];
+    if (GL) { const mp = h("div", { class: "ins-card gl-month" }, h("div", { class: "ins-skel", style: "height:150px" })); wrap.append(mp); monthPanel(mp, null); }
 
     /* 2. decisions + portfolio health */
     const g1 = h("div", { class: "ins-grid" });
-    g1.append(decisionsCard(d.decisions || [], d.attention || {}));
+    g1.append(decisionsCard(d.decisions || [], d.attention || {}, d.glance || {}));
     if (ok.length) {
       const q = quadrant(ok, (r) => goProject(r.id, "#/p/control"));
       g1.append(h("div", { class: "ins-card" }, h("div", { class: "hd" }, h("h2", {}, "Portfolio health"), h("span", { class: "grow" }), h("a", { href: "#/command" }, "Portfolio ›")),
-        q.shown ? q.el : h("div", { class: "ins-empty" }, "Projects appear here once they have a programme (for SPI) and a BOQ budget with costs (for CPI)."),
+        q.shown ? q.el : (GL && setup.length ? setupCard(setup, true) : h("div", { class: "ins-empty" }, "Projects appear here once they have a programme (for SPI) and a BOQ budget with costs (for CPI).")),
         h("div", { class: "ins-note" }, q.shown ? "Bubble size = contract value. Click a project to open its control room." + (q.missing ? " " + q.missing + " project(s) without SPI/CPI yet." : "") : ""),
         quadSummary(ok)));
     } else g1.append(risksCard(d.risks));
@@ -333,6 +381,7 @@
     if (ok.length || !d.cash) g2.append(risksCard(d.risks));
     if (g2.children.length === 1) g2.style.gridTemplateColumns = "1fr";
     if (g2.children.length) wrap.append(g2);
+    if (GL && setup.length && q_shown(ok)) wrap.append(h("div", { class: "ins-card" }, h("div", { class: "hd" }, h("h2", {}, "To complete your figures", h("span", { class: "n" }, setup.length + " step" + (setup.length === 1 ? "" : "s")))), setupCard(setup, false)));
 
     /* 4. projects */
     if (d.projects.length > 1 || !S.project) wrap.append(projectsCard(d.projects, d.trends || {}, d.money));
@@ -340,6 +389,102 @@
     wrap.append(viewsRow());
   }
   let DATA = null;
+
+  /* ───────────────────────── 2.48: what is missing for complete figures ───────────────────────── */
+  const q_shown = (rows) => rows.some((r) => r.spi != null && r.cpi != null);
+  function setupList(d) {
+    const K = d.kpis || {}, rows = (d.projects || []).filter((r) => !r.error), out = [];
+    (K.value_mismatch || []).forEach((x) => out.push({ t: "Check the contract value of " + x.code, w: "The BOQ adds up to " + money(x.boq) + " but the project's contract value is " + money(x.contract_value) + ". Work in hand uses the contract value, the forecast uses the BOQ.", href: "#/m/projects", l: "Projects ›" }));
+    const noCost = rows.filter((r) => (r.revenue_without_cost || 0) > 0);
+    if (noCost.length) out.push({ t: "Add cost estimates to the BOQ", w: money(noCost.reduce((a, r) => a + r.revenue_without_cost, 0)) + " of BOQ on " + noCost.map((r) => r.code).join(", ") + " has no control budget or rate analysis, so profit and CPI cannot be worked out for it.", href: "#/cl/budget", l: "Control budget ›" });
+    const noProg = rows.filter((r) => r.planned_pct == null || r.spi == null);
+    if (noProg.length) out.push({ t: "Give the programme its dates", w: noProg.map((r) => r.code).join(", ") + ": activities with planned start and finish give planned progress and SPI.", href: "#/p/schedule", l: "Programme ›" });
+    if (K.receivable_overdue != null && !(K.receivable > 0) && rows.length) out.push({ t: "Bill the work done (IPC)", w: "No client bill is posted yet, so receivables show 0.", href: "#/p/ipc", l: "IPC ›" });
+    if (d.money && K.cash == null && K.receivable_overdue != null) out.push({ t: "Enter the bank and cash opening balances", w: "Cash today and the 12-month cash outlook start from them.", href: "#/acc/bank", l: "Bank ›" });
+    return out;
+  }
+  function setupCard(list, compact) {
+    const ul = h("ul", { class: "gl-setup" });
+    list.forEach((x) => ul.append(h("li", {}, h("span", { class: "k" }), h("b", {}, x.t), h("a", { href: x.href }, x.l), h("span", { class: "w" }, x.w))));
+    return compact ? h("div", {}, h("div", { class: "ins-note", style: "margin-bottom:6px" }, "Time and cost health show here once these are in:"), ul) : ul;
+  }
+
+  /* ───────────────────────── 2.48: this month at a glance ───────────────────────── */
+  const RESPN = { contractor: "Own", employer: "Employer's", neutral: "Neutral", concurrent: "Concurrent" };
+  const RESPC = { contractor: "#a0aec0", employer: "#3182ce", neutral: "#d69e2e", concurrent: "#805ad5" };
+  const n0 = (x) => (x == null ? "—" : Number(x).toLocaleString("en-IN", { maximumFractionDigits: 1 }));
+  const hrs = (x) => (x == null ? "—" : n0(Math.round(x)) + " h");
+  async function monthPanel(box, cal) {
+    let g;
+    try { g = await api("glance.month", { project_id: S.project || null, cal: cal || undefined }); } catch (e) { box.replaceChildren(h("div", { class: "ins-note" }, "This month could not load: " + e.message)); return; }
+    const P = g.period, T = g.site_total || {}, M = g.money, U = g.supply, E = g.equipment, A = g.approvals || {};
+    const other = P.cal === "bs" ? "ad" : "bs";
+    box.replaceChildren(h("div", { class: "hd" }, h("h2", {}, "This month", h("span", { class: "n" }, P.label + " · day " + P.days_elapsed + " of " + P.days_total)), h("span", { class: "grow" }),
+      h("div", { class: "ins-scope" }, h("button", { class: P.cal === "bs" ? "on" : "", onclick: () => P.cal !== "bs" && monthPanel(box, "bs") }, "Nepali month"), h("button", { class: P.cal === "ad" ? "on" : "", onclick: () => P.cal !== "ad" && monthPanel(box, "ad") }, "English month"))));
+    const gr = h("div", { class: "gl-groups" });
+    const grp = (title, link, linkText, ...kids) => gr.append(h("div", { class: "gl-g" }, h("h3", {}, title, link ? h("a", { href: link }, linkText + " ›") : null), ...kids));
+    const rowsEl = (pairs) => h("div", { class: "gl-rows" }, pairs.filter(Boolean).flatMap(([k, v, cls]) => [h("span", {}, k), h("span", { class: cls || "" }, v)]));
+    if (g.site_total) {
+      const pr = g.projects.length;
+      grp("Site work", "#/p/dpr", "DPRs",
+        h("div", { class: "gl-big" }, money(T.work_value), h("small", {}, "NPR")),
+        h("div", { class: "gl-cap" }, "work reported in DPRs at BOQ rates" + (T.work_value_prev ? " · " + money(T.work_value_prev) + " in " + T.prev_label : "")),
+        rowsEl([["DPR days", T.dpr_days + (pr === 1 ? " of " + P.days_elapsed : " (all projects)"), pr === 1 && T.dpr_days < P.days_elapsed - 3 ? "warn" : ""],
+          T.waiting ? ["Waiting for approval", String(T.waiting), "warn"] : null,
+          ["Workers (man-days)", n0(T.man_days)],
+          ["Machine hours", hrs(T.machine_hours)]]));
+      const tot = (T.machine_hours || 0) + (T.idle_hours || 0) + (T.breakdown_hours || 0);
+      const bar = (parts) => h("div", { class: "gl-bar" }, parts.filter((p) => p[0] > 0).map(([v, col, t]) => h("i", { style: "width:" + (100 * v / parts.reduce((a, p) => a + p[0], 0)).toFixed(1) + "%;background:" + col, title: t })));
+      const dl = Object.entries(T.delay_by_resp || {});
+      grp("Machines and delays", "#/x/delays", "Delays",
+        h("div", { class: "gl-big" }, T.utilisation == null ? "—" : pct(T.utilisation, 0), h("small", {}, "machine time working")),
+        tot ? bar([[T.machine_hours, "#38a169", "Working"], [T.idle_hours, "#d69e2e", "Idle"], [T.breakdown_hours, "#c53030", "Breakdown"]]) : h("div", { class: "gl-cap" }, "No machine hours in DPRs this month."),
+        tot ? h("div", { class: "gl-legend" }, h("span", {}, h("i", { style: "background:#38a169" }), "Working " + hrs(T.machine_hours)), h("span", {}, h("i", { style: "background:#d69e2e" }), "Idle " + hrs(T.idle_hours)), h("span", {}, h("i", { style: "background:#c53030" }), "Breakdown " + hrs(T.breakdown_hours))) : null,
+        h("div", { style: "margin-top:10px" }, rowsEl([["Delay hours", hrs(T.delay_hours)], ...dl.map(([k, v]) => ["  " + (RESPN[k] || k), hrs(v), k === "employer" ? "warn" : ""])])),
+        (T.delay_top || []).length ? h("div", { class: "gl-note" }, "Most: " + T.delay_top.slice(0, 2).map((x) => x.category + " " + hrs(x.hours) + " (" + (RESPN[x.resp] || x.resp).toLowerCase() + ")").join(", ")) : null,
+        E && E.down && E.down.length ? h("div", { class: "gl-note", style: "color:var(--bad)" }, "Down now: " + E.down.map((x) => x.code).join(", ")) : null);
+    }
+    if (M) {
+      grp("Money", "#/acc/ageing", "Ageing",
+        M.cash_total != null ? h("div", { class: "gl-big" }, money(M.cash_total), h("small", {}, "NPR cash and bank")) : h("div", { class: "gl-big" }, money(M.receivable), h("small", {}, "NPR receivable")),
+        M.cash_total != null ? h("div", { class: "gl-cap" }, M.cash_entered ? (M.cash_bank || []).filter((x) => Math.abs(x.balance) > 0.5).slice(0, 3).map((x) => x.name + " " + money(x.balance)).join(" · ") || "balances today" : h("a", { href: "#/acc/bank" }, "Enter the opening bank and cash balances ›")) : h("div", { class: "gl-cap" }, "this project"),
+        rowsEl([["Billed (IPC)", money(M.billed)], ["Received", money(M.received)], ["Paid", money(M.paid)],
+          ["Receivable", money(M.receivable)], M.receivable_overdue > 0.5 ? ["  of which overdue", money(M.receivable_overdue), M.receivable_overdue_60 > 0.5 ? "bad" : "warn"] : null,
+          ["Payable", money(M.payable)], M.payable_overdue > 0.5 ? ["  of which overdue", money(M.payable_overdue), M.payable_overdue_60 > 0.5 ? "bad" : "warn"] : null,
+          ["Cost booked", money(M.cost)]]));
+    }
+    if (U || A) {
+      grp("Supply and approvals", "#/approvals", "Approvals",
+        U && U.stock_value != null ? h("div", { class: "gl-big" }, money(U.stock_value), h("small", {}, "NPR in stock")) : h("div", { class: "gl-big" }, String((A.approval || 0) + (A.to_post || 0)), h("small", {}, "waiting")),
+        U && U.stock_value != null ? h("div", { class: "gl-cap" }, U.low_stock_count ? U.low_stock_count + " material(s) below reorder level" : "nothing below its reorder level") : h("div", { class: "gl-cap" }, "approvals and entries to post"),
+        rowsEl([U && U.po_pending != null ? ["POs to deliver", U.po_pending + (U.po_pending ? " · " + money(U.po_pending_value) : "") + (U.po_overdue ? " (" + U.po_overdue + " late)" : ""), U.po_overdue ? "warn" : ""] : null,
+          U && U.grn_count != null ? ["Goods received", U.grn_count + " GRN" + (U.grn_value ? " · " + money(U.grn_value) : "")] : null,
+          ["To approve", String(A.approval || 0), A.approval ? "warn" : ""],
+          A.to_post != null ? ["To post (accounts)", A.to_post + (A.to_post ? " · " + money(A.to_post_value) : ""), A.to_post ? "warn" : ""] : null,
+          E ? ["Machines", E.total + (E.down && E.down.length ? " · " + E.down.length + " down" : " · all working"), E.down && E.down.length ? "bad" : ""] : null]));
+    }
+    box.append(gr);
+    /* one row per project */
+    if (g.site && g.projects.length) {
+      const t = h("table", { class: "ins-ptable gl-ptable" });
+      const pm = (M && M.cost_by_project) || {};
+      t.append(h("thead", {}, h("tr", {}, h("th", {}, "Project"), h("th", { class: "n" }, "Work reported"), h("th", { class: "n hide-m" }, "DPR days"), h("th", { class: "n hide-s" }, "Workers / day"),
+        h("th", { class: "n hide-m" }, "Machine h"), h("th", { class: "n hide-s" }, "Breakdown h"), h("th", { class: "n hide-s" }, "Delay h"), M ? h("th", { class: "n hide-m" }, "Cost booked") : null, h("th", { class: "hide-s" }, "Last DPR"))));
+      const tb = h("tbody");
+      g.projects.forEach((p) => {
+        const x = g.site[p.id] || {};
+        tb.append(h("tr", { onclick: () => goProject(p.id, "#/p/dpr") , title: (x.top_items || []).map((i) => i.code + " " + n0(i.qty) + " " + (i.unit || "") + " = " + money(i.value)).join("\n") || "Open the DPRs" },
+          h("td", {}, h("b", {}, p.code), " ", h("span", { class: "hide-m" }, p.name)), h("td", { class: "n" }, money(x.work_value || 0)), h("td", { class: "n hide-m" + (x.dpr_days ? "" : " v-attention") }, String(x.dpr_days || 0)),
+          h("td", { class: "n hide-s" }, x.workers_avg ? n0(x.workers_avg) : "—"), h("td", { class: "n hide-m" }, x.machine_hours ? n0(x.machine_hours) : "—"),
+          h("td", { class: "n hide-s" + (x.breakdown_hours > 0 ? " v-attention" : "") }, x.breakdown_hours ? n0(x.breakdown_hours) : "—"), h("td", { class: "n hide-s" }, x.delays ? n0(x.delays.hours) : "—"),
+          M ? h("td", { class: "n hide-m" }, money(pm[p.id] || 0)) : null, h("td", { class: "hide-s" }, x.last_dpr || (x.last_dpr_ever ? x.last_dpr_ever : "none yet"))));
+      });
+      t.append(tb);
+      box.append(h("div", { style: "overflow-x:auto;margin-top:14px" }, t));
+    }
+    if ((T.top_items || []).length) box.append(h("div", { class: "gl-note" }, "Most work this month: " + T.top_items.slice(0, 4).map((i) => (g.projects.length > 1 ? i.project + " " : "") + i.code + " " + n0(i.qty) + " " + (i.unit || "") + " (" + money(i.value) + ")").join(" · ") + "."));
+    if (g.own_events && g.own_events.count) box.append(h("div", { class: "gl-note" }, g.own_events.count + " own delay event(s) are open in the delay register (for example " + g.own_events.examples[0] + "). They need no contract notice; close them once the cause is fixed."));
+  }
 
   /* the four quarters as a short list: which projects sit where, and the money in each */
   function quadSummary(rows) {
@@ -357,7 +502,8 @@
     return ul;
   }
 
-  function decisionsCard(list, att) {
+  function decisionsCard(list, att, gl) {
+    gl = gl || {};
     let filter = "all", showAll = false;
     const kinds = [...new Set(list.map((x) => x.kind))];
     const box = h("div", { class: "ins-card" });
@@ -365,15 +511,31 @@
       box.innerHTML = "";
       const vis = list.filter((x) => filter === "all" || x.kind === filter);
       const total = vis.reduce((a, x) => a + (x.impact || 0), 0);
-      box.append(h("div", { class: "hd" }, h("h2", {}, "Decisions this week", h("span", { class: "n" }, list.length ? list.length + (total ? " · " + money(total) + " at stake" : "") : "")), h("span", { class: "grow" }),
+      box.append(h("div", { class: "hd" }, h("h2", {}, GL ? "Needs attention" : "Decisions this week", h("span", { class: "n" }, list.length ? list.length + (total ? " · " + money(total) + " at stake" : "") : "")), h("span", { class: "grow" }),
         kinds.length > 1 ? h("div", { class: "ins-chips" }, [["all", "All"], ...kinds.map((k) => [k, KIND[k] || k])].map(([k, l]) => h("button", { class: filter === k ? "on" : "", onclick: () => { filter = k; showAll = false; draw(); } }, l))) : null));
       if (!vis.length) {
-        box.append(h("div", { class: "ins-empty" }, h("span", { class: "ok" }, "✓"), h("span", {}, "Nothing needs a decision right now." + (att.approval ? " " + att.approval + " item(s) wait for approval." : ""))));
+        box.append(h("div", { class: "ins-empty" }, h("span", { class: "ok" }, "✓"), h("span", {}, (GL ? "Nothing needs attention right now." : "Nothing needs a decision right now.") + (att.approval ? " " + att.approval + " item(s) wait for approval." : ""))));
       } else {
         const ul = h("ul", { class: "ins-dec" });
-        (showAll ? vis : vis.slice(0, 6)).forEach((x) => ul.append(h("li", { class: x.severity, onclick: () => goProject(x.project_id, x.link), title: "Open the screen that fixes it" },
-          h("span", { class: "ic" }, ico(x.kind)), h("b", {}, h("span", { class: "sev" }, SEV[x.severity] || ""), x.title), h("span", { class: "amt" }, x.impact ? money(x.impact) : ""),
-          h("span", { class: "why" }, x.why), h("span", { class: "act" }, (x.action || "Open") + " ›"))));
+        (showAll ? vis : vis.slice(0, 6)).forEach((x) => {
+          const grp = GL && x.items && x.items.length > 1;
+          const li = h("li", { class: x.severity, title: grp ? "Show each one" : "Open the screen that fixes it" },
+            h("span", { class: "ic" }, ico(x.kind)), h("b", {}, h("span", { class: "sev" }, SEV[x.severity] || ""), x.title), h("span", { class: "amt" }, x.impact ? money(x.impact) : ""),
+            h("span", { class: "why" }, x.why), h("span", { class: "act" }, grp ? "Show " + x.items.length + " ▾" : (x.action || "Open") + " ›"));
+          if (grp) {
+            let sub = null;
+            li.onclick = (e) => {
+              if (e.target.closest(".subs")) return;
+              if (sub) { sub.remove(); sub = null; li.querySelector(".act").textContent = "Show " + x.items.length + " ▾"; return; }
+              sub = h("ul", { class: "subs" }, x.items.map((y) => h("li", { onclick: (ev) => { ev.stopPropagation(); goProject(y.project_id || x.project_id, y.link || x.link); }, style: "cursor:pointer" },
+                h("b", {}, y.title), h("span", { class: "why" }, y.why), y.impact ? h("span", { class: "amt" }, money(y.impact)) : null, h("span", { class: "act" }, (y.action || "Open") + " ›"))));
+              sub.append(h("li", { style: "border:0" }, h("a", { href: x.link, onclick: (ev) => { ev.preventDefault(); ev.stopPropagation(); goProject(x.project_id, x.link); } }, (x.action || "Open") + " ›")));
+              li.append(sub);
+              li.querySelector(".act").textContent = "Hide ▴";
+            };
+          } else li.onclick = () => goProject(x.project_id, x.link);
+          ul.append(li);
+        });
         box.append(ul);
         if (vis.length > 6 && !showAll) box.append(h("button", { class: "ins-more", onclick: () => { showAll = true; draw(); } }, "Show all " + vis.length));
       }
@@ -382,6 +544,8 @@
       if (att.overdue) extra.push(h("a", { href: "#/action" }, att.overdue + " overdue"));
       if (att.today) extra.push(h("a", { href: "#/action" }, att.today + " due today"));
       if (extra.length) box.append(h("div", { class: "ins-views", style: "margin-top:10px" }, h("span", {}, "Action centre:"), extra));
+      if (GL && gl.own_events) box.append(h("div", { class: "ins-note", style: "margin-top:8px" }, gl.own_events + " delay event" + (gl.own_events === 1 ? " is" : "s are") + " the company's own (equipment breakdown, shortages): no contract notice is needed, so they are not listed here. ",
+        h("a", { href: "#/x/delays" }, "Delays by responsibility ›")));
     };
     draw();
     return box;
