@@ -30,7 +30,7 @@ from api_inventory import api as _register
 import api_project as P
 import sched_calc as SC
 
-VERSION = "2.44.0"
+VERSION = "2.44.1"
 _READY = set()
 
 
