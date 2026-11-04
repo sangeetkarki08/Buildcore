@@ -6,11 +6,22 @@
  *  - Backup & restore gets a step to bring the desktop's attachments (data\files folder) across
  *  - Forgot password on the sign-in page; the requests it sends are listed in Administration › Users
  *  - The address opens on a company sign-in (no company's name is shown), then the user sign-in of that company
+ *  - The "What's new" pop-ups of each version are not shown
  */
 (function () {
   "use strict";
   const BIG = 4 * 1024 * 1024;
   const realFetch = window.fetch.bind(window);
+
+  /* "What's new in BuildCore ...": each version's pop-up is left out (a new browser would get about 15 in a row) */
+  window.addEventListener("DOMContentLoaded", () => {
+    const realModal = window.modal;
+    if (typeof realModal !== "function") return;
+    window.modal = function (title, ...rest) {
+      if (/^What.s new/i.test(String(title))) return { close() { /* never opened */ }, el: document.createElement("div") };
+      return realModal(title, ...rest);
+    };
+  });
 
   /* company sign-in: the ticket of the company this browser works in */
   const LSg = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };

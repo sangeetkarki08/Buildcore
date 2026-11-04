@@ -979,6 +979,12 @@ def _patch_forgot():
 
 
 # ───────────────────────── request handling ─────────────────────────
+# Functions that read. If one of them does write, it still takes the company lock, at its first write.
+_READS = re.compile(r"^(rep|kpi|dash|insight|cl)\.|(^|\.)(list|lookups|get|view|meta|status|info|me|overview|summary|checks?|preview|"
+                    r"register|ledger|board|tree|history|search|compare|forecast|stats|report|queue|schedule|movement|analysis|health|"
+                    r"radar|league|scan|plan|today|mywork|inbox|recent|due|pending|alerts?|trend|settings|policy|profile_get|roles|team)(_|$)")
+
+
 def _wrap_call(server):
     import api_workspace
     import core
@@ -989,6 +995,8 @@ def _wrap_call(server):
         entry = FUNCS.get(fn)
         if entry and entry[3] and fn not in _GATE_FREE and getattr(_LOCAL, "http", False) and not company_pass(token):
             raise core.ApiError("COMPANY_LOGIN")
+        # a request that only reads must not hold up the company's other requests while it runs
+        pgsqlite.LAZY.on = bool(_READS.search(fn))
         # role templates may have been changed by another copy of the server: read them for this request
         try:
             c = core.connect()
@@ -1121,6 +1129,7 @@ def make_handler(server):
                     fh.write(body or b"")
                 transfer.check_sqlite(path)
                 rep = transfer.import_sqlite(path, schema)
+                pgsqlite.forget_names()
                 del _KV_READY[:]
                 if key:
                     try:
@@ -1166,8 +1175,26 @@ def before_init(server):
     server.Handler.allowed = lambda self: True
 
 
+def _patch_snapshot():
+    """The dashboard records each project's figures for the day. On every load that made the rest of the load pay for
+    a write; once an hour per server copy keeps the daily rows the trends read."""
+    import api_insight
+    orig = api_insight.snapshot
+    last = {}
+
+    def snapshot(c, rows):
+        key = current_schema()
+        if time.time() - last.get(key, 0) < 3600:
+            return None
+        last[key] = time.time()
+        return orig(c, rows)
+    api_insight.snapshot = snapshot
+
+
 def after_init(server):
     import api_corp
+    if pgsqlite.FAST:
+        _patch_snapshot()
     if hasattr(api_corp, "_patch_server"):
         api_corp._patch_server()          # company switching and the engine lock around each request
     _wrap_call(server)

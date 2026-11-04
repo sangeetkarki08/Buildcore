@@ -12,6 +12,10 @@ its own SQL. It translates the SQLite dialect to PostgreSQL as each statement ru
   * transactions: implicit BEGIN before writes as sqlite3 does, BEGIN IMMEDIATE takes a per-company lock
     (the desktop engine's single writer), and each write runs in a savepoint so a failed statement
     leaves the rest of the transaction intact, as in SQLite
+  * speed: SQLite is a file on the same computer, so the engine asks many small questions. Here each one is a trip
+    over the network, so within one request the same question is asked once, questions about the tables are answered
+    from a list kept in memory, and item-by-item questions on a BOQ are asked once for the whole project. The answers
+    are the same; BCO_PG_FAST=0 turns all of this off.
 
 One company = one PostgreSQL schema. The engine still names a data file per company; the file path is
 mapped to the schema: <root>/data/buildcore.db -> "buildcore", <root>/<dir>/data/buildcore.db ->
@@ -809,6 +813,14 @@ def _invalidate(ckey):
         _CAT.pop(ckey, None)
 
 
+def forget_names(ckey=None):
+    """A schema was replaced outside this module (restore): read its table list again."""
+    if ckey is None:
+        _NAMES.clear()
+    else:
+        _NAMES.pop(ckey, None)
+
+
 def table_info(conn, name):
     cat = catalog(conn)
     tb = cat.get(name) or cat.get(str(name).lower())
@@ -942,6 +954,15 @@ class Cursor:
 
 
 # ───────────────────────── connection ─────────────────────────
+FAST = os.environ.get("BCO_PG_FAST") != "0"
+LAZY = threading.local()      # LAZY.on: this request only reads, so it takes the company lock at its first write, if any
+MEMO_MAX = 20000
+_NAMES = {}                   # (dsn, schema) -> {table, view or index name: relkind}
+_DDL_IFNE = re.compile(r"(?is)^\s*CREATE\s+(?:UNIQUE\s+)?(TABLE|INDEX|VIEW)\s+IF\s+NOT\s+EXISTS\s+\"?(\w+)\"?[\s(]")
+_HAS_TABLE = re.compile(r"(?is)^\s*SELECT\s+(COUNT\(\*\)|1|name)\s+FROM\s+sqlite_master\s+WHERE\s+type\s*=\s*'table'\s+AND\s+name\s*=\s*"
+                        r"(\?|'(\w+)')\s*$")
+_BOQ_ARG = re.compile(r"(\b\w+\.)?\bboq_item_id\s*=\s*%s")
+_SEL_HEAD = re.compile(r"(?is)^\s*SELECT\s+(.*?)\s+FROM\s")
 _POOL = {}
 _POOL_LOCK = threading.Lock()
 _SCHEMA_READY = set()
@@ -1121,6 +1142,10 @@ class Connection:
         self._in_tx = False
         self._locked = False
         self._closed = False
+        self._memo = {}          # (statement, values) -> (columns, rows): one request asks each question once
+        self._pf_seen = {}
+        self._pf_done = set()
+        self._boq_ids = {}
         self._dsn = DSN_FOR_PATH(self.path) if DSN_FOR_PATH else _dsn()
         self.ckey = (self._dsn, self.schema)
         self._pg = _get_pg(self._dsn)
@@ -1169,6 +1194,7 @@ class Connection:
         return Cursor(self)
 
     def commit(self):
+        self._forget()
         if self._in_tx:
             try:
                 self._pg.execute("COMMIT")
@@ -1178,6 +1204,7 @@ class Connection:
         self._in_tx = self._locked = False
 
     def rollback(self):
+        self._forget()
         if self._in_tx:
             try:
                 self._pg.execute("ROLLBACK")
@@ -1286,6 +1313,97 @@ class Connection:
             raise _map_error(e, sql)
         return cur
 
+    def _forget(self):
+        self._memo.clear()
+        self._pf_done.clear()
+
+    def _names(self):
+        n = _NAMES.get(self.ckey)
+        if n is None:
+            rows = self._pg.execute("SELECT c.relname, c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+                                    "WHERE n.nspname=%s AND c.relkind IN ('r','p','v','i')", (self.schema,)).fetchall()
+            n = _NAMES[self.ckey] = {r[0]: str(r[1]) for r in rows}
+        return n
+
+    def _quick(self, cur, sql, params):
+        """Questions about the tables, answered without a trip to the database. True when answered."""
+        m = _DDL_IFNE.match(sql)
+        if m:
+            if m.group(2).lower() in self._names():
+                cur._set(None, [])
+                return True
+            return False
+        m = _HAS_TABLE.match(sql) if "sqlite_master" in sql else None
+        if m:
+            name = m.group(3) or (params[0] if params else None)
+            if str(name).lower() in {k for k, v in self._names().items() if v in ("r", "p") and k == str(name).lower()}:
+                what = m.group(1).upper()
+                cur._set([("name" if what == "NAME" else "count",)], [(name if what == "NAME" else 1,)])
+                return True
+        return False
+
+    def _ids_of_boq(self, one):
+        """Every BOQ item of the project this item belongs to."""
+        ids = self._boq_ids.get(one)
+        if ids is None:
+            rows = self._pg.execute("SELECT id FROM boq_items WHERE project_id=(SELECT project_id FROM boq_items WHERE id=%s)",
+                                    (int(one),)).fetchall()
+            ids = [int(r[0]) for r in rows]
+            for i in ids:
+                self._boq_ids[i] = ids
+        return ids
+
+    def _prefetch(self, plan, sql2, args):
+        """The second time one statement is asked item by item, ask it once for all the project's BOQ items."""
+        if plan.recipe or not isinstance(args, list):
+            return
+        found = list(_BOQ_ARG.finditer(sql2))
+        up = sql2.upper()
+        first_only = re.search(r"(?i)\s+LIMIT\s+1\s*$", sql2)
+        rest = up[:first_only.start()] if first_only else up
+        if len(found) != 1 or up.count("SELECT") - up.count("EXISTS (SELECT") != 1 or any(x in rest for x in (" GROUP BY", " HAVING", " LIMIT", " UNION", " DISTINCT")):
+            return
+        m = found[0]
+        at = sql2[:m.start()].count("%s")
+        one = args[at]
+        if not isinstance(one, int) or isinstance(one, bool):
+            return
+        group = (sql2, tuple(args[:at]), tuple(args[at + 1:]))
+        self._pf_seen[group] = self._pf_seen.get(group, 0) + 1
+        if self._pf_seen[group] < 2:
+            return
+        head = _SEL_HEAD.match(sql2)
+        if not head:
+            return
+        cols = head.group(1).strip()
+        total = re.match(r"(?i)^SUM\(", cols) is not None
+        if total and " ORDER BY" in up:
+            return
+        if not total and re.search(r"(?i)\b(SUM|COUNT|MIN|MAX|AVG|TOTAL|STRING_AGG)\(", cols):
+            return
+        ids = self._ids_of_boq(one)
+        if len(ids) < 2 or (group, ids[0]) in self._pf_done:
+            return
+        self._pf_done.add((group, ids[0]))
+        alias = m.group(1) or ""
+        body = sql2[:first_only.start()] if first_only else sql2
+        new = body[:m.start()] + "%sboq_item_id IN (%s)" % (alias, ",".join(str(i) for i in ids)) + body[m.end():]
+        new = new[:head.start(1)] + "%sboq_item_id AS bco_key, " % alias + new[head.start(1):]
+        if total:
+            new += " GROUP BY 1"
+        try:
+            res = self._run(new, args[:at] + args[at + 1:], guard=self._in_tx)
+        except OperationalError:
+            return
+        desc = [(d[0],) for d in res.description[1:]]
+        got = {}
+        for r in res.fetchall():
+            if not (first_only and int(r[0]) in got):
+                got.setdefault(int(r[0]), []).append(tuple(r[1:]))
+        empty = [tuple([None] * len(desc))] if total else []
+        for i in ids:
+            self._memo[(sql2, tuple(args[:at]) + (i,) + tuple(args[at + 1:]))] = (desc, got.get(i) or empty)
+
     _dirty = False
     _poisoned = False
     _lastrowid = 0
@@ -1300,6 +1418,8 @@ class Connection:
             # SQLite's last_insert_rowid(): the id of this connection's last inserted row (ids here come from
             # bcfn.next_id, not a sequence, so PostgreSQL's lastval() does not know them)
             sql = _LAST_ROWID.sub(str(int(self._lastrowid or 0)), sql)
+        if FAST and self._quick(cur, sql, params):
+            return
         plan = _plan(sql)
         kind = plan.kind
         if kind == "noop":
@@ -1310,7 +1430,7 @@ class Connection:
         if kind == "begin":
             if self._in_tx:
                 raise OperationalError("cannot start a transaction within a transaction")
-            self._begin(lock=plan.lock)
+            self._begin(lock=plan.lock and not getattr(LAZY, "on", False))
             self._dirty = False
             self._poisoned = False
             cur._set(None, [])
@@ -1324,6 +1444,7 @@ class Connection:
             cur._set(None, [])
             return
         if kind == "savepoint":
+            self._forget()
             self._begin()
             self._pg.execute(plan.sql)
             cur._set(None, [])
@@ -1332,8 +1453,14 @@ class Connection:
             raise OperationalError("An earlier statement failed; the transaction was cancelled.")
         sql2, args = plan.bind(self, params)
         if kind == "ddl":
+            self._forget()
             res = self._run(sql2, args, guard=True)
             _invalidate(self.ckey)
+            m = _DDL_IFNE.match(sql)
+            if m and self.ckey in _NAMES:
+                _NAMES[self.ckey][m.group(2).lower()] = {"TABLE": "r", "INDEX": "i", "VIEW": "v"}[m.group(1).upper()]
+            elif not re.match(r"(?is)^\s*(CREATE|ALTER\s+TABLE\s+\S+\s+ADD)\b", sql):
+                _NAMES.pop(self.ckey, None)
             if plan.after:
                 for extra in plan.after(self):
                     self._run(extra, None, guard=True)
@@ -1341,6 +1468,7 @@ class Connection:
             cur.rowcount = -1
             return
         if kind == "dml":
+            self._forget()
             self._begin(lock=True)
             self._dirty = True
             res = self._run(sql2, args, guard=True)
@@ -1358,9 +1486,26 @@ class Connection:
                 cur._set(res.description, rows or [])
             return
         # select / other (after a write, reads are guarded too so a failing one leaves the writes intact)
+        key = None
+        if FAST and sql2.lstrip()[:6].upper() == "SELECT" and "pg_advisory" not in sql2 and "random(" not in sql2.lower():
+            try:
+                key = (sql2, tuple(args) if isinstance(args, list) else tuple(sorted(args.items())) if args else ())
+                hit = self._memo.get(key)
+                if hit is None and args and "boq_item_id" in sql2:
+                    self._prefetch(plan, sql2, args)
+                    hit = self._memo.get(key)
+            except TypeError:           # a value that cannot be remembered
+                key, hit = None, None
+            if hit is not None:
+                cur._set(hit[0], hit[1])
+                cur.rowcount = -1
+                return
         res = self._select(plan, sql2, args)
         if res.description is not None:
-            cur._set(res.description, res.fetchall())
+            desc, rows = [(d[0],) for d in res.description], res.fetchall()
+            cur._set(desc, rows)
+            if key is not None and len(self._memo) < MEMO_MAX:
+                self._memo[key] = (desc, rows)
         else:
             cur._set(None, [])
         cur.rowcount = res.rowcount if res.description is None else -1
