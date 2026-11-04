@@ -10,6 +10,7 @@ own disk or a program that keeps running:
   * the first administrator can only be created with the setup key from the Vercel settings (BCO_SETUP_KEY)
   * role templates are read again on every request, because several server copies may be running
 """
+import hashlib
 import hmac
 import json
 import mimetypes
@@ -137,8 +138,13 @@ def _patch_companies():
         orig_list = f[0]
 
         def co_list(c, u, a):
-            cache["t"] = 0                         # the sign-in screen always sees every company
-            return orig_list(c, u, a)
+            cache["t"] = 0                         # always the current list
+            out = orig_list(c, u, a)
+            cur = api_corp.CUR["code"] or "main"
+            # companies do not see each other: only the main company's administrator sees the whole list
+            if not (u and u.get("role") == "admin" and cur == "main"):
+                out = dict(out, companies=[x for x in out["companies"] if x["code"] == cur])
+            return out
         co_list._web_fresh = True
         inv_funcs()["co.list"] = (co_list,) + tuple(f[1:])
 
@@ -156,7 +162,7 @@ def _patch_licence():
     import api_license as L
     from api_inventory import FUNCS
     L._MID.clear()
-    L.ALLOW = set(L.ALLOW) | {"web.info"}
+    L.ALLOW = set(L.ALLOW) | {"web.info", "co.gate_login", "co.signup"}
     L._machine_guid = lambda: "web:" + project_ref()
     L._read = lambda name, default=None: kv_get("licence/" + name, default)
     L._write = lambda name, text: kv_set("licence/" + name, text)
@@ -628,7 +634,12 @@ def _patch_signup():
             raise ApiError("Fill in the company name, your full name and a username.")
         if len(pw) < 6:
             raise ApiError("The password needs at least 6 characters.")
+        login_id = _clean_company_id(a.get("company_id"))
+        co_pw = str(a.get("company_password") or "")
+        if len(co_pw) < 6:
+            raise ApiError("The company password needs at least 6 characters.")
         reg = api_corp.registry()
+        _company_id_free(reg, login_id)
         if any((x.get("name") or "").strip().lower() == name.lower() for x in reg["companies"]):
             raise ApiError("A company called %s is already here. Choose it on the sign-in page instead." % name)
         code = base = api_corp._slug(name)
@@ -636,7 +647,7 @@ def _patch_signup():
         while any(x["code"] == code for x in reg["companies"]):
             code = "%s%d" % (base, n)
             n += 1
-        reg["companies"].append({"code": code, "name": name, "dir": "companies/" + code, "created": now()})
+        reg["companies"].append({"code": code, "name": name, "dir": "companies/" + code, "created": now(), "login_id": login_id})
         api_corp.save_registry(reg)
         src = api_corp.CUR["code"] or "main"
         ok = False
@@ -671,7 +682,8 @@ def _patch_signup():
                 except Exception:
                     pass
         ins(c, "login_attempts", {"ts": now(), "username": _CO_TRIES, "ip": a.get("_ip"), "ok": 1})
-        return {"code": code, "name": name, "username": username}
+        _set_company_password(code, co_pw)
+        return {"code": code, "name": name, "username": username, "company_id": login_id, "ticket": company_ticket(code)}
 
     f = FUNCS.get("web.info")
     if f:
@@ -687,6 +699,183 @@ def _patch_signup():
 def core_connect():
     import core
     return core.connect()
+
+
+# ───────────────────────── company sign-in ─────────────────────────
+# The address is shared with other companies, so it opens on a company sign-in and shows no company's name. A person
+# gives the company ID and password and gets a ticket for that company; only then does the server say anything about
+# it (name, licence holder, user sign-in). Signed-in sessions work as before. Until a company has its own password,
+# the setup key (BCO_SETUP_KEY) opens it, so the first company can get in after this update.
+_GATE_FREE = {"co.gate_login", "co.signup", "license.status", "license.activate", "license.master_load", "web.info"}
+_SETUP_DONE = []
+
+
+def _gate_secret():
+    seed = (os.environ.get("BCO_SETUP_KEY") or "") + "|" + (os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or "")
+    return hashlib.sha256(("bco-company|" + seed).encode()).digest()
+
+
+def company_ticket(code):
+    """Good for this company until its password changes."""
+    msg = "%s|%s" % (code, kv_get("gatepw/" + code) or "")
+    return hmac.new(_gate_secret(), msg.encode(), hashlib.sha256).hexdigest()
+
+
+def _set_company_password(code, pw):
+    from core import hash_pw
+    h, s = hash_pw(pw)
+    kv_set("gatepw/" + code, "%s:%s" % (s, h))
+
+
+def _clean_company_id(v):
+    from core import ApiError
+    cid = str(v or "").strip().lower()
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{2,29}", cid):
+        raise ApiError("The company ID needs 3 to 30 letters, numbers or dashes, with no spaces.")
+    return cid
+
+
+def _company_login_id(co):
+    return (co.get("login_id") or co["code"]).lower()
+
+
+def _company_id_free(reg, cid, code=None):
+    from core import ApiError
+    if any(x["code"] != code and cid in (_company_login_id(x), x["code"].lower()) for x in reg["companies"]):
+        raise ApiError("That company ID is taken. Choose another one.")
+
+
+def _first_run():
+    """A new BuildCore with no first administrator yet shows its usual first set-up."""
+    if _SETUP_DONE:
+        return False
+    c = _kv_conn()
+    try:
+        n = c.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    finally:
+        c.close()
+    if n:
+        _SETUP_DONE.append(1)
+    return not n
+
+
+def company_pass(token):
+    """May this request hear about the company it names?"""
+    import core
+    code = getattr(_LOCAL, "company", None) or "main"
+    ticket = getattr(_LOCAL, "ticket", None)
+    if ticket and hmac.compare_digest(str(ticket), company_ticket(code)):
+        return True
+    if code == "main" and _first_run():
+        return True
+    if token:
+        c = core.connect()
+        try:
+            return bool(core.user_from_token(c, token))
+        finally:
+            c.close()
+    return False
+
+
+def _owner(u):
+    import api_corp
+    return bool(u and u.get("role") == "admin" and (api_corp.CUR["code"] or "main") == "main")
+
+
+def _patch_gate():
+    import api_corp
+    from api_inventory import FUNCS, api
+    from core import ApiError, hash_pw
+
+    @api("co.gate_login", public=True)
+    def gate_login(c, u, a):
+        cid = str(a.get("company_id") or "").strip().lower()
+        pw = str(a.get("password") or "")
+        if not cid or not pw:
+            raise ApiError("Type the company ID and the company password.")
+        key = "gatetry/" + hashlib.sha256(cid.encode()).hexdigest()[:20]
+        try:
+            n, t = json.loads(kv_get(key) or "[0, 0]")
+        except ValueError:
+            n, t = 0, 0
+        if time.time() - t > 600:
+            n = 0
+        if n >= 5:
+            raise ApiError("Too many wrong tries. Wait 10 minutes and try again.")
+        co = next((x for x in api_corp.registry()["companies"] if not x.get("broken") and
+                   cid in (_company_login_id(x), x["code"].lower())), None)
+        good = False
+        if co:
+            stored = kv_get("gatepw/" + co["code"])
+            if stored:
+                salt, h = stored.split(":", 1)
+                good = hmac.compare_digest(hash_pw(pw, salt)[0], h)
+            else:
+                want = (os.environ.get("BCO_SETUP_KEY") or "").strip()
+                good = bool(want) and hmac.compare_digest(pw.strip(), want)
+        if not good:          # the same words whether or not the company exists
+            kv_set(key, json.dumps([n + 1, time.time()]))
+            raise ApiError("The company ID or password is not right.")
+        kv_del(key)
+        return {"code": co["code"], "ticket": company_ticket(co["code"])}
+
+    def gate_info(code):
+        co = api_corp._find(code)
+        return {"code": code, "ticket": company_ticket(code), "company_id": _company_login_id(co),
+                "has_password": kv_get("gatepw/" + code) is not None}
+
+    @api("co.gate_ticket")
+    def gate_ticket(c, u, a):
+        return gate_info(api_corp.CUR["code"] or "main")
+
+    @api("co.gate_set", "admin", "edit")
+    def gate_set(c, u, a):
+        code = api_corp.CUR["code"] or "main"
+        reg = api_corp.registry()
+        co = next(x for x in reg["companies"] if x["code"] == code)
+        cid = _clean_company_id(a.get("company_id"))
+        _company_id_free(reg, cid, code)
+        pw = str(a.get("password") or "")
+        if pw and len(pw) < 6:
+            raise ApiError("The company password needs at least 6 characters.")
+        if not pw and kv_get("gatepw/" + code) is None:
+            raise ApiError("Choose a company password.")
+        co["login_id"] = cid
+        api_corp.save_registry(reg)
+        if pw:
+            _set_company_password(code, pw)
+        return gate_info(code)
+
+    f = FUNCS.get("license.status")
+    if f:
+        orig_status = f[0]
+
+        def license_status(c, u, a):
+            s = orig_status(c, u, a)
+            if getattr(_LOCAL, "http", False) and not company_pass(a.get("_token")) and isinstance(s, dict):
+                s = dict(s, licensee="")          # the licence holder's name is a company's name
+            return s
+        FUNCS["license.status"] = (license_status,) + tuple(f[1:])
+
+    f = FUNCS.get("co.create")
+    if f:
+        orig_create = f[0]
+
+        def co_create(c, u, a):
+            if not _owner(u):
+                raise ApiError("New companies are made from the sign-in page (Set up a new company).")
+            return orig_create(c, u, a)
+        FUNCS["co.create"] = (co_create,) + tuple(f[1:])
+
+    f = FUNCS.get("co.update")
+    if f:
+        orig_update = f[0]
+
+        def co_update(c, u, a):
+            if not _owner(u) and a.get("code") not in (None, api_corp.CUR["code"] or "main"):
+                raise ApiError("You can change only your own company.")
+            return orig_update(c, u, a)
+        FUNCS["co.update"] = (co_update,) + tuple(f[1:])
 
 
 def _patch_forgot():
@@ -796,6 +985,10 @@ def _wrap_call(server):
     orig = server.call
 
     def call(fn, args, token, ip=None, device=None):
+        from api_inventory import FUNCS
+        entry = FUNCS.get(fn)
+        if entry and entry[3] and fn not in _GATE_FREE and getattr(_LOCAL, "http", False) and not company_pass(token):
+            raise core.ApiError("COMPANY_LOGIN")
         # role templates may have been changed by another copy of the server: read them for this request
         try:
             c = core.connect()
@@ -833,13 +1026,21 @@ def make_handler(server):
 
         # Requests of one company run one after the other anyway (the company lock), so running many at once in
         # one server copy only uses up database connections (Supabase free plan: 15 in all). A few at a time.
+        def _company_of_request(self):
+            import api_corp
+            _LOCAL.http = True
+            _LOCAL.company = api_corp._req_company(self)
+            _LOCAL.ticket = self.headers.get("X-Company-Ticket")
+
         def do_GET(self):
             self._fix_path()
+            self._company_of_request()
             with _GATE:
                 return super().do_GET()
 
         def do_POST(self):
             self._fix_path()
+            self._company_of_request()
             with _GATE:
                 return super().do_POST()
 
@@ -959,6 +1160,7 @@ def before_init(server):
     _patch_setup()
     _patch_forgot()
     _patch_signup()
+    _patch_gate()
     _patch_doclib()
     _patch_reinit(server)
     server.Handler.allowed = lambda self: True
