@@ -285,9 +285,7 @@
     const bulk = h("span", { class: "kbulk", hidden: true });
     const count = h("span", { class: "kcount" });
     if (o.search !== false && K.all.length > 8) {
-      const runQ = () => { clearTimeout(K.qWait); K.qWait = 0; K.q = K.search.value; K.render(); };
-      K.search = h("input", { type: "search", placeholder: "Filter these rows", oninput: () => { clearTimeout(K.qWait); K.qWait = setTimeout(runQ, 150); },
-        onblur: () => { if (K.qWait) runQ(); } });
+      K.search = h("input", { type: "search", placeholder: "Filter these rows", oninput: () => { K.q = K.search.value; K.render(); } });
       bar.append(K.search);
     }
     if (o.search !== false && K.all.length > 5) {

@@ -16,9 +16,9 @@ with the data in **Supabase** (PostgreSQL), the website on **Vercel**, and the c
 | `vercel.json` | Vercel settings: function size and time limit, the region (Mumbai), the address rewrites. |
 | `supabase/schema.sql` | The database layout. Not needed: the app creates it on first start. |
 | `.env.example` | The four settings to put in Vercel. |
-| `tools/` | `sync_desktop.py` (bring a new desktop version in), `web_build.py` (versioned file addresses and WOFF2 fonts, run by the sync), `dev_server.py` (run it on your own computer), `dev_storage.py` (a stand-in file store for testing), `perf/` (database round trips, query plans, load test). |
-| `tests/` | What was checked before delivery and the results; `company_isolation.py` (company A cannot reach company B). |
-| `docs/` | `DEPLOY.md` (how to publish), `WEB_DIFFERENCES.md` (what is different from desktop), `performance/` (speed audit, what was changed, hosting advice). |
+| `tools/` | `sync_desktop.py` (bring a new desktop version in), `dev_server.py` (run it on your own computer), `dev_storage.py` (a stand-in file store for testing). |
+| `tests/` | What was checked before delivery and the results. |
+| `docs/` | `DEPLOY.md` (how to publish), `WEB_DIFFERENCES.md` (what is different from desktop). |
 
 ## How it works
 
@@ -36,16 +36,13 @@ at the same moment cannot mix their entries.
 When a new desktop version comes out:
 
 1. Install it on a Windows computer as usual.
-2. On a computer with Python 3.10+ and this repository (once: `pip install fonttools brotli`, for the WOFF2 fonts):
+2. On a computer with Python 3.10+ and this repository:
    `python tools/sync_desktop.py "C:\Program Files\BuildCore\resources\backend"`
-   (the backend folder of the installed app). It copies the new engine and screens in, keeps the web layer, makes the
-   web's speed changes again (`docs/performance/`), and versions the file addresses so browsers fetch only what changed.
+   (the backend folder of the installed app). It copies the new engine and screens in and keeps the web layer.
 3. Commit and push to GitHub. Vercel deploys the new version; on its first start the engine upgrades the
    database the same way the desktop upgrades its data file.
 
 Check `docs/WEB_DIFFERENCES.md` for the few screen texts `sync_desktop.py` changes; it says if one was not found.
-A "text not found" note on `lib.js`, `pages_keys.js` or `pages_copilot.js` means the desktop changed that code, so the
-speed change there needs another look (see `docs/performance/PERFORMANCE_OPTIMIZATION_REPORT.md`).
 
 ## Running it on your own computer (optional)
 

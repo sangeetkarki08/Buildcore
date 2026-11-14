@@ -268,14 +268,14 @@
   }
 
   /* remember the last real screen's text, so "use what is on my last screen" works from the Copilot page */
-  window.addEventListener("hashchange", (ev) => {      // web: read once as Copilot opens, not every 2 seconds
+  setInterval(() => {
     try {
-      if (/^#\/copilot/.test(location.hash) && !/#\/copilot/.test(String(ev.oldURL || ""))) {
+      if (!/^#\/copilot/.test(location.hash)) {
         const pg = document.querySelector("#page");
         if (pg) window.__bcoLastScreenText = ((document.querySelector("#page h1") || {}).textContent || "") + "\n" + pg.innerText.slice(0, 15000);
       }
     } catch (e) { /* ignore */ }
-  });
+  }, 2000);
 
   /* ───────────────────────── Master data › Extra fields ───────────────────────── */
   PAGES["m/fields"] = async (root, params) => {

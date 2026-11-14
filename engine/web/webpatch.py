@@ -463,24 +463,7 @@ _INDEXES = (
     "CREATE INDEX IF NOT EXISTS ix_v_project ON vouchers(project_id)",
     "CREATE INDEX IF NOT EXISTS ix_vl_boq ON voucher_lines(boq_item_id)",
     "CREATE INDEX IF NOT EXISTS ix_vl_act ON voucher_lines(activity_id)",
-) + tuple("CREATE INDEX IF NOT EXISTS ix_web_%s_%s ON %s(%s)" % (t, c.replace(",", "_"), t, c) for t, c in (
-    # Line tables are read by their document (SQLite answered these from a local file; PostgreSQL scans the whole table
-    # without an index, and does not index these columns by itself). Each one is used by the engine's own queries.
-    ("dpr_work", "dpr_id"), ("dpr_labour", "dpr_id"), ("dpr_equipment", "dpr_id"), ("dpr_delays", "dpr_id"),
-    ("dpr_work", "boq_item_id"), ("ipc_lines", "ipc_id"), ("ipc_lines", "boq_item_id"),
-    ("invoice_lines", "invoice_id"), ("grn_lines", "grn_id"), ("po_lines", "po_id"), ("pr_lines", "pr_id"),
-    ("mrq_lines", "mrq_id"), ("issue_lines", "issue_id"), ("return_lines", "return_id"),
-    ("transfer_lines", "transfer_id"), ("count_lines", "count_id"), ("measurement_lines", "measurement_id"),
-    ("sc_order_items", "order_id"), ("sc_bill_items", "bill_id"), ("mix_lines", "mix_id"),
-    ("plant_run_lines", "run_id"), ("fld_meeting_items", "meeting_id"), ("dm_trans_items", "transmittal_id"),
-    ("po_revisions", "po_id"), ("prov_moves", "provision_id"),
-    # project lists and party statements
-    ("boq_items", "project_id"), ("boq_components", "project_id"), ("ipc", "project_id"),
-    ("invoices", "project_id"), ("invoices", "party_id"), ("payments", "project_id"), ("payments", "party_id"),
-    ("grn", "project_id"), ("po", "project_id"), ("pr", "project_id"), ("mrq", "project_id"),
-    ("issues", "project_id"), ("measurements", "project_id"), ("provisions", "project_id"),
-    ("sessions", "user_id"),
-))
+)
 
 
 def _add_indexes(core):
@@ -732,25 +715,9 @@ def _gate_secret():
     return hashlib.sha256(("bco-company|" + seed).encode()).digest()
 
 
-# Every request checks its company ticket, which needs the company password's hash. Reading it from the database each
-# time is one more trip (two more for other companies: the store is in the main company's schema). It is kept for
-# GATE_PW_SECONDS in this server copy; a change made here is seen at once, one made in another copy within that time.
-GATE_PW_SECONDS = float(os.environ.get("BCO_GATE_CACHE_SECONDS") or 30)
-_GATE_PW = {}       # code -> (time read, stored hash)
-
-
-def _gate_pw(code):
-    hit = _GATE_PW.get(code)
-    if hit and time.time() - hit[0] < GATE_PW_SECONDS:
-        return hit[1]
-    v = kv_get("gatepw/" + code) or ""
-    _GATE_PW[code] = (time.time(), v)
-    return v
-
-
 def company_ticket(code):
     """Good for this company until its password changes."""
-    msg = "%s|%s" % (code, _gate_pw(code))
+    msg = "%s|%s" % (code, kv_get("gatepw/" + code) or "")
     return hmac.new(_gate_secret(), msg.encode(), hashlib.sha256).hexdigest()
 
 
@@ -758,7 +725,6 @@ def _set_company_password(code, pw):
     from core import hash_pw
     h, s = hash_pw(pw)
     kv_set("gatepw/" + code, "%s:%s" % (s, h))
-    _GATE_PW.pop(code, None)
 
 
 def _clean_company_id(v):
@@ -1016,9 +982,7 @@ def _patch_forgot():
 # Functions that read. If one of them does write, it still takes the company lock, at its first write.
 _READS = re.compile(r"^(rep|kpi|dash|insight|cl)\.|(^|\.)(list|lookups|get|view|meta|status|info|me|overview|summary|checks?|preview|"
                     r"register|ledger|board|tree|history|search|compare|forecast|stats|report|queue|schedule|movement|analysis|health|"
-                    r"radar|league|scan|plan|today|mywork|inbox|recent|due|pending|alerts?|trend|settings|policy|profile_get|roles|team|"
-                    # the calls every open browser repeats (team.tick every 15 s, cm.unread every minute): reads only
-                    r"tick|unread|presence|feed)(_|$)")
+                    r"radar|league|scan|plan|today|mywork|inbox|recent|due|pending|alerts?|trend|settings|policy|profile_get|roles|team)(_|$)")
 
 
 def _wrap_call(server):
@@ -1167,7 +1131,6 @@ def make_handler(server):
                 rep = transfer.import_sqlite(path, schema)
                 pgsqlite.forget_names()
                 del _KV_READY[:]
-                _GATE_PW.clear()
                 if key:
                     try:
                         storage.delete([key])
