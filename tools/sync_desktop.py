@@ -10,6 +10,7 @@ exactly as the desktop does with its data file.
 The files in engine/web/ (the web layer) are not touched.
 """
 import os
+import re
 import shutil
 import sys
 
@@ -31,7 +32,57 @@ WEB_TEXT = [
      "Create the first administrator. Everything is stored in your own Supabase database."),
     ("pages_corp.js", "Your data stays on your own computer or office server.", "Your data stays in your own Supabase database."),
     ("pages_license.js", '"Activate BuildCore on this computer"', '"Activate BuildCore"'),
+    # Speed (docs/performance): the whole page's text was read every 2 seconds on every screen, for Copilot's "use what
+    # is on my last screen". It is now read once, as Copilot opens (before the router clears the page).
+    ("pages_copilot.js", '''  setInterval(() => {
+    try {
+      if (!/^#\\/copilot/.test(location.hash)) {
+        const pg = document.querySelector("#page");
+        if (pg) window.__bcoLastScreenText = ((document.querySelector("#page h1") || {}).textContent || "") + "\\n" + pg.innerText.slice(0, 15000);
+      }
+    } catch (e) { /* ignore */ }
+  }, 2000);''', '''  window.addEventListener("hashchange", (ev) => {      // web: read once as Copilot opens, not every 2 seconds
+    try {
+      if (/^#\\/copilot/.test(location.hash) && !/#\\/copilot/.test(String(ev.oldURL || ""))) {
+        const pg = document.querySelector("#page");
+        if (pg) window.__bcoLastScreenText = ((document.querySelector("#page h1") || {}).textContent || "") + "\\n" + pg.innerText.slice(0, 15000);
+      }
+    } catch (e) { /* ignore */ }
+  });'''),
+    # Speed: money and quantity figures were formatted with Number.toLocaleString(locale, options), which builds a new
+    # number formatter for every figure (a 5,000-row table: several thousand formatters per draw). The same formatter is
+    # now made once and reused; the text it gives is the same by definition (ECMA-402: toLocaleString = new
+    # Intl.NumberFormat(locale, options).format).
+    ("lib.js", '''const fmtMoney = (n) => n == null || n === "" ? "" : Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtQty = (n) => n == null || n === "" ? "" : Number(n).toLocaleString("en-IN", { maximumFractionDigits: 3 });''',
+     '''const NF_MONEY = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const NF_QTY = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 3 });
+const fmtMoney = (n) => n == null || n === "" ? "" : NF_MONEY.format(Number(n));
+const fmtQty = (n) => n == null || n === "" ? "" : NF_QTY.format(Number(n));'''),
+    # Speed: a list's "Filter these rows" box drew every row again on each key press; it now draws once typing pauses
+    # (150 ms), and at once when the box is left, so keys and buttons used next always act on the filtered rows.
+    ("pages_keys.js", '''      K.search = h("input", { type: "search", placeholder: "Filter these rows", oninput: () => { K.q = K.search.value; K.render(); } });''',
+     '''      const runQ = () => { clearTimeout(K.qWait); K.qWait = 0; K.q = K.search.value; K.render(); };
+      K.search = h("input", { type: "search", placeholder: "Filter these rows", oninput: () => { clearTimeout(K.qWait); K.qWait = setTimeout(runQ, 150); },
+        onblur: () => { if (K.qWait) runQ(); } });'''),
 ]
+
+
+def apply_web_text():
+    """Make the WEB_TEXT changes in public/ (files are read with any line endings and written with LF). A change already
+    made is left alone. Returns the ones whose desktop text was not found."""
+    missing = []
+    for fname, a, b in WEB_TEXT:
+        p = os.path.join(PUBLIC, fname)
+        s = open(p, encoding="utf-8").read()
+        if b in re.sub(r"\?v=[0-9a-f]{6,64}", "", s):      # already made (web_build.py may have versioned the addresses)
+            continue
+        if a not in s:
+            missing.append("%s: %s" % (fname, a[:60]))
+            continue
+        with open(p, "w", encoding="utf-8", newline="") as fh:
+            fh.write(s.replace(a, b, 1))
+    return missing
 
 
 def main(src):
@@ -64,19 +115,15 @@ def main(src):
     if webjs is not None:
         with open(keep, "w", encoding="utf-8") as fh:
             fh.write(webjs)
-    missing = []
-    for fname, a, b in WEB_TEXT:
-        p = os.path.join(PUBLIC, fname)
-        s = open(p, encoding="utf-8").read()
-        if a not in s:
-            missing.append("%s: %s" % (fname, a[:60]))
-            continue
-        with open(p, "w", encoding="utf-8", newline="") as fh:
-            fh.write(s.replace(a, b, 1))
+    missing = apply_web_text()
     print("Engine: %d items copied to %s" % (n, ENGINE))
     print("Screens copied to %s" % PUBLIC)
     for m in missing:
         print("  note - text not found (check by hand): " + m)
+    # fonts as WOFF2 and versioned addresses, so browsers keep the files (tools/web_build.py)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import web_build
+    web_build.main()
 
 
 if __name__ == "__main__":

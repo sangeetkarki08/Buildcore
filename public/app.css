@@ -1,5 +1,5 @@
-@font-face { font-family: "BuildCore Sans"; src: url("/fonts/BuildCoreSans.ttf") format("truetype"); font-weight: 400; }
-@font-face { font-family: "BuildCore Sans"; src: url("/fonts/BuildCoreSans-Bold.ttf") format("truetype"); font-weight: 600 800; }
+@font-face { font-family: "BuildCore Sans"; src: url("/fonts/BuildCoreSans.woff2?v=0b2bbb48e9") format("woff2"), url("/fonts/BuildCoreSans.ttf?v=ae7b7855e1") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "BuildCore Sans"; src: url("/fonts/BuildCoreSans-Bold.woff2?v=7dfa5cc788") format("woff2"), url("/fonts/BuildCoreSans-Bold.ttf?v=5c1247acef") format("truetype"); font-weight: 600 800; font-display: swap; }
 :root {
   --ink: #17232d;
   --muted: #5b6970;

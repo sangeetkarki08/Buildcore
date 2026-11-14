@@ -80,8 +80,10 @@ function toast(msg, kind) {
 function stamp(s) { return s ? h("span", { class: "stamp st-" + s }, String(s).replace(/_/g, " ")) : ""; }
 
 /* ── formatting & names ── */
-const fmtMoney = (n) => n == null || n === "" ? "" : Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtQty = (n) => n == null || n === "" ? "" : Number(n).toLocaleString("en-IN", { maximumFractionDigits: 3 });
+const NF_MONEY = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const NF_QTY = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 3 });
+const fmtMoney = (n) => n == null || n === "" ? "" : NF_MONEY.format(Number(n));
+const fmtQty = (n) => n == null || n === "" ? "" : NF_QTY.format(Number(n));
 const fmtPct = (n) => n == null ? "—" : n + "%";
 const today = () => new Date().toISOString().slice(0, 10);
 const monthAgo = () => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10); };
