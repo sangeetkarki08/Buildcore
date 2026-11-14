@@ -22,8 +22,13 @@ VER = re.compile(r"\?v=[0-9a-f]{6,64}")
 
 
 def digest(path):
+    """The file's version. Text files are read with LF line endings (as Git stores them), so every computer gives the
+    same version for the same content whatever its checkout does with line endings."""
     with open(path, "rb") as fh:
-        return hashlib.sha256(fh.read()).hexdigest()[:10]
+        data = fh.read()
+    if path.endswith((".js", ".css", ".html")):
+        data = data.replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()[:10]
 
 
 def read(path):
