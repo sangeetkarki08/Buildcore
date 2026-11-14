@@ -140,13 +140,16 @@ patched through `sync_desktop.py`'s `WEB_TEXT`, **desktop** = must be fixed in t
 #### B3 — Fixed overhead of ~8 trips per request · P2 · owner: web (partly) / desktop
 - **Where:** `webpatch._wrap_call` reads `ws_roles` on its own connection for every request.
   `api_workspace._guard._precheck` and `server.call` each open a connection and each run `user_from_token`
-  (sessions⋈users + `settings.session_days`). On the HTTP path, `company_pass()` also reads `web_kv` for the company
-  password hash (`kv_get("gatepw/…")`), on the main company's schema. For any other company, that switches the pooled
-  connection's `search_path` back and forth (`SET search_path`, 2 more trips).
+  (sessions⋈users + `settings.session_days`). For *public* calls only (the sign-in screens, licence status), the HTTP
+  path also checks the company ticket. It reads the company password hash from `web_kv` in the main company's schema,
+  and for other companies that switches the pooled connection's `search_path` back and forth. *(Corrected after
+  testing: an earlier draft said this happens on every request. `_wrap_call` checks it only when `entry[3]`, the
+  public flag, is set.)*
 - **Correction (done):** Cache the company-password hash for 30 s per server copy, and clear it at once when the password
-  changes in that copy. **(Recommended, desktop):** Pass the connection and user from the workspace check into `call` so that
-  sessions/users/settings are read once.
-- **Expected:** −1 to −3 trips per request on the HTTP path.
+  changes or on restore in that copy. This only affects the sign-in screens. **(Recommended, desktop):** Pass the
+  connection and user from the workspace check into `call` so that sessions/users/settings are read once (−2 trips on
+  *every* request).
+- **Expected:** −1 to −3 trips on public calls. The desktop change would save −2 on every call.
 
 #### B4 — N+1 queries in financial summaries · P2 · owner: desktop
 - **Where:** `cash.summary` runs 25× `SUM(debit-credit) … WHERE l.account_id=?` (one per bank or cash account) and
@@ -192,27 +195,33 @@ patched through `sync_desktop.py`'s `WEB_TEXT`, **desktop** = must be fixed in t
   the router clears the page). The result is the same, without the polling.
 - **Expected:** One capture per Copilot visit instead of 1,800 per hour.
 
-#### C4 — Table filter rebuilds every cell on every keystroke · P1 · owner: web-patch
-- **Where:** `public/lib.js:265-269`, inside `table()`, which has 536 call sites.
-- **Root cause:** `oninput` runs `cols.some(c => textOf(c, r))` over all rows. `textOf` calls `cellValue`, which re-runs each
-  column's renderer (status stamps, links and buttons are built as DOM nodes) only to read their text. There is no debounce.
-- **Impact:** 5,000 rows × 8 columns = 40,000 renderer calls per key press. Typing "cement" does it 6 times.
-- **Correction:** 150 ms debounce, and compute each row's search text once per filter session (rebuilt on focus). The
-  filtered rows are the same.
-- **Expected:** One filter pass per pause in typing instead of one per key. Renderers run once per row per session instead of
-  once per key.
+#### C4 — Number formatting builds a new formatter for every figure · P1 · owner: web-patch
+- **Where:** `public/lib.js:83-84`: `fmtMoney` / `fmtQty` call `Number(n).toLocaleString("en-IN", {…})`. These have 461 call
+  sites and run in every money/quantity column of every table and total.
+- **Root cause:** `toLocaleString` with options creates a new `Intl.NumberFormat` on each call.
+- **Impact (measured, Chrome):** 60,000 figures take 1,400 ms. A CPU profile of typing in a 6,000-row list put `fmtQty` at the
+  top of the JavaScript time.
+- **Correction:** One `Intl.NumberFormat` per format, reused. ECMA-402 defines `toLocaleString(locale, options)` as
+  `new Intl.NumberFormat(locale, options).format(x)`, so the text is the same. Verified identical on 600,033 values.
+- **Expected:** 1,400 → 40 ms per 60,000 figures.
 
-#### C5 — The home screen reloads itself entirely whenever anyone saves anything · P1 · owner: web
-- **Where:** `public/pages_team.js:249-266` (`liveTick` every 15 s). `PAGES.command.live = true`
-  (`pages_project.js:63`, `pages_cash.js:389`, getter in `pages_fcc.js:487`).
-- **Root cause:** If the activity feed has *any* new entry in the company, `go()` re-renders the Command centre. The
-  Command centre is the home screen of directors, admins and viewers, and it is the heaviest screen (dozens of calls, including
-  `cash.summary`).
-- **Impact:** With 25–50 users entering data, each director's screen reloads up to 4× a minute. That multiplies server
-  load, and it can throw away a half-typed filter or a scroll position.
-- **Correction:** At most one automatic reload per 60 s, and never while the user is typing in the page or has a dialog
-  open. The existing "tab 0 only" rule is kept. When a reload is skipped, the existing toast ("X posted Y") is shown instead.
-- **Expected:** Up to 4× fewer Command-centre reloads per viewer during busy periods.
+#### C4b — List filter redraws all rows on every key press · P1 · owner: web-patch
+- **Where:** `public/pages_keys.js:288`. `pages_keys.js:416` replaces the global `table()` with its keyboard list `klist`,
+  so this is the filter box people actually type into. *(An earlier draft of this audit pointed at the filter inside
+  `lib.js`'s `table()`. A CPU profile showed that function is replaced at load, so it never runs.)*
+- **Root cause:** `oninput` → `K.render()` rebuilds every visible row on each key, with no debounce.
+- **Impact (measured):** Typing "cement" in a 6,000-row list blocked the page for **6.3 s** (12 long tasks).
+- **Correction:** Redraw once typing pauses (150 ms), and at once when the box is left. List keys act only when focus is
+  outside text fields (`pages_keys.js:903`), so the next key or click always sees the filtered rows.
+- **Expected:** Measured with C4: **6.3 s → 0.8 s** of blocked page, same rows shown.
+
+#### C5 — Live reload of the Command centre · not an issue in 2.48 (withdrawn)
+- The code suggests that `liveTick` (`pages_team.js:262`) re-renders the Command centre whenever anyone saves. **At run time
+  it does not:** `wrapPages()` (`pages_workspace.js:248-276`) replaces every page with a wrapper that does not copy the
+  page's properties, so `PAGES.command.live` (and `PAGES["p/live"].live`) are gone. Checked in Chrome on both the original
+  and the new code. A throttle written for this was removed again, since it would have been dead code.
+- **Side effect to report to the desktop side (functional, not speed):** the *Live activity* screen no longer refreshes
+  by itself either. If the desktop restores `.live`, revisit this: the Command centre is the heaviest screen.
 
 #### C6 — 2.5 MB of JavaScript parsed at start-up; no lazy loading · P2 · owner: desktop
 - Every page module is loaded at start. **Route-level code splitting is not safe** in this codebase as it stands:
@@ -263,5 +272,5 @@ patched through `sync_desktop.py`'s `WEB_TEXT`, **desktop** = must be fixed in t
 | B3 | Partly | `engine/web/webpatch.py` |
 | C1 | Yes | `tools/web_build.py`, `vercel.json`, `tools/sync_desktop.py` |
 | C2 | Yes | `tools/web_build.py` (WOFF2 + `font-display`) |
-| C3, C4 | Yes | `public/*.js` + registered in `sync_desktop.py` so they survive syncs |
-| C5 | Yes | `public/web.js` |
+| C3, C4, C4b | Yes | `public/pages_copilot.js`, `public/lib.js`, `public/pages_keys.js`, registered in `sync_desktop.py` so they survive syncs |
+| C5 | Withdrawn | Not reproducible in 2.48 (see above) |

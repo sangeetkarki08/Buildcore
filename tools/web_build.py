@@ -56,7 +56,7 @@ def make_woff2(fonts):
         src = os.path.join(fonts, name)
         dst = src[:-4] + ".woff2"
         if TTFont is not None and (not os.path.exists(dst) or os.path.getmtime(dst) < os.path.getmtime(src)):
-            f = TTFont(src)
+            f = TTFont(src, recalcTimestamp=False)      # same bytes every time, so the version only changes with the font
             f.flavor = "woff2"
             f.save(dst)
             print("  font %s: %d KB -> %s %d KB" % (name, os.path.getsize(src) // 1024, os.path.basename(dst),
