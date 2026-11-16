@@ -21,6 +21,23 @@ from datetime import datetime
 from web import pgsqlite
 
 STAGE_DIR = "__import"
+# Desktop full-text search tables (SQLite FTS) have no PostgreSQL equivalent. They are copied as the plain table the web
+# engine itself uses for them (doc_id = the SQLite rowid, one text column each; searched with LIKE), and SQLite's own
+# internal tables for them (dl_fts_data, dl_fts_idx, ...) are left out: they only hold SQLite's search index.
+_VIRTUAL = re.compile(r"(?is)^\s*CREATE\s+VIRTUAL\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[\"'`\[]?(\w+)[\"'`\]]?\s+USING\s+(\w+)\s*(?:\((.*)\))?\s*$")
+_FTS_SHADOW = ("_data", "_idx", "_content", "_docsize", "_config", "_segments", "_segdir", "_stat")
+
+
+def _fts_columns(args):
+    """Column names of an FTS table definition (options such as tokenize=... and UNINDEXED left out)."""
+    out = []
+    for part in re.split(r",(?=(?:[^']*'[^']*')*[^']*$)", args or ""):
+        part = part.strip()
+        if part and "=" not in part:
+            out.append(part.split()[0].strip("\"'`[]"))
+    return out
+
+
 NUMERIC = ("numeric", "double precision", "bigint", "integer", "smallint", "real")
 
 
@@ -118,7 +135,22 @@ def import_sqlite(path, target_schema, progress=None, run_startup=True):
                                         "AND name NOT LIKE 'sqlite_%' ORDER BY CASE type WHEN 'table' THEN 0 "
                                         "WHEN 'index' THEN 1 ELSE 2 END, rowid")]
     # 1. tables, from the file's own definitions
-    tables = [(n, s) for n, t, s in master if t == "table"]
+    fts = {}                           # FTS table -> its columns
+    tables = []
+    for n, t, sql in master:
+        if t != "table":
+            continue
+        m = _VIRTUAL.match(sql)
+        if m:
+            if m.group(2).lower().startswith("fts"):
+                fts[n] = _fts_columns(m.group(3))
+                sql = "CREATE TABLE %s (doc_id INTEGER PRIMARY KEY, %s)" % (n, ", ".join("%s TEXT" % c for c in fts[n]))
+            else:
+                report.setdefault("skipped", []).append(n)
+                continue
+        tables.append((n, sql))
+    tables = [(n, sql) for n, sql in tables
+              if not any(n.lower() == (v + x).lower() for v in fts for x in _FTS_SHADOW)]
     for name, sql in tables:
         plan = pgsqlite._make_plan(sql)
         ddl = plan.sql
@@ -136,8 +168,13 @@ def import_sqlite(path, target_schema, progress=None, run_startup=True):
         tb = cat.get(name) or cat.get(name.lower())
         if tb is None:
             continue
-        scols = [r[1].decode() if isinstance(r[1], bytes) else r[1]
-                 for r in sq.execute('PRAGMA table_info("%s")' % name.replace('"', '""'))]
+        try:
+            scols = [r[1].decode() if isinstance(r[1], bytes) else r[1]
+                     for r in sq.execute('PRAGMA table_info("%s")' % name.replace('"', '""'))]
+        except Exception:
+            if name not in fts:
+                raise
+            scols = []                 # an FTS table this SQLite cannot open: read from its content store below
         cols = [c for c in scols if c.lower() in [x.lower() for x in tb.cols]]
         pgcols = {x.lower(): x for x in tb.cols}
         types = [tb.types[pgcols[c.lower()]] for c in cols]
@@ -150,12 +187,23 @@ def import_sqlite(path, target_schema, progress=None, run_startup=True):
         sel = 'SELECT %s%s FROM "%s"' % ("rowid, " if has_rowid else "", ", ".join('"%s"' % c.replace('"', '""') for c in cols),
                                          name.replace('"', '""'))
         qcols = ", ".join('"%s"' % pgcols[c.lower()] for c in cols)
+        if name in fts:
+            # rowid becomes doc_id. If this Python's SQLite cannot open FTS tables, the text is read from the
+            # table's own content store (<name>_content: id, c0, c1, ... in column order).
+            cols = [c for c in fts[name] if c.lower() in pgcols]
+            types = [tb.types[pgcols[c.lower()]] for c in cols]
+            qcols = ", ".join('"%s"' % pgcols[c.lower()] for c in ["doc_id"] + cols)
+            has_rowid = True
+            if not scols:
+                sel = 'SELECT id, %s FROM "%s_content"' % (", ".join("c%d" % fts[name].index(c) for c in cols), name)
+            else:
+                sel = 'SELECT rowid, %s FROM "%s"' % (", ".join('"%s"' % c for c in cols), name)
         cur = pg.cursor()
         with cur.copy('COPY "%s" (%s) FROM STDIN' % (tb.name, qcols)) as cp:
             for row in sq.execute(sel):
                 rid = row[0] if has_rowid else None
                 vals = row[1:] if has_rowid else row
-                out = []
+                out = [rid] if name in fts else []
                 for c, t, v in zip(cols, types, vals):
                     if isinstance(v, bytes) and t != "bytea":
                         try:
