@@ -7,6 +7,7 @@
  *  - Forgot password on the sign-in page; the requests it sends are listed in Administration › Users
  *  - The address opens on a company sign-in (no company's name is shown), then the user sign-in of that company
  *  - The "What's new" pop-ups of each version are not shown
+ *  - Two-step sign-in with an authenticator app (user menu; required or not in Administration › Users)
  */
 (function () {
   "use strict";
@@ -98,6 +99,10 @@
           alert(msg);
         }
         return reply(j);
+      }
+      if (url === "/api" && typeof init.body === "string" && init.body.indexOf('"auth.login"') >= 0) {
+        const req = JSON.parse(init.body);
+        if (req.fn === "auth.login" && !(req.args && req.args.otp)) return await loginWithCode(input, init, req);
       }
       if (url === "/api" && typeof init.body === "string" && init.body.indexOf('"auth.setup"') >= 0) {
         const req = JSON.parse(init.body);
@@ -383,5 +388,148 @@
     if (!rows.length || !head.isConnected) return;
     const bar = head.closest(".bar") || head;
     bar.parentNode.insertBefore(requestsPanel(rows), bar.nextSibling);
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  /* Two-step sign-in: a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator...)
+     after the password. The server answers a correct password with TOTP_CODE (asks for the code) or TOTP_SETUP
+     (company requires it, not set up yet: shows the QR code); the sign-in is sent again with the code. */
+  function qrBox(text) {
+    const qr = window.qrcode(0, "M");
+    qr.addData(text); qr.make();
+    const n = qr.getModuleCount(), size = 200, c = size / (n + 8);
+    let d = "";
+    for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (qr.isDark(r, k)) d += `M${(k + 4) * c},${(r + 4) * c}h${c}v${c}h-${c}z`;
+    const box = h("div", { style: "text-align:center;margin:8px 0" });
+    box.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="border-radius:8px"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+    return box;
+  }
+  const spaced = (s) => String(s || "").replace(/(.{4})/g, "$1 ").trim();
+  function setupSteps(secret, uri) {
+    return h("div", {},
+      h("ol", { style: "margin:0 0 6px 18px;padding:0" },
+        h("li", {}, "Install ", h("b", {}, "Google Authenticator"), " on your phone (Play Store or App Store)."),
+        h("li", {}, "In the app tap ", h("b", {}, "+"), " then ", h("b", {}, "Scan a QR code"), ", and scan this:")),
+      qrBox(uri),
+      h("p", { class: "hint", style: "text-align:center" }, "Can't scan? Choose “Enter a setup key” and type: ",
+        h("b", { style: "font-family:monospace;user-select:all" }, spaced(secret))),
+      h("p", { style: "margin:6px 0 0" }, "3. Type the 6-digit code the app now shows for BuildCore:"));
+  }
+  function codeInput() {
+    return h("input", { inputmode: "numeric", autocomplete: "one-time-code", maxlength: "7", placeholder: "123456",
+      style: "font-size:24px;letter-spacing:6px;text-align:center;width:100%" });
+  }
+  async function loginWithCode(input, init, req) {
+    const r = await realFetch(input, init);
+    let j;
+    try { j = await r.clone().json(); } catch (e) { return r; }
+    if (j.ok || typeof j.error !== "string" || !/^TOTP_(CODE|SETUP)/.test(j.error)) return r;
+    let setup = null;
+    if (j.error.indexOf("TOTP_SETUP:") === 0) { try { setup = JSON.parse(j.error.slice(11)); } catch (e) { /* asked for a code below */ } }
+    return new Promise((resolve) => {
+      let done = false;
+      const code = codeInput();
+      const send = async () => {
+        const v = code.value.replace(/\D/g, "");
+        if (v.length !== 6) { toast("Type the 6 digits from the app.", "err"); throw new Error("x"); }
+        const body = JSON.stringify(Object.assign({}, req, { args: Object.assign({}, req.args, { otp: v }) }));
+        const r2 = await realFetch(input, Object.assign({}, init, { body }));
+        let j2 = {};
+        try { j2 = await r2.clone().json(); } catch (e) { /* passed on as it is */ }
+        if (!j2.ok && j2.error === "TOTP_WRONG") {
+          toast("That code is not right. Type the code the app shows now; if it keeps failing, check that the phone's time is set automatically.", "err");
+          code.value = ""; code.focus();
+          throw new Error("x");
+        }
+        done = true;
+        resolve(r2);
+      };
+      const body = setup
+        ? h("div", {}, h("p", { class: "muted", style: "margin-top:0" }, "Your company asks everyone to use an authenticator app when signing in. Set it up once on this phone:"), setupSteps(setup.secret, setup.uri), code)
+        : h("div", {}, h("p", { style: "margin-top:0" }, "Open ", h("b", {}, "Google Authenticator"), " on your phone and type the 6-digit code shown for BuildCore."), code,
+          h("p", { class: "hint" }, "Lost your phone? Ask an administrator to reset two-step sign-in for you (Administration › Users)."));
+      const m = modal(setup ? "Set up two-step sign-in" : "Two-step sign-in", body, [{ label: "Sign in", cls: "primary", act: send }],
+        { narrow: true, onClose: () => { if (!done) resolve(reply({ ok: false, error: "Sign-in needs the 6-digit code from your authenticator app." })); } });
+      code.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); const b = m.el.querySelector("footer .btn.primary"); if (b) b.click(); } });
+      code.focus();
+    });
+  }
+  window.bcoLoginWithCode = loginWithCode;
+
+  /* user menu › Two-step sign-in: turn it on (scan, confirm a code) or off (password) */
+  async function totpDialog() {
+    let st;
+    try { st = await api("web.totp_status", {}); } catch (e) { toast(e.message, "err"); return; }
+    if (st.on) {
+      const pw = h("input", { type: "password", autocomplete: "current-password" });
+      modal("Two-step sign-in", h("div", {},
+        h("p", { style: "margin-top:0" }, "✅ On since " + String(st.since || "").replace("T", " ").slice(0, 16) + ". Each sign-in asks for the code from your authenticator app."),
+        st.required ? h("p", { class: "hint" }, "Your company requires it, so it stays on. Changing phones? Ask an administrator to reset it, then set it up again at your next sign-in.")
+          : [h("p", { class: "hint" }, "To turn it off, type your password."), h("label", { class: "f" }, h("span", {}, "Password"), pw)]),
+      st.required ? [] : [{ label: "Turn off", cls: "warn", act: async () => {
+        await tryApi("web.totp_disable", { password: pw.value });
+        toast("Two-step sign-in is off.");
+      } }], { narrow: true });
+      return;
+    }
+    let s;
+    try { s = await api("web.totp_begin", {}); } catch (e) { toast(e.message, "err"); return; }
+    const code = codeInput();
+    const m = modal("Turn on two-step sign-in", h("div", {},
+      h("p", { class: "muted", style: "margin-top:0" }, "After your password, BuildCore will also ask for a 6-digit code from your phone, so a stolen password alone cannot open your account."),
+      setupSteps(s.secret, s.uri), code), [{ label: "Turn on", cls: "primary", act: async () => {
+      await tryApi("web.totp_enable", { code: code.value });
+      toast("Two-step sign-in is on. You will need the app each time you sign in.");
+    } }], { narrow: true });
+    code.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); const b = m.el.querySelector("footer .btn.primary"); if (b) b.click(); } });
+  }
+  new MutationObserver(() => {
+    const list = document.querySelector(".usermenu-list");
+    if (!list || list.querySelector(".bco-totp")) return;
+    const pw = [...list.querySelectorAll("button")].find((b) => /Change password/.test(b.textContent));
+    const b = h("button", { class: "bco-totp", onclick: () => { list.hidden = true; totpDialog(); } }, "Two-step sign-in (Authenticator)");
+    if (pw) pw.after(b); else list.prepend(b);
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  /* Administration › Users: require it for everyone, see who has it, reset it for someone who changed phones */
+  function totpPanel(d) {
+    const box = h("div", { class: "panel", style: "margin-bottom:14px" });
+    const paint = () => {
+      const on = d.users.filter((x) => x.on_since).length;
+      box.replaceChildren(h("h3", {}, "Two-step sign-in (Google Authenticator)"),
+        h("p", { class: "hint" }, on + " of " + d.users.length + " active users have it on. " +
+          (d.required ? "Required: people without it are shown the QR code right after their password and must set it up to get in."
+            : "Optional: each person can turn it on from their user menu (top right).")),
+        h("label", { style: "display:flex;gap:8px;align-items:center;margin:6px 0 10px" },
+          h("input", { type: "checkbox", checked: d.required, onchange: async (e) => {
+            const want = e.target.checked;
+            if (want && !confirm("Require two-step sign-in for everyone?\n\nPeople who have not set it up will need their phone at their next sign-in. Make sure your own phone is set up first.")) { e.target.checked = false; return; }
+            try { d.required = (await api("web.totp_require", { on: want })).required; toast(want ? "Two-step sign-in is now required." : "Two-step sign-in is now optional."); }
+            catch (err) { e.target.checked = !want; toast(err.message, "err"); }
+            paint();
+          } }), h("b", {}, "Require it for everyone in this company")),
+        h("details", {}, h("summary", { style: "cursor:pointer" }, "Who has it on"),
+          h("div", {}, d.users.map((x) => h("div", { class: "bar", style: "gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--line, #ddd)" },
+            h("div", { class: "grow" }, h("b", {}, x.name || x.username), " · " + x.username + " · " + String(x.role || "").replace(/_/g, " ")),
+            x.on_since ? h("span", { class: "muted" }, "On since " + String(x.on_since).slice(0, 10)) : h("span", { class: "muted" }, "Not set up"),
+            x.on_since ? h("button", { class: "btn small", onclick: async () => {
+              if (!confirm("Reset two-step sign-in for " + (x.name || x.username) + "?\n\nUse this when they lost or changed their phone. They are signed out, and set it up again at their next sign-in (if required) or from their user menu.")) return;
+              try { await api("web.totp_reset", { user_id: x.id }); x.on_since = null; toast("Reset for " + x.username + "."); paint(); } catch (err) { toast(err.message, "err"); }
+            } }, "Reset") : null)))));
+    };
+    paint();
+    return box;
+  }
+  const totpSeen = new WeakSet();
+  new MutationObserver(async () => {
+    if (!/#\/?admin\/users/.test(location.hash)) return;
+    const page = document.querySelector("#page");
+    const head = page && page.querySelector("h1");
+    if (!head || totpSeen.has(head) || !can("admin", "edit")) return;
+    totpSeen.add(head);
+    let d;
+    try { d = await api("web.totp_admin", {}); } catch (e) { return; }
+    if (!head.isConnected) return;
+    const bar = head.closest(".bar") || head;
+    bar.parentNode.insertBefore(totpPanel(d), bar.nextSibling);
   }).observe(document.documentElement, { childList: true, subtree: true });
 })();

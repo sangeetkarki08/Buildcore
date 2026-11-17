@@ -1160,6 +1160,191 @@ def make_handler(server):
     return WebHandler
 
 
+# ───────────────────────── two-step sign-in (authenticator app) ─────────────────────────
+# After the password, a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, ...):
+# the standard time-based code (RFC 6238: HMAC-SHA1, 30 seconds, 6 digits). Each person turns it on for themselves
+# (user menu > Two-step sign-in) by scanning a QR code; an administrator can require it for everyone, in which case a
+# person without it is shown the QR code right after their password and cannot get in until a code from it works.
+# An administrator can turn it off for someone who lost their phone; the setup-key password reset turns it off too.
+_TOTP_TABLE = ("CREATE TABLE IF NOT EXISTS web_totp(user_id INTEGER PRIMARY KEY, secret TEXT, on_since TEXT, "
+               "last_step INTEGER)")
+_TOTP_REQUIRED = "web_totp_required"
+TOTP_STEP = 30
+
+
+def _totp_code(secret, step):
+    import base64
+    import struct
+    key = base64.b32decode(secret + "=" * (-len(secret) % 8), casefold=True)
+    d = hmac.new(key, struct.pack(">Q", step), hashlib.sha1).digest()
+    o = d[-1] & 15
+    return "%06d" % ((struct.unpack(">I", d[o:o + 4])[0] & 0x7FFFFFFF) % 1000000)
+
+
+def _totp_match(secret, code, last_step=None):
+    """The time step the code belongs to (this one, or one either side for a phone clock a little off), or None.
+    A step at or before last_step is refused, so a code that was used once cannot be used again."""
+    code = re.sub(r"\D", "", str(code or ""))
+    if len(code) != 6 or not secret:
+        return None
+    now_step = int(time.time() // TOTP_STEP)
+    for st in (now_step - 1, now_step, now_step + 1):
+        if (last_step is None or st > int(last_step)) and hmac.compare_digest(_totp_code(secret, st), code):
+            return st
+    return None
+
+
+def _totp_new_secret():
+    import base64
+    import secrets
+    return base64.b32encode(secrets.token_bytes(20)).decode().rstrip("=")
+
+
+def _totp_uri(c, secret, username):
+    from core import setting
+    co = (setting(c, "company_name") or "").strip()
+    issuer = "BuildCore" + (" " + co if co else "")
+    return "otpauth://totp/%s:%s?secret=%s&issuer=%s&digits=6&period=%d" % (
+        quote(issuer), quote(username), secret, quote(issuer), TOTP_STEP)
+
+
+def _patch_totp():
+    import api_inventory as inv
+    from api_inventory import api
+    from core import ApiError, audit, hash_pw, ins, now, q, q1, require, setting
+
+    def row(c, uid):
+        c.execute(_TOTP_TABLE)
+        return q1(c, "SELECT * FROM web_totp WHERE user_id=?", (uid,))
+
+    def required(c):
+        return (setting(c, _TOTP_REQUIRED) or "") == "1"
+
+    orig = inv.FUNCS["auth.login"]
+
+    def login(c, u, a):
+        res = orig[0](c, u, a)                       # password checked (and its own lock-out) exactly as before
+        s = q1(c, "SELECT user_id FROM sessions WHERE token=?", (res.get("token"),)) if isinstance(res, dict) else None
+        if not s:
+            return res
+        uid = s["user_id"]
+        t = row(c, uid)
+        on = bool(t and t["on_since"])
+        if not on and not required(c):
+            return res
+        usr = q1(c, "SELECT id, username FROM users WHERE id=?", (uid,))
+        code = a.get("otp")
+        if not on and not (t and t["secret"] and code):
+            # required but not set up yet: a new QR code, then the person signs in again with a code from it
+            c.rollback()                             # no session, no "signed in" record: nothing happened yet
+            secret = t["secret"] if t and t["secret"] else _totp_new_secret()
+            c.execute(_TOTP_TABLE)
+            c.execute("INSERT OR REPLACE INTO web_totp(user_id, secret, on_since, last_step) VALUES(?,?,NULL,NULL)",
+                      (uid, secret))
+            c.commit()
+            raise ApiError("TOTP_SETUP:" + json.dumps({"secret": secret, "uri": _totp_uri(c, secret, usr["username"])}))
+        if not code:
+            c.rollback()
+            raise ApiError("TOTP_CODE")
+        st = _totp_match(t["secret"], code, t["last_step"] if on else None)
+        if st is None:
+            c.rollback()
+            ins(c, "login_attempts", {"ts": now(), "username": usr["username"], "ip": a.get("_ip"), "ok": 0})
+            c.commit()                               # a wrong code counts like a wrong password (5 = locked a while)
+            raise ApiError("TOTP_WRONG")
+        c.execute("UPDATE web_totp SET last_step=?, on_since=COALESCE(on_since, ?) WHERE user_id=?", (st, now(), uid))
+        if not on:
+            audit(c, usr, "totp_on", "users", uid, {"how": "at sign-in"})
+        return res
+    inv.FUNCS["auth.login"] = (login, orig[1], orig[2], orig[3])
+
+    @api("web.totp_status")
+    def totp_status(c, u, a):
+        t = row(c, u["id"])
+        return {"on": bool(t and t["on_since"]), "since": t["on_since"] if t else None, "required": required(c)}
+
+    @api("web.totp_begin")
+    def totp_begin(c, u, a):
+        t = row(c, u["id"])
+        if t and t["on_since"]:
+            raise ApiError("Two-step sign-in is already on for you.")
+        secret = _totp_new_secret()
+        c.execute("INSERT OR REPLACE INTO web_totp(user_id, secret, on_since, last_step) VALUES(?,?,NULL,NULL)",
+                  (u["id"], secret))
+        return {"secret": secret, "uri": _totp_uri(c, secret, u["username"])}
+
+    @api("web.totp_enable")
+    def totp_enable(c, u, a):
+        t = row(c, u["id"])
+        if not t or not t["secret"]:
+            raise ApiError("Start again: the QR code was not made.")
+        if t["on_since"]:
+            return {"on": True}
+        st = _totp_match(t["secret"], a.get("code"))
+        if st is None:
+            raise ApiError("That code is not right. Type the 6 digits the app shows now (they change every 30 seconds).")
+        c.execute("UPDATE web_totp SET on_since=?, last_step=? WHERE user_id=?", (now(), st, u["id"]))
+        audit(c, u, "totp_on", "users", u["id"], {})
+        return {"on": True}
+
+    @api("web.totp_disable")
+    def totp_disable(c, u, a):
+        if required(c):
+            raise ApiError("Your company requires two-step sign-in, so it cannot be turned off. An administrator can "
+                           "reset it if you change phones.")
+        usr = q1(c, "SELECT pw_hash, salt FROM users WHERE id=?", (u["id"],))
+        if not usr or hash_pw(a.get("password") or "", usr["salt"])[0] != usr["pw_hash"]:
+            raise ApiError("Your password is not right.")
+        row(c, u["id"])
+        c.execute("DELETE FROM web_totp WHERE user_id=?", (u["id"],))
+        audit(c, u, "totp_off", "users", u["id"], {})
+        return {"on": False}
+
+    @api("web.totp_admin")
+    def totp_admin(c, u, a):
+        require(u, "admin", "edit")
+        c.execute(_TOTP_TABLE)
+        on = {r["user_id"]: r["on_since"] for r in q(c, "SELECT user_id, on_since FROM web_totp WHERE on_since IS NOT NULL")}
+        users = [{"id": r["id"], "username": r["username"], "name": r["name"], "role": r["role"], "on_since": on.get(r["id"])}
+                 for r in q(c, "SELECT id, username, name, role FROM users WHERE active=1 ORDER BY name, username")]
+        return {"required": required(c), "users": users}
+
+    @api("web.totp_require")
+    def totp_require(c, u, a):
+        require(u, "admin", "edit")
+        v = "1" if a.get("on") else "0"
+        c.execute("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                  (_TOTP_REQUIRED, v))
+        audit(c, u, "totp_required", "settings", None, {"on": v == "1"})
+        return {"required": v == "1"}
+
+    @api("web.totp_reset")
+    def totp_reset(c, u, a):
+        require(u, "admin", "edit")
+        uid = int(a.get("user_id") or 0)
+        usr = q1(c, "SELECT id, username FROM users WHERE id=?", (uid,))
+        if not usr:
+            raise ApiError("No such user.")
+        row(c, uid)
+        c.execute("DELETE FROM web_totp WHERE user_id=?", (uid,))
+        c.execute("DELETE FROM sessions WHERE user_id=?", (uid,))     # signed out: the next sign-in sets it up again
+        audit(c, u, "totp_reset", "users", uid, {"user": usr["username"]})
+        return {"username": usr["username"]}
+
+    # whoever can reset a password with the setup key owns the site: it turns two-step sign-in off for that user too,
+    # so an owner who lost their phone can still get in
+    rk = inv.FUNCS.get("auth.reset_with_key")
+    if rk:
+        def reset_with_key(c, u, a):
+            res = rk[0](c, u, a)
+            usr = q1(c, "SELECT id FROM users WHERE username=?", (res.get("username"),))
+            if usr:
+                row(c, usr["id"])
+                c.execute("DELETE FROM web_totp WHERE user_id=?", (usr["id"],))
+            return res
+        inv.FUNCS["auth.reset_with_key"] = (reset_with_key, rk[1], rk[2], rk[3])
+
+
 def before_init(server):
     _patch_companies()
     _patch_licence()
@@ -1198,4 +1383,5 @@ def after_init(server):
     if hasattr(api_corp, "_patch_server"):
         api_corp._patch_server()          # company switching and the engine lock around each request
     _wrap_call(server)
+    _patch_totp()                         # after the engine's own sign-in wrapper
     server.read_server_settings()

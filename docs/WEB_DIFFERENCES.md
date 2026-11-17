@@ -32,6 +32,13 @@ These are the only differences, all because a website has no Windows computer be
 - **Team & devices / Remote access** (the desktop's own local-network server) have nothing to do on the web:
   everyone simply opens the web address.
 - **Sign-in** is BuildCore's own users and passwords, as on desktop. Supabase Auth is not used.
+- **Two-step sign-in (web only)**: after the password, a 6-digit code from an authenticator app (Google
+  Authenticator, Microsoft Authenticator…; standard 30-second codes). Each person turns it on from the user menu
+  (top right › Two-step sign-in) by scanning a QR code. In Administration › Users an administrator can require it for
+  everyone (people without it see the QR code right after their password), see who has it, and reset it for someone
+  who lost their phone. Five wrong codes lock the user like five wrong passwords. A password reset with the setup key
+  also turns it off for that user, so the owner can always get back in. Stored in table `web_totp`; a desktop data
+  file restored on the web does not carry it, so people set it up again after a restore.
 
 ## Screen texts changed by `tools/sync_desktop.py`
 
