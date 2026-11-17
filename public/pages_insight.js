@@ -414,13 +414,14 @@
   const RESPC = { contractor: "#a0aec0", employer: "#3182ce", neutral: "#d69e2e", concurrent: "#805ad5" };
   const n0 = (x) => (x == null ? "—" : Number(x).toLocaleString("en-IN", { maximumFractionDigits: 1 }));
   const hrs = (x) => (x == null ? "—" : n0(Math.round(x)) + " h");
-  async function monthPanel(box, cal) {
+  async function monthPanel(box, cal, ref) {
     let g;
-    try { g = await api("glance.month", { project_id: S.project || null, cal: cal || undefined }); } catch (e) { box.replaceChildren(h("div", { class: "ins-note" }, "This month could not load: " + e.message)); return; }
+    try { g = await api("glance.month", { project_id: S.project || null, cal: cal || undefined, ref: ref || undefined }); } catch (e) { box.replaceChildren(h("div", { class: "ins-note" }, "This month could not load: " + e.message)); return; }
     const P = g.period, T = g.site_total || {}, M = g.money, U = g.supply, E = g.equipment, A = g.approvals || {};
-    const other = P.cal === "bs" ? "ad" : "bs";
-    box.replaceChildren(h("div", { class: "hd" }, h("h2", {}, "This month", h("span", { class: "n" }, P.label + " · day " + P.days_elapsed + " of " + P.days_total)), h("span", { class: "grow" }),
+    const other = P.cal === "bs" ? "ad" : "bs"; const shiftDay = (s, n) => { const d = new Date(s + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }; const isNow = !ref || (P.from <= today() && today() <= P.to), prevRef = shiftDay(P.from, -1), nextRef = shiftDay(P.to, 1); const goMonth = (r) => monthPanel(box, P.cal, r && r <= today() ? r : undefined); const monthNav = h("div", { class: "ins-scope", style: "margin-right:8px" }, h("button", { title: "Previous month", onclick: () => goMonth(prevRef) }, "‹"), h("button", { title: isNow ? "This is the current month" : "Next month", disabled: isNow, onclick: () => goMonth(nextRef) }, "›")); const noDpr = isNow && g.site && !((g.site_total || {}).dpr_days) ? h("div", { class: "gl-note" }, "No DPR in " + P.label + " yet. ", h("a", { href: "#", onclick: (e) => { e.preventDefault(); goMonth(prevRef); } }, "See last month ›")) : null;
+    box.replaceChildren(h("div", { class: "hd" }, h("h2", {}, isNow ? "This month" : "Month", h("span", { class: "n" }, P.label + (isNow ? " · day " + P.days_elapsed + " of " + P.days_total : " · " + P.days_total + " days"))), h("span", { class: "grow" }), monthNav,
       h("div", { class: "ins-scope" }, h("button", { class: P.cal === "bs" ? "on" : "", onclick: () => P.cal !== "bs" && monthPanel(box, "bs") }, "Nepali month"), h("button", { class: P.cal === "ad" ? "on" : "", onclick: () => P.cal !== "ad" && monthPanel(box, "ad") }, "English month"))));
+    if (noDpr) box.append(noDpr);
     const gr = h("div", { class: "gl-groups" });
     const grp = (title, link, linkText, ...kids) => gr.append(h("div", { class: "gl-g" }, h("h3", {}, title, link ? h("a", { href: link }, linkText + " ›") : null), ...kids));
     const rowsEl = (pairs) => h("div", { class: "gl-rows" }, pairs.filter(Boolean).flatMap(([k, v, cls]) => [h("span", {}, k), h("span", { class: cls || "" }, v)]));

@@ -31,6 +31,17 @@ WEB_TEXT = [
      "Create the first administrator. Everything is stored in your own Supabase database."),
     ("pages_corp.js", "Your data stays on your own computer or office server.", "Your data stays in your own Supabase database."),
     ("pages_license.js", '"Activate BuildCore on this computer"', '"Activate BuildCore"'),
+    # dashboard "This month": previous / next month, and a way to last month while this one has no DPR
+    ("pages_insight.js", 'async function monthPanel(box, cal) {',
+     'async function monthPanel(box, cal, ref) {'),
+    ("pages_insight.js", 'try { g = await api("glance.month", { project_id: S.project || null, cal: cal || undefined }); }',
+     'try { g = await api("glance.month", { project_id: S.project || null, cal: cal || undefined, ref: ref || undefined }); }'),
+    ("pages_insight.js", 'const other = P.cal === "bs" ? "ad" : "bs";',
+     'const other = P.cal === "bs" ? "ad" : "bs"; const shiftDay = (s, n) => { const d = new Date(s + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }; const isNow = !ref || (P.from <= today() && today() <= P.to), prevRef = shiftDay(P.from, -1), nextRef = shiftDay(P.to, 1); const goMonth = (r) => monthPanel(box, P.cal, r && r <= today() ? r : undefined); const monthNav = h("div", { class: "ins-scope", style: "margin-right:8px" }, h("button", { title: "Previous month", onclick: () => goMonth(prevRef) }, "‹"), h("button", { title: isNow ? "This is the current month" : "Next month", disabled: isNow, onclick: () => goMonth(nextRef) }, "›")); const noDpr = isNow && g.site && !((g.site_total || {}).dpr_days) ? h("div", { class: "gl-note" }, "No DPR in " + P.label + " yet. ", h("a", { href: "#", onclick: (e) => { e.preventDefault(); goMonth(prevRef); } }, "See last month ›")) : null;'),
+    ("pages_insight.js", 'box.replaceChildren(h("div", { class: "hd" }, h("h2", {}, "This month", h("span", { class: "n" }, P.label + " · day " + P.days_elapsed + " of " + P.days_total)), h("span", { class: "grow" }),',
+     'box.replaceChildren(h("div", { class: "hd" }, h("h2", {}, isNow ? "This month" : "Month", h("span", { class: "n" }, P.label + (isNow ? " · day " + P.days_elapsed + " of " + P.days_total : " · " + P.days_total + " days"))), h("span", { class: "grow" }), monthNav,'),
+    ("pages_insight.js", '    const gr = h("div", { class: "gl-groups" });\n',
+     '    if (noDpr) box.append(noDpr);\n    const gr = h("div", { class: "gl-groups" });\n'),
 ]
 
 
