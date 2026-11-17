@@ -11,7 +11,7 @@ with the data in **Supabase** (PostgreSQL), the website on **Vercel**, and the c
 |---|---|
 | `public/` | The screens (HTML, CSS, JavaScript), exactly the desktop's, plus `web.js` for the few web steps. Vercel serves them as plain files. |
 | `engine/` | The BuildCore engine, the same Python files as desktop 2.35.0, unchanged. |
-| `engine/web/` | The web layer: lets the engine use PostgreSQL in place of its SQLite file (`pgsqlite.py`), keeps photos, documents and backups in Supabase Storage (`storage.py`), imports and exports desktop data files (`transfer.py`), and the web start-up (`boot.py`, `webpatch.py`). |
+| `engine/web/` | The web layer: lets the engine use PostgreSQL in place of its SQLite file (`pgsqlite.py`), keeps photos, documents and backups in Supabase Storage (`storage.py`), imports and exports desktop data files (`transfer.py`), the Claude assistant, alerts and daily summary (`automate.py`), and the web start-up (`boot.py`, `webpatch.py`). |
 | `api/index.py` | The one Vercel function. Every `/api` and `/files` request goes to it. |
 | `vercel.json` | Vercel settings: function size and time limit, the region (Mumbai), the address rewrites. |
 | `supabase/schema.sql` | The database layout. Not needed: the app creates it on first start. |

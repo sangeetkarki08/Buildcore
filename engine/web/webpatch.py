@@ -1042,9 +1042,42 @@ def make_handler(server):
 
         def do_GET(self):
             self._fix_path()
+            if urlparse(self.path).path.startswith("/api/cron/"):
+                return self._cron()
             self._company_of_request()
             with _GATE:
                 return super().do_GET()
+
+        def _cron(self):
+            """Vercel Cron: /api/cron/alerts and /api/cron/summary, for every company that switched them on. Vercel
+            sends the CRON_SECRET setting as a Bearer token; without that setting nothing runs."""
+            import api_corp
+            from web import automate
+            want = (os.environ.get("CRON_SECRET") or "").strip()
+            got = (self.headers.get("Authorization") or "").replace("Bearer ", "", 1).strip()
+            if not want or not hmac.compare_digest(got, want):
+                return self._json(403, {"ok": False, "error": "Set CRON_SECRET in Vercel to run scheduled jobs."})
+            job = urlparse(self.path).path.rstrip("/").rsplit("/", 1)[-1]
+            if job not in ("alerts", "summary"):
+                return self._json(404, {"ok": False, "error": "Unknown job."})
+            out = {}
+            with core.LOCK:
+                try:
+                    for co in api_corp.registry()["companies"]:
+                        if co.get("broken"):
+                            continue
+                        try:
+                            api_corp.switch(co["code"])
+                        except Exception as e:
+                            out[co["code"]] = {"error": str(e)[:200]}
+                            continue
+                        out[co["code"]] = automate.run_company(job)
+                finally:
+                    try:
+                        api_corp.switch("main")
+                    except Exception:
+                        pass
+            return self._json(200, {"ok": True, "job": job, "companies": out})
 
         def do_POST(self):
             self._fix_path()
@@ -1384,4 +1417,6 @@ def after_init(server):
         api_corp._patch_server()          # company switching and the engine lock around each request
     _wrap_call(server)
     _patch_totp()                         # after the engine's own sign-in wrapper
+    from web import automate
+    automate.install()                    # Claude assistant, alerts, daily summary
     server.read_server_settings()

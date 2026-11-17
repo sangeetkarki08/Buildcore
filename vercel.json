@@ -10,6 +10,16 @@
       "includeFiles": "engine/**"
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/alerts",
+      "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/cron/summary",
+      "schedule": "45 12 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api",

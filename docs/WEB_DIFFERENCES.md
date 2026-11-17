@@ -39,6 +39,18 @@ These are the only differences, all because a website has no Windows computer be
   who lost their phone. Five wrong codes lock the user like five wrong passwords. A password reset with the setup key
   also turns it off for that user, so the owner can always get back in. Stored in table `web_totp`; a desktop data
   file restored on the web does not carry it, so people set it up again after a restore.
+- **Claude assistant & automations (web only)**, Overview › Claude assistant & automations (`engine/web/automate.py`):
+  - *Assistant*: a chat. Claude looks things up (projects, materials, vendors, stores, BOQ items, stock, documents,
+    the Action centre) and can save **draft** material requisitions, purchase requests and purchase orders. It acts as
+    the signed-in person (their permissions and projects apply) and can never submit, approve, post, pay or delete.
+  - *Alerts* (09:00 Nepal time): the Action centre's items (approvals, overdue tasks, DPR not started, shortage risk,
+    late activities, notice deadlines, NCRs, equipment down, overdue payments) as bell notifications, each person only
+    for their projects; an item is repeated at most every 3 days. No AI used.
+  - *Daily site summary* (18:30 Nepal time): Claude writes each person a short summary of the day for their projects,
+    kept on the assistant screen and announced in the bell.
+  - Claude uses the key and model of Administration › AI assistant settings, and its use shows in that screen's table.
+    Alerts and the summary are off until an administrator switches them on. The schedules are Vercel Cron jobs
+    (`vercel.json`); they run only when the Vercel setting `CRON_SECRET` exists ("Run now" works without it).
 
 ## Screen texts changed by `tools/sync_desktop.py`
 

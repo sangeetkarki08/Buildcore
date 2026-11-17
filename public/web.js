@@ -8,6 +8,7 @@
  *  - The address opens on a company sign-in (no company's name is shown), then the user sign-in of that company
  *  - The "What's new" pop-ups of each version are not shown
  *  - Two-step sign-in with an authenticator app (user menu; required or not in Administration › Users)
+ *  - Overview › Claude assistant & automations: chat that saves drafts, daily site summary, alerts
  */
 (function () {
   "use strict";
@@ -532,4 +533,132 @@
     const bar = head.closest(".bar") || head;
     bar.parentNode.insertBefore(totpPanel(d), bar.nextSibling);
   }).observe(document.documentElement, { childList: true, subtree: true });
+
+  /* Overview › Claude assistant: a chat that looks things up and saves DRAFTS (never submits or approves), the daily
+     site summary, and for administrators the switches for the summary and the alerts (engine/web/automate.py). */
+  async function waitAiJob(id) {
+    for (let i = 0; i < 240; i++) {
+      const j = await api("ai.job", { id });
+      if (j.status !== "running") {
+        if (j.status === "failed") throw new Error(j.error || "The request failed.");
+        return j.result;
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    throw new Error("Claude is still working. Open this screen again in a minute.");
+  }
+  const chatKey = () => "bco_auto_chat:" + coCode() + ":" + ((typeof S !== "undefined" && S.user && S.user.id) || "");
+  const loadChat = () => { try { return JSON.parse(sessionStorage.getItem(chatKey()) || "[]"); } catch (e) { return []; } };
+  const saveChat = (m) => { try { sessionStorage.setItem(chatKey(), JSON.stringify(m.slice(-40))); } catch (e) { /* private window */ } };
+
+  async function autoPage(root, params) {
+    root.append(pageHead("Claude assistant", "Ask in plain words. Claude looks things up in BuildCore and can prepare draft requisitions, purchase requests and purchase orders for you to check and submit. It never approves, posts or pays."));
+    let d;
+    try { d = await api("web.auto_feed", {}); } catch (e) { root.append(h("p", { class: "red" }, e.message)); return; }
+    if (!d.claude) {
+      root.append(h("div", { class: "panel" }, h("h3", {}, "Claude is not switched on"),
+        h("p", {}, "An administrator adds a Claude API key (from platform.claude.com) in ",
+          can("admin", "edit") ? h("a", { href: "#/admin/ai" }, "Administration › AI assistant settings") : "Administration › AI assistant settings",
+          " and sets AI to Claude. Alerts work without it.")));
+    }
+    const msgs = loadChat();
+    const log = h("div", { style: "display:flex;flex-direction:column;gap:10px;max-height:58vh;overflow:auto;padding:4px" });
+    const bubble = (m) => {
+      const mine = m.role === "user";
+      const b = h("div", { style: "max-width:85%;padding:10px 12px;border-radius:12px;white-space:pre-wrap;line-height:1.45;" +
+        (mine ? "align-self:flex-end;background:var(--blue-wash, #e8f0fe)" : "align-self:flex-start;background:var(--panel-2, #f4f5f7);border:1px solid var(--line, #ddd)") });
+      b.textContent = m.content;
+      if (m.drafts && m.drafts.length) {
+        b.append(h("div", { style: "margin-top:8px;display:flex;flex-direction:column;gap:4px" }, m.drafts.map((x) =>
+          h("a", { href: x.link, class: "btn small" }, "📝 " + x.label + " " + (x.no || "#" + x.id) + " (draft) — open to check and submit"))));
+      }
+      return b;
+    };
+    const paint = () => {
+      log.replaceChildren(...(msgs.length ? msgs.map(bubble) : [h("p", { class: "muted" }, "Try: “What needs attention today?”, “How much cement is in stock at the site?”, or “Draft a purchase order for 200 bags of cement from Shree Traders for project ABC”.")]));
+      log.scrollTop = log.scrollHeight;
+    };
+    const box = h("textarea", { rows: 3, placeholder: "Ask Claude… (Enter sends, Shift+Enter for a new line)", style: "width:100%;resize:vertical" });
+    const send = h("button", { class: "btn primary", disabled: !d.claude }, "Send");
+    const busy = h("span", { class: "muted", hidden: true }, "Claude is working…");
+    const ask = async () => {
+      const text = box.value.trim();
+      if (!text || send.disabled) return;
+      const history = msgs.map((m) => ({ role: m.role, content: m.content }));
+      msgs.push({ role: "user", content: text });
+      box.value = ""; paint(); send.disabled = true; busy.hidden = false;
+      try {
+        const r = await api("web.agent", { message: text, history });
+        const res = await waitAiJob(r.job);
+        msgs.push({ role: "assistant", content: res.reply, drafts: res.drafts || [] });
+      } catch (e) {
+        msgs.push({ role: "assistant", content: "⚠ " + e.message });
+      }
+      saveChat(msgs); paint(); send.disabled = !d.claude; busy.hidden = true; box.focus();
+    };
+    send.onclick = ask;
+    box.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } });
+    const clear = h("button", { class: "btn", onclick: () => { msgs.length = 0; saveChat(msgs); paint(); } }, "New conversation");
+    root.append(h("div", { class: "panel" }, log, h("div", { style: "margin-top:10px" }, box),
+      h("div", { class: "actions", style: "align-items:center" }, busy, h("span", { class: "grow" }), clear, send)));
+    paint();
+
+    /* summaries kept for this person */
+    const want = (params && params.r) || (location.hash.match(/[?&]r=(\d+)/) || [])[1];
+    const list = h("div", {});
+    const paintFeed = (items) => list.replaceChildren(...(items.length ? items.map((x) => {
+      const det = h("details", { open: String(x.id) === String(want), style: "border-top:1px solid var(--line, #ddd);padding:6px 0" },
+        h("summary", { style: "cursor:pointer" }, h("b", {}, x.title), h("span", { class: "muted" }, "  " + String(x.ts || "").replace("T", " ").slice(0, 16))));
+      const body = h("div", { style: "white-space:pre-wrap;line-height:1.45;margin-top:6px" });
+      body.textContent = x.body || "";
+      det.append(body);
+      return det;
+    }) : [h("p", { class: "muted" }, "No summaries yet. They arrive each evening when an administrator switches them on, or press “Make my summary now”.")]));
+    paintFeed(d.items || []);
+    const mineBtn = h("button", { class: "btn", disabled: !d.claude, onclick: async () => {
+      mineBtn.disabled = true; mineBtn.textContent = "Writing…";
+      try { const r = await api("web.auto_run", { what: "summary" }); const x = await waitAiJob(r.job); toast(x.summaries ? "Summary ready." : "Nothing recorded today for your projects."); paintFeed((await api("web.auto_feed", {})).items || []); }
+      catch (e) { toast(e.message, "err"); }
+      mineBtn.disabled = false; mineBtn.textContent = "Make my summary now";
+    } }, "Make my summary now");
+    root.append(h("div", { class: "panel" }, h("div", { class: "bar" }, h("h3", { class: "grow" }, "Daily site summaries"), can("admin", "edit") ? null : mineBtn), list));
+
+    /* administrators: switches and run-now */
+    if (d.settings) {
+      const st = d.settings;
+      const sw = (key, label, hint) => h("label", { style: "display:flex;gap:8px;align-items:flex-start;margin:6px 0" },
+        h("input", { type: "checkbox", checked: st[key], onchange: async (e) => {
+          try { Object.assign(st, await api("web.auto_settings", { [key]: e.target.checked })); toast("Saved."); }
+          catch (err) { e.target.checked = !e.target.checked; toast(err.message, "err"); }
+        } }), h("span", {}, h("b", {}, label), h("br"), h("span", { class: "hint" }, hint)));
+      const runBtn = (what, label) => {
+        const b = h("button", { class: "btn", onclick: async () => {
+          b.disabled = true; const old = b.textContent; b.textContent = "Running…";
+          try {
+            const r = await api("web.auto_run", { what }); const x = await waitAiJob(r.job);
+            toast(what === "alerts" ? (x.alerts || 0) + " alert(s) sent to " + (x.people || 0) + " person(s)." : (x.summaries || 0) + " summary(ies) made.");
+            if (what === "summary") paintFeed((await api("web.auto_feed", {})).items || []);
+          } catch (e) { toast(e.message, "err"); }
+          b.disabled = false; b.textContent = old;
+        } }, label);
+        return b;
+      };
+      root.append(h("div", { class: "panel" }, h("h3", {}, "Automations (administrators)"),
+        sw("summary", "Daily site summary — every evening at 18:30", "Claude writes each person a short summary of today's DPRs, work, labour, machines, delays, materials and what needs attention, for the projects they work on. Uses the Claude API (a few cents a day)."),
+        sw("alerts", "Alerts — every morning at 09:00", "Each person gets bell notifications for approvals waiting, overdue tasks, DPRs not started, shortage risk, late activities, notice deadlines, NCRs, equipment down and overdue payments on their projects. The same item is repeated at most every 3 days. Free: no AI used."),
+        st.cron ? h("p", { class: "hint" }, "✓ Scheduled runs are set up.")
+          : h("p", { class: "hint", style: "color:var(--red, #b42318)" }, "Scheduled runs need one setting in Vercel: add CRON_SECRET (any long random words) in Settings › Environment Variables and redeploy. Until then use Run now."),
+        h("div", { class: "actions" }, runBtn("alerts", "Run alerts now"), d.claude ? runBtn("summary", "Make everyone's summary now") : null)));
+    }
+  }
+  (window.bcoBootHooks = window.bcoBootHooks || []).push(() => {
+    PAGES["auto"] = autoPage;
+    try {
+      const g = MENU.find((x) => x[0] === "Overview");
+      if (g && !g[2].some((it) => it[0] === "auto")) {
+        const i = g[2].findIndex((it) => it[0] === "copilot");
+        g[2].splice(i >= 0 ? i + 1 : g[2].length, 0, ["auto", "Claude assistant & automations", null]);
+      }
+    } catch (e) { /* menu as before */ }
+  });
 })();
