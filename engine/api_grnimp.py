@@ -22,7 +22,7 @@ import re
 from core import ApiError, audit, can, ins, now, num, q, q1, today, val
 from api_inventory import FUNCS, api
 
-VERSION = "2.16.1"
+VERSION = "2.48.1"
 
 # field, heading in the sample, other headings recognised
 COLUMNS = [
@@ -87,6 +87,56 @@ def grn_import_template(c, u, a):
     return {"filename": "GRN_import_sample.xlsx", "b64": base64.b64encode(data).decode("ascii"), "columns": heads}
 
 
+def _pkey(s):
+    """Code compared without case, spaces and dashes / slashes / dots."""
+    return re.sub(r"[\s\-_/.:]+", "", str(s or "")).upper()
+
+
+def _cell_text(s):
+    """Excel numbers come as 2, 2.0 or 2.00 - the same project code 2."""
+    s = _clean(s)
+    if re.fullmatch(r"\d+\.0+", s):
+        s = s.split(".")[0]
+    return s
+
+
+def find_project(c, value, cache=None):
+    """2.48.1: the project of a sheet row, found leniently.
+    1. the code exactly (any case);  2. the code without spaces, dashes or slashes;
+    3. a number: the project whose code is that number with leading zeros (2 = 002, which Excel drops from a number cell);
+    4. the project name.  Two projects matching the same way is an error, never a guess."""
+    if cache is None:
+        cache = {}
+    v = _cell_text(value)
+    if v.upper() in cache:
+        return cache[v.upper()]
+    if "_all" not in cache:
+        cache["_all"] = q(c, "SELECT id, code, name, status FROM projects ORDER BY id")
+    allp = cache["_all"]
+
+    def one(hits, how):
+        if len(hits) > 1:
+            raise ValueError("project '%s' matches %d projects by %s (%s) - write the full project code"
+                             % (v, len(hits), how, ", ".join(p["code"] or "?" for p in hits)))
+        return hits[0] if hits else None
+
+    p = None
+    if v:
+        p = one([x for x in allp if (x["code"] or "").strip().upper() == v.upper()], "code")
+        if not p and _pkey(v):
+            p = one([x for x in allp if _pkey(x["code"]) == _pkey(v)], "code")
+        if not p and v.isdigit():
+            p = one([x for x in allp if (x["code"] or "").strip().isdigit() and int(x["code"].strip()) == int(v)], "number")
+        if not p:
+            p = one([x for x in allp if _clean(x["name"]).upper() == v.upper()], "name")
+    if not p:
+        codes = ", ".join("%s (%s)" % (x["code"], x["name"]) for x in allp[:12] if x.get("code"))
+        raise ValueError("project '%s' not found - the Project Code column must have a project code: %s"
+                         % (v, codes or "no projects yet"))
+    cache[v.upper()] = p
+    return p
+
+
 def _pan(s):
     return re.sub(r"\D", "", str(s or ""))
 
@@ -126,7 +176,7 @@ def grn_import(c, u, a):
     dfrom, dto = (a.get("from") or None), (a.get("to") or None)
     apply_, post = bool(a.get("apply")), a.get("post", 1) not in (0, "0", False, "")
     rows_out, groups = [], {}
-    vend_cache, mat_cache = {}, {}
+    vend_cache, mat_cache, proj_cache = {}, {}, {}
     new_vendors, new_materials = [], []
 
     c.execute("SAVEPOINT grnimp_all")
@@ -210,13 +260,19 @@ def grn_import(c, u, a):
                     raise ValueError("accepted qty must be between 0 and the received qty")
                 if x["rate"] <= 0:
                     raise ValueError("rate must be above zero")
-                p = q1(c, "SELECT id, code, status FROM projects WHERE UPPER(code)=UPPER(?)", (r["project_code"],))
-                if not p:
-                    raise ValueError("project %s not found" % r["project_code"])
+                p = find_project(c, r["project_code"], proj_cache)
                 if p["status"] not in ("active", None, ""):
                     out["warn"] = "project %s is %s" % (p["code"], p["status"])
                 s = q1(c, "SELECT id, name FROM stores WHERE project_id=? AND active=1 AND COALESCE(type,'')<>'transit' AND "
                           "(UPPER(COALESCE(code,''))=UPPER(?) OR UPPER(name)=UPPER(?)) ORDER BY id LIMIT 1", (p["id"], r["store"], r["store"]))
+                if not s:      # 2.48.1: same leniency as the project (MS-1 = MS1, 1 = 01)
+                    sv = _cell_text(r["store"])
+                    for z in q(c, "SELECT id, code, name FROM stores WHERE project_id=? AND active=1 AND COALESCE(type,'')<>'transit' ORDER BY id", (p["id"],)):
+                        zc = (z["code"] or "").strip()
+                        if (_pkey(zc) and _pkey(zc) == _pkey(sv)) or _pkey(z["name"]) == _pkey(sv) or \
+                                (sv.isdigit() and zc.isdigit() and int(zc) == int(sv)):
+                            s = z
+                            break
                 if not s:
                     names = ", ".join((z["code"] or z["name"]) for z in q(c, "SELECT code, name FROM stores WHERE project_id=? AND active=1 AND COALESCE(type,'')<>'transit'", (p["id"],)))
                     raise ValueError("store '%s' not found in %s (stores: %s)" % (r["store"], p["code"], names or "none"))

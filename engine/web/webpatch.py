@@ -1345,6 +1345,45 @@ def _patch_totp():
         inv.FUNCS["auth.reset_with_key"] = (reset_with_key, rk[1], rk[2], rk[3])
 
 
+def _patch_261():
+    """2.49 / 2.61 on the website. The hourly second backup copy is for a desktop data folder (Supabase keeps
+    the website's database), and Group view reads every company from PostgreSQL instead of data files."""
+    try:
+        import api_safe
+        api_safe._loop = lambda: None
+    except ImportError:
+        pass
+    try:
+        import api_group
+    except ImportError:
+        return
+
+    def companies():
+        import api_corp as CO
+        out = []
+        for co in CO.registry()["companies"]:
+            if co.get("broken"):
+                continue
+            try:
+                _d, _b, db = CO._paths(co)
+                k = pgsqlite.connect(db)
+                try:
+                    k.execute("SELECT 1 FROM accounts LIMIT 1").fetchall()
+                finally:
+                    k.close()
+            except Exception:
+                continue
+            out.append((co["code"], co.get("name") or co["code"], db))
+        return out
+
+    def ro(db):
+        k = pgsqlite.connect(db)
+        k.row_factory = pgsqlite.Row
+        return k
+    api_group._companies = companies
+    api_group._ro = ro
+
+
 def before_init(server):
     _patch_companies()
     _patch_licence()
@@ -1357,6 +1396,7 @@ def before_init(server):
     _patch_gate()
     _patch_doclib()
     _patch_reinit(server)
+    _patch_261()
     server.Handler.allowed = lambda self: True
 
 

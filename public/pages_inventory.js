@@ -26,7 +26,7 @@ function docEditor(cfg, doc) {
   const module = cfg.module || MODULE_OF[cfg.type];
   const editable = doc.status === "draft" && can(module, "edit");
   const ctx = { doc, cfg, avail: {} };
-  const title = (cfg.name || TYPE_NAME[cfg.type]) + " " + (doc.no || (isNew ? "(new)" : "draft #" + doc.id));
+  const title = (cfg.name || TYPE_NAME[cfg.type]) + " " + (doc.no || (doc.id ? "draft #" + doc.id : "(new)"));
   const hdrFields = cfg.header(doc, ctx).map((f) => Object.assign({}, f, { readonly: f.readonly || !editable }));
   const hf = form(hdrFields, doc, async () => { if (cfg.onHeader) await cfg.onHeader(ctx); });
   ctx.hf = hf;
@@ -185,7 +185,7 @@ PAGES["m/boq"] = masterPage({ table: "boq_items", title: "BOQ items & material n
     load();
     return box;
   } });
-PAGES["m/staff"] = masterPage({ table: "staff", title: "Staff", single: "staff member", importer: ["code", "name", "designation", "phone", "daily_rate", "monthly_rate"],
+PAGES["m/staff"] = masterPage({ table: "staff", title: "Staff", single: "staff member", importer: ["code", "name", "designation", "phone", "daily_rate", "monthly_rate", "project"],
   cols: [{ k: "code", label: "Code" }, { k: "name", label: "Name" }, { k: "designation", label: "Designation" }, { k: "phone", label: "Phone" }, { k: "project_id", label: "Project", v: (r) => nm.pcode(r.project_id) }, { k: "active", label: "Active", fmt: "yes" }],
   fields: [{ k: "code", label: "Code" }, { k: "name", label: "Name", req: true }, { k: "designation", label: "Designation" }, { k: "phone", label: "Phone" }, { k: "daily_rate", label: "Daily rate", type: "number" }, { k: "monthly_rate", label: "Monthly rate", type: "number" }, { k: "project_id", label: "Project", type: "select", options: opt.projects }, { k: "active", label: "Active", type: "check" }] });
 

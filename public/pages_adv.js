@@ -634,10 +634,15 @@
      English: every date is shown and typed in AD. Nepali: every date is shown and typed in BS (with a BS calendar),
      in lists, panels, headings, printouts and CSV exports. The database keeps AD, so sorting and reports stay right. */
   let BST = null, bsLoading = null;
-  const loadBS = () => bsLoading || (bsLoading = api("bs.table", {}).then((t) => {
+  /* 2.48.2: the calendar is read only while someone is signed in. On the sign-in page there is no session, the
+     engine answers SESSION_EXPIRED and lib.js reloads the page; with Nepali dates on that reload asked again,
+     so after Sign out the sign-in page blinked endlessly. After signing in the next screen loads it as before. */
+  const signedIn = () => { try { return !!(typeof S !== "undefined" && S.token); } catch (e) { return false; } };
+  window.bcoSignedIn = signedIn;
+  const loadBS = () => bsLoading || (!signedIn() ? Promise.resolve(null) : (bsLoading = api("bs.table", {}).then((t) => {
     BST = Object.entries(t.years).map(([y, v]) => ({ y: Number(y), start: Date.UTC(...v.start.split("-").map((x, i) => Number(x) - (i === 1 ? 1 : 0))), m: v.months })).sort((a, b) => a.y - b.y);
     window.BS_MONTHS = t.months; applyMode(); enhanceAll(); convertTree(document.body); if (MODE !== "ad" && !document.querySelector(".overlay")) rerender();
-  }).catch(() => { bsLoading = null; }));
+  }).catch(() => { bsLoading = null; })));
   const utc = (iso) => { const [y, m, d] = iso.slice(0, 10).split("-").map(Number); return Date.UTC(y, m - 1, d); };
   const pad = (n) => String(n).padStart(2, "0");
   window.adToBs = function (iso) {

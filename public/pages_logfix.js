@@ -38,10 +38,12 @@
 
   /* ══════════ 2. months in Nepali (BS) when the Nepali date switch is on ══════════ */
   let BST = null, loading = null;
-  const loadBS = () => loading || (loading = api("bs.table", {}).then((t) => {
+  /* 2.48.2: no calendar request without a session (it reloaded the sign-in page endlessly after Sign out) */
+  const signedIn = () => (typeof window.bcoSignedIn === "function" ? window.bcoSignedIn() : (typeof S !== "undefined" && !!S.token));
+  const loadBS = () => loading || (!signedIn() ? Promise.resolve(null) : (loading = api("bs.table", {}).then((t) => {
     BST = { names: t.months, years: Object.entries(t.years).map(([y, v]) => ({ y: Number(y), start: v.start, m: v.months })).sort((a, b) => a.y - b.y) };
     return BST;
-  }).catch(() => { loading = null; return null; }));
+  }).catch(() => { loading = null; return null; })));
   const pad = (n) => String(n).padStart(2, "0");
   const addDays = (iso, n) => { const d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const bsRange = (y, m) => {
